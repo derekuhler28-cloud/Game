@@ -32,11 +32,14 @@ const shuffle = arr => arr.map(v => [Math.random(), v]).sort((a, b) => a[0] - b[
 // ---------- player ----------
 
 function newPlayer(name) {
+  const fruitMap = {};
+  shuffle(Object.keys(FRUITS)).forEach((k, i) => { fruitMap[i] = k; });
   return {
-    v: 1, name, lvl: 1, xp: 0, hp: 60, maxHp: 60, atk: 10, def: 4, spd: 5, haki: 0,
-    energy: 100, food: 80, mood: 70, berries: 150, bounty: 0,
+    v: 2, name, lvl: 1, xp: 0, hp: 60, maxHp: 60, atk: 10, def: 4, spd: 5, haki: 0,
+    energy: 100, food: 70, mood: 60, berries: 50, bounty: 0,
     day: 1, tick: 0, island: 0, unlocked: 1, bosses: {}, crew: [], fruit: null,
-    bag: { meat: 2, medicine: 1 }, owned: {}, wins: 0, trained: 0, king: false,
+    bag: { meat: 1 }, owned: {}, wins: 0, trained: 0, king: false,
+    hat: false, weapon: null, weapons: [], mastery: {}, explored: {}, fruitMap, fruitsFound: [], fruitBag: [],
   };
 }
 
@@ -47,7 +50,7 @@ const isLate = () => G.p.tick >= TICKS_PER_DAY;
 const xpNeed = l => Math.round(12 * Math.pow(l, 1.35));
 const moodMult = () => (G.p.mood >= 75 ? 1.1 : G.p.mood <= 25 ? 0.9 : 1);
 const fruit = () => (G.p.fruit ? FRUITS[G.p.fruit] : null);
-const effDef = () => Math.round(G.p.def * ((fruit() && fruit().defMult) || 1));
+const effDef = () => Math.round((G.p.def + ((weapon() && weapon().def) || 0)) * ((fruit() && fruit().defMult) || 1));
 const hasCrew = id => G.p.crew.includes(id);
 const foodBoost = () => (hasCrew('basil') ? 1.5 : 1) * (G.p.owned.galley ? 1.25 : 1);
 const trainCap = k => { const L = G.p.lvl; return Math.round({ atk: 12 + L * 4, def: 6 + L * 2.5, spd: 7 + L * 2.5, haki: 4 + L * 2 }[k]); };
@@ -82,10 +85,6 @@ async function announceLevels(r) {
   screenFlash('#fff6a0', 0.45);
   floatText(G.hero.x, 70, 'LEVEL UP!', '#ffe14a', 2);
   await talk(`LEVEL UP! You're Lv ${p.lvl}. HP +${9 * n}, ATK +${2 * n}, DEF +${n}, SPD +${n}.`);
-  const skills = fruit() ? fruit().skills : BASE_SKILLS;
-  for (let i = 0; i < SKILL_LEVELS.length; i++) {
-    if (r.from < SKILL_LEVELS[i] && r.to >= SKILL_LEVELS[i]) await talk(`New skill unlocked: ${skills[i].name}!`);
-  }
 }
 
 // ---------- save / load ----------
@@ -96,10 +95,18 @@ function save() {
 }
 
 function restore(raw) {
-  if (!raw || raw.v !== 1) return null;
-  const p = Object.assign(newPlayer(raw.name || 'Rookie'), raw);
+  if (!raw || (raw.v !== 1 && raw.v !== 2)) return null;
+  const p = Object.assign(newPlayer(raw.name || 'Nobody'), raw);
   p.bag = Object.assign({}, p.bag);
   p.owned = Object.assign(raw.weights ? { weights: true } : {}, p.owned);
+  if (raw.v === 1) {
+    // Saves from before weapons existed: keep the hat and the moves they had by level.
+    p.v = 2;
+    p.hat = true;
+    p.fruitsFound = p.fruit ? [p.fruit] : [];
+    p.mastery = { fists: p.lvl >= 9 ? 90 : p.lvl >= 4 ? 40 : 10 };
+    if (p.fruit) p.mastery[p.fruit] = p.lvl >= 9 ? 120 : p.lvl >= 4 ? 40 : 0;
+  }
   return p;
 }
 
@@ -283,7 +290,7 @@ function showTitle() {
     say('Welcome back, Captain. Your ship is waiting.');
   } else {
     newGameForm(false);
-    say('A pocket-sized pirate life. Train, eat, fight and raid your way to Pirate King!');
+    say('Start as a nobody. Explore for weapons and Devil Fruits, master their moves, and fight your way to Pirate King!');
   }
   updateHud();
 }
@@ -291,7 +298,7 @@ function showTitle() {
 function newGameForm(overwrite) {
   const box = $('actions');
   box.className = 'actions single';
-  const input = el('input', { id: 'nameInput', maxlength: '12', autocomplete: 'off', value: overwrite ? '' : 'Rookie', placeholder: 'Rookie' });
+  const input = el('input', { id: 'nameInput', maxlength: '12', autocomplete: 'off', value: overwrite ? '' : 'Nobody', placeholder: 'Nobody' });
   const form = el('form', { class: 'nameform' },
     el('label', { for: 'nameInput', text: 'Name your pirate' }),
     input,
@@ -300,7 +307,7 @@ function newGameForm(overwrite) {
     e.preventDefault();
     Sfx.unlock();
     Sfx.play('select');
-    const name = input.value.trim().replace(/\s+/g, ' ').slice(0, 12) || 'Rookie';
+    const name = input.value.trim().replace(/\s+/g, ' ').slice(0, 12) || 'Nobody';
     G.p = newPlayer(name);
     G.saved = null;
     save();
@@ -324,9 +331,9 @@ async function enterGame(cont) {
   }
   lock(true);
   homeMenu();
-  await talk(`${p.name} sets out from Dawn Village with a straw hat and a big dream.`);
-  await talk('Train to get stronger, eat so you do not starve, and fight for XP and berries.');
-  await talk('When you feel ready, RAID the island boss. Beat it to recruit crew and sail on!');
+  await talk(`${p.name} is a nobody from Dawn Village. No weapon, no powers, no crew. Just a big dream.`);
+  await talk('EXPLORE to find weapons and hidden Devil Fruits. Use them in fights to master new moves.');
+  await talk('Train, eat, and fight to grow. When you feel ready, RAID the island boss!');
   lock(false);
   if (G.mode !== 'home') return;
   homeMenu();
@@ -347,18 +354,21 @@ function homeMenu() {
   const tooLate = late ? "It's way past bedtime. Get some sleep!" : null;
   const isl = island();
   const beaten = p.bosses[isl.boss];
+  const loot = lootCount(p.island).left;
   setActions([
-    { label: 'Train', sub: '18 EN', onClick: trainMenu, blocked: tooLate },
+    { label: 'Explore', sub: loot ? `${loot} secret${loot > 1 ? 's' : ''}` : '12 EN', onClick: explore, blocked: tooLate },
     { label: 'Fight', sub: '10 EN', onClick: fightRandom, blocked: tooLate },
+    { label: 'Train', sub: '18 EN', onClick: trainMenu, blocked: tooLate },
     { label: beaten ? 'Rematch' : 'Raid', sub: 'boss', cls: 'raid', onClick: raidMenu, blocked: tooLate },
-    { label: 'Work', sub: 'earn ฿', onClick: workMenu, blocked: tooLate },
+    { label: 'Gear', sub: shortWeapon(), onClick: () => gearMenu() },
     { label: 'Eat', sub: 'bag', onClick: bagMenu },
+    { label: 'Work', sub: 'earn ฿', onClick: workMenu, blocked: tooLate },
     { label: 'Shop', sub: 'buy', onClick: shopMenu },
     { label: 'Crew', sub: `${p.crew.length}/5`, onClick: crewMenu },
     { label: 'Sail', sub: 'map', onClick: mapMenu, blocked: tooLate },
     { label: 'Wanted', sub: 'stats', onClick: wantedMenu },
     { label: 'Sleep', sub: 'next day', onClick: sleep, cls: late ? 'pulse' : '' },
-  ]);
+  ], 'cols4');
 }
 
 function needEnergy(n) {
@@ -396,6 +406,8 @@ function talkToHero() {
 // ---------- training ----------
 
 function statLabel(k) {
+  if (k === 'drill') return `${shortWeapon()} ${mastery(styleKey())}`;
+  if (k === 'fruit') return `mastery ${mastery(G.p.fruit)}`;
   const v = G.p[k], cap = trainCap(k);
   return v >= cap ? `${k.toUpperCase()} ${v} max` : `${k.toUpperCase()} ${v}/${cap}`;
 }
@@ -403,23 +415,25 @@ function statLabel(k) {
 function trainMenu() {
   const p = G.p;
   setActions([
-    ...Object.keys(TRAININGS).map(k => ({ label: TRAININGS[k].name, sub: statLabel(k), onClick: () => startTraining(k) })),
+    ...Object.keys(TRAININGS).filter(k => k !== 'fruit' || p.fruit).map(k => ({ label: TRAININGS[k].name, sub: statLabel(k), onClick: () => startTraining(k) })),
     { label: 'Back', cls: 'ghost', onClick: homeMenu },
   ], 'cols3');
   const bonus = [p.owned.weights ? 'weights +1' : '', p.mood >= 75 ? 'pumped +1' : '', p.mood <= 25 ? 'gloomy -1' : ''].filter(Boolean).join(', ');
   const hakiTip = p.haki < HAKI.armament ? ` Haki ${HAKI.armament} unlocks Armament (needed vs Logias).` : '';
-  say(`Training costs 18 energy and 12 food. Each stat has a limit that rises as you level up.${bonus ? ' Bonus: ' + bonus + '.' : ''}${hakiTip}`);
+  say(`Training costs 18 energy and 12 food. Stats have limits that rise as you level. Drills raise mastery to unlock moves.${bonus ? ' Bonus: ' + bonus + '.' : ''}${hakiTip}`);
 }
 
 function startTraining(k) {
   const p = G.p;
-  if (p[k] >= trainCap(k)) {
+  const isStat = STAT_KEYS.includes(k);
+  if (isStat && p[k] >= trainCap(k)) {
     Sfx.play('bad');
     say(`Your ${TRAININGS[k].name} is maxed out for Lv ${p.lvl}. Fight and level up to raise the limit!`);
     return;
   }
   if (!needEnergy(18)) return;
-  const level = { atk: p.atk - 10, def: (p.def - 4) * 2, spd: (p.spd - 5) * 2, haki: p.haki * 2 }[k];
+  const level = isStat ? { atk: p.atk - 10, def: (p.def - 4) * 2, spd: (p.spd - 5) * 2, haki: p.haki * 2 }[k]
+    : mastery(k === 'drill' ? styleKey() : p.fruit) * 0.6;
   const diff = clamp(level / 90, 0, 1);
   G.train = {
     k, rep: 0, reps: 3, results: [], cur: 0, dir: 1,
@@ -429,7 +443,8 @@ function startTraining(k) {
   G.mode = 'train';
   G.hero.x = 96;
   setActions([{ label: 'Strike!', cls: 'big raid', onClick: trainStrike }], 'single');
-  say(`${TRAININGS[k].name} training (${TRAININGS[k].desc})! Hit STRIKE when the marker is inside the gold zone. Dead center is PERFECT.`);
+  const what = k === 'drill' ? `${styleName(styleKey())} drills` : k === 'fruit' ? `${fruit().name} practice` : `${TRAININGS[k].name} training (${TRAININGS[k].desc})`;
+  say(`${what}! Hit STRIKE when the marker is inside the gold zone. Dead center is PERFECT.`);
 }
 
 function trainStrike() {
@@ -465,6 +480,7 @@ async function finishTraining() {
   const perfects = T.results.filter(r => r === 'perfect').length;
   const goods = T.results.filter(r => r === 'good').length;
   const misses = T.results.length - perfects - goods;
+  if (!STAT_KEYS.includes(T.k)) return finishPractice(T, perfects, goods, misses);
   let gain = Math.round((perfects * 2 + goods) / 3);
   if (gain > 0) {
     if (p.owned.weights) gain++;
@@ -497,6 +513,32 @@ async function finishTraining() {
   if (hakiBefore < HAKI.armament && p.haki >= HAKI.armament) { Sfx.play('haki'); await talk('You awakened ARMAMENT HAKI! New skill: coat your fists in invisible armor. It hits Logia users.'); }
   if (hakiBefore < HAKI.observation && p.haki >= HAKI.observation) { Sfx.play('haki'); await talk('You awakened OBSERVATION HAKI! You can sense attacks coming. Dodge chance up.'); }
   if (hakiBefore < HAKI.conqueror && p.haki >= HAKI.conqueror) { Sfx.play('haki'); await talk("CONQUEROR'S HAKI! The rarest power of all. Weak foes faint before you."); }
+  save();
+  lock(false);
+  homeMenu();
+}
+
+async function finishPractice(T, perfects, goods, misses) {
+  const p = G.p;
+  const key = T.k === 'drill' ? styleKey() : p.fruit;
+  let gain = 4 + perfects * 4 + goods * 2;
+  if (p.owned.weights) gain += 2;
+  if (p.mood >= 75) gain += 2;
+  if (p.food <= 0) gain = Math.floor(gain / 2);
+  spend(18, 2, 12);
+  p.mood = clamp(p.mood + perfects * 3 - misses * 2, 0, 100);
+  p.trained++;
+  const unlocked = gainMastery(key, gain);
+  const lv = gainXp(4);
+  G.train = null;
+  G.mode = 'home';
+  resetHero();
+  lock(true);
+  homeMenu();
+  const next = styleMoves(key).find(m => m.at > mastery(key));
+  await talk(`${styleName(key)} practice: +${gain} mastery (${mastery(key)} total). ${next ? `${next.name} unlocks at ${next.at}.` : 'Every move unlocked!'}`);
+  await announceUnlocks(unlocked);
+  await announceLevels(lv);
   save();
   lock(false);
   homeMenu();
@@ -757,7 +799,8 @@ function mapMenu() {
     const open = i < p.unlocked;
     const here = i === p.island;
     const boss = BOSSES[isl.boss];
-    const status = p.bosses[isl.boss] ? `${boss.name} defeated` : `Raid boss: ${open ? boss.name : '???'} (Lv ${boss.lvl})`;
+    const lc = lootCount(i);
+    const status = (p.bosses[isl.boss] ? `${boss.name} defeated` : `Raid boss: ${boss.name} (Lv ${boss.lvl})`) + `. Secrets found: ${lc.found}/${lc.total}.`;
     let right;
     if (here) right = el('span', { class: 'count', text: 'Here' });
     else if (open) right = el('button', { type: 'button', class: 'mini-btn', text: 'Sail', disabled: isLate() || null, onclick: () => sailTo(i) });
@@ -875,7 +918,7 @@ function wantedMenu(confirmReset) {
   body.style.display = 'contents';
   body.append(el('div', { class: 'poster' },
     el('div', { class: 'wanted', text: 'WANTED' }),
-    el('img', { src: spriteURL(PLAYER_SPR, 6), alt: `${p.name}'s wanted poster portrait` }),
+    el('img', { src: spriteURL(heroSpec(), 6), alt: `${p.name}'s wanted poster portrait` }),
     el('div', { class: 'doa', text: 'DEAD OR ALIVE' }),
     el('div', { class: 'pname', text: p.name }),
     el('div', { class: 'pbounty', text: '฿ ' + fmt(p.bounty) + ' -' }),
@@ -884,17 +927,16 @@ function wantedMenu(confirmReset) {
   const stats = [
     ['LEVEL', `${p.lvl}  (${p.xp}/${xpNeed(p.lvl)} XP)`],
     ['HP', `${p.hp}/${p.maxHp}`],
-    ['ATK', p.atk], ['DEF', effDef()], ['SPD', p.spd],
+    ['ATK', effAtk()], ['DEF', effDef()], ['SPD', p.spd],
     ['HAKI', `${p.haki} (${hakiNext})`],
+    ['WEAPON', weapon() ? weapon().name : 'Bare fists'],
     ['FRUIT', fruit() ? fruit().name : 'None yet'],
     ['RAIDS', `${ISLANDS.filter(i => p.bosses[i.boss]).length}/6 bosses`],
     ['DAYS', p.day], ['WINS', p.wins],
   ];
   body.append(el('div', { class: 'statgrid' }, stats.map(([k, v]) => el('div', null, el('b', { text: k }), el('span', { text: String(v) })))));
-  const skills = (fruit() ? fruit().skills : BASE_SKILLS).map((s, i) => `${s.name}${p.lvl < SKILL_LEVELS[i] ? ` (Lv ${SKILL_LEVELS[i]})` : ''}`);
-  if (p.haki >= HAKI.armament) skills.push(ARMAMENT_SKILL.name);
-  if (p.haki >= HAKI.conqueror) skills.push(CONQUEROR_SKILL.name);
-  body.append(el('p', { class: 'note', text: 'Skills: ' + skills.join(', ') }));
+  const moves = availableSkills().filter(s => !s.locked).map(s => s.name);
+  body.append(el('p', { class: 'note', text: moves.length ? 'Moves: ' + moves.join(', ') : 'Moves: none yet. Explore for weapons and fight to master them.' }));
   if (confirmReset) {
     body.append(el('p', { text: 'Erase this save and return to the title screen? This cannot be undone.' }));
     body.append(el('div', { class: 'btn-row' },
@@ -935,6 +977,7 @@ function raidMenu() {
     null));
   const tips = [];
   tips.push(beaten ? `Rematch #${beaten}: the boss is stronger, but still drops berries and bounty.` : `Suggested level: ${lvl - (key === 'grizzle' ? 1 : 2)}+. You are Lv ${p.lvl}.`);
+  if (!beaten && def.drop) tips.push(`Loot: ${WEAPONS[def.drop].name}${key === 'grizzle' ? ' and something special' : ''}.`);
   if (p.owned.cannon) tips.push('Your Ship Cannon will fire every turn.');
   tips.push('Bosses charge a huge attack every few turns. GUARD when they do!');
   if (def.logia) tips.push(p.haki >= HAKI.armament ? 'Logia! Use Armament Haki so your hits connect.' : `Logia! Your hits pass through. Train Haki to ${HAKI.armament} or bring Water Barrels.`);
@@ -1016,9 +1059,10 @@ function battleMenu() {
 }
 
 function availableSkills() {
-  const p = G.p;
-  const base = fruit() ? fruit().skills : BASE_SKILLS;
-  const out = base.map((s, i) => Object.assign({}, s, { locked: p.lvl < SKILL_LEVELS[i] ? SKILL_LEVELS[i] : 0 }));
+  const p = G.p, out = [];
+  const add = key => styleMoves(key).forEach(m => out.push(Object.assign({}, m, { style: key, locked: mastery(key) < m.at ? m.at : 0 })));
+  add(styleKey());
+  if (p.fruit) add(p.fruit);
   if (p.haki >= HAKI.armament) out.push(ARMAMENT_SKILL);
   if (p.haki >= HAKI.conqueror) out.push(CONQUEROR_SKILL);
   return out;
@@ -1028,15 +1072,15 @@ function skillMenu() {
   const B = G.battle;
   const list = availableSkills().map(s => ({
     label: s.name,
-    sub: s.locked ? `Lv ${s.locked}` : `${s.sp} SP`,
-    blocked: s.locked ? `${s.name} unlocks at Lv ${s.locked}.`
+    sub: s.locked ? `${mastery(s.style)}/${s.locked} mastery` : `${s.sp} SP`,
+    blocked: s.locked ? `${s.name} unlocks at ${s.locked} ${styleName(s.style)} mastery (you have ${mastery(s.style)}). Fight with it or do Drills.`
       : (s.conq && B.conqUsed) ? "You already unleashed your Conqueror's Will this battle."
       : B.sp < s.sp ? `Not enough spirit (${B.sp}/${s.sp} SP). Attack or Guard to build SP.` : null,
     onClick: () => playerTurn({ type: 'skill', skill: s }),
   }));
   list.push({ label: 'Back', cls: 'ghost', onClick: battleMenu });
   setActions(list, 'cols3');
-  say(`Spirit: ${B.sp}/100 SP.${fruit() ? '' : ' Devil fruit skills come later...'}`);
+  say(`Spirit: ${B.sp}/100 SP.${fruit() ? '' : ' No Devil Fruit powers yet. Explore to find one!'}`);
 }
 
 function battleBag() {
@@ -1076,13 +1120,13 @@ function hitFoe(mult, o) {
     tween(F, { ox: 10 }, 90).then(() => tween(F, { ox: 0 }, 140));
     return 0;
   }
-  const atk = (o.atk || p.atk * moodMult()) * (B.armament > 0 ? 1.35 : 1);
-  let dmg = atk * mult * rand(0.9, 1.1) - F.defense * 0.5;
+  const atk = (o.atk || effAtk() * moodMult()) * (B.armament > 0 ? 1.35 : 1);
+  let dmg = atk * mult * rand(0.9, 1.1) - (o.pierce ? 0 : F.defense * 0.5);
   const crit = Math.random() < clamp(0.05 + p.spd * 0.003, 0.05, 0.3) + (o.critBonus || 0);
   if (crit) dmg *= o.critMult || 1.6;
   dmg = Math.max(1, Math.round(dmg));
   let phased = false;
-  if (F.info.logia && B.armament <= 0 && F.solid <= 0) {
+  if (F.info.logia && B.armament <= 0 && F.solid <= 0 && !o.logiaHit) {
     dmg = Math.max(1, Math.round(dmg * 0.12));
     phased = true;
     if (!B.phaseHint) { B.phaseHint = true; B.note = `Your attack passes right through the ${F.info.logia}! Use Armament Haki or a Water Barrel.`; }
@@ -1150,10 +1194,13 @@ async function playerTurn(act) {
   const F = B.F, p = G.p;
   lock(true);
   B.guard = false;
+  let unlocked = [];
   if (act.type === 'attack') {
-    say(`${p.name} attacks!`);
-    await fxPlayer('punch', () => hitFoe(1));
+    const w = weapon();
+    say(`${p.name} ${!w ? 'attacks' : w.hit === 'shot' ? 'fires' : 'swings the ' + w.name}!`);
+    await fxPlayer(w ? w.hit : 'punch', () => hitFoe(1, { logiaHit: !!(w && w.logiaHit) }), 1, w && w.color);
     B.sp = Math.min(100, B.sp + 12);
+    unlocked = gainMastery(styleKey(), 1);
   } else if (act.type === 'skill') {
     const s = act.skill;
     B.sp -= s.sp;
@@ -1168,13 +1215,32 @@ async function playerTurn(act) {
       if (!F.boss && F.lvl <= p.lvl + 2) { F.hp = 0; await talk(`${F.name} foams at the mouth and faints!`); }
       else { F.stun = 1; F.charging = false; await talk(`${F.name} staggers under the pressure of your will! Stunned.`); }
     } else {
-      await fxPlayer(s.fx, () => hitFoe(s.mult), s.hits || 1);
-      if (F.hp > 0 && s.burn) { F.burn = s.burn; F.burnDmg = Math.max(3, Math.round(p.atk * 0.4)); await talk(`${F.name} is on fire!`); }
+      const wp = s.style === p.fruit ? null : weapon();
+      let dealt = 0;
+      await fxPlayer(s.fx, () => {
+        dealt += hitFoe(s.mult, { sure: s.sure, critBonus: s.crit, pierce: s.pierce, logiaHit: !!(wp && wp.logiaHit) });
+      }, s.hits || 1, s.color || (wp && wp.color));
+      if (s.style === p.fruit) B.usedFruit = true;
+      unlocked = gainMastery(s.style, 3);
+      if (F.hp > 0 && s.burn) { F.burn = s.burn; F.burnDmg = Math.max(3, Math.round(effAtk() * 0.4)); await talk(`${F.name} is on fire!`); }
       if (F.hp > 0 && s.freeze) {
         if (!F.boss || Math.random() < 0.5) { F.freeze = 1; F.charging = false; await talk(`${F.name} is frozen solid!`); }
         else await talk(`${F.name} shatters the ice!`);
       }
-      if (F.hp > 0 && s.atkDown) { F.weak = 3; await talk(`Smoke binds ${F.name}! Its attacks are weaker.`); }
+      if (F.hp > 0 && s.atkDown) { F.weak = 3; await talk(`${F.name} is weakened! Its attacks hit softer.`); }
+      if (F.hp > 0 && s.stun && Math.random() < (F.boss ? s.stun / 2 : s.stun)) { F.stun = 1; await talk(`${F.name} is dazed and stunned!`); }
+      if (F.hp > 0 && s.wet && F.info.logia) { F.solid = Math.max(F.solid, 3); await talk(`${F.name} is soaked! Your hits will connect for a while.`); }
+      if (s.drain && dealt > 0) {
+        const h = Math.max(1, Math.round(dealt * s.drain));
+        p.hp = Math.min(p.maxHp, p.hp + h);
+        floatText(heroC().x, 74, '+' + h, '#7cff7a');
+      }
+      if (s.recoil) {
+        const r = Math.round(p.maxHp * s.recoil);
+        p.hp = Math.max(1, p.hp - r);
+        G.hero.flash = 0.12;
+        await talk(`The recoil slams into you too! -${r} HP.`);
+      }
     }
   } else if (act.type === 'guard') {
     B.guard = true;
@@ -1193,6 +1259,7 @@ async function playerTurn(act) {
     }
     await talk("You couldn't get away!");
   }
+  await announceUnlocks(unlocked);
   await showNote();
   if (F.hp <= 0) return winBattle();
   await checkPhase();
@@ -1430,6 +1497,7 @@ async function winBattle() {
   Sfx.play('coin');
   await talk(`+${xp} XP, +฿${fmt(berries)}, bounty +฿${fmt(bounty)}.${drop ? ` Got ${ITEMS[drop].name}!` : ''}`);
   await announceLevels(gainXp(xp));
+  await announceUnlocks(gainMastery(styleKey(), 2).concat(B.usedFruit ? gainMastery(p.fruit, 2) : []));
   const after = B.after, key = F.key;
   G.battle = null;
   G.mode = 'home';
@@ -1496,44 +1564,22 @@ async function bossAftermath(key) {
     await talk(c.join);
     await talk(`${c.name} the ${c.role} joined your crew! (${c.perk})`);
   }
-  if (key === 'grizzle' && !p.fruit) await offerFruit();
+  if (key === 'grizzle' && !p.hat) {
+    p.hat = true;
+    Sfx.play('find');
+    screenFlash('#ffe14a', 0.5);
+    showLoot({ kind: 'icon', icon: 'chest' });
+    await talk("In Grizzle's loot you find a battered straw hat. You put it on. It fits like it was waiting for you.");
+    await talk("You're not a nobody anymore. You're a PIRATE!");
+  }
+  const drop = BOSSES[key].drop;
+  if (drop && !p.weapons.includes(drop)) await findWeapon(drop, BOSSES[key].name);
   if (idx + 1 < ISLANDS.length && p.unlocked < idx + 2) {
     p.unlocked = idx + 2;
     await talk(`Your Log Pose now points to ${ISLANDS[idx + 1].name}. Open the Sail map when you're ready!`);
   }
   if (key === 'drakko') await ending();
   save();
-}
-
-function offerFruit() {
-  return new Promise(res => {
-    const keys = shuffle(Object.keys(FRUITS)).slice(0, 3);
-    const body = el('div');
-    body.style.display = 'contents';
-    body.append(el('p', { text: "Grizzle's treasure chest holds three strange, swirly fruits. A Devil Fruit grants a power, but you can only ever eat ONE. Choose!" }));
-    for (const k of keys) {
-      const f = FRUITS[k];
-      body.append(el('div', { class: 'row' },
-        el('img', { src: iconURL('fruit', { c: f.color, C: f.color2 }), alt: '' }),
-        el('div', null, el('h3', { text: f.name }), el('p', { text: f.desc }), el('p', { text: 'Skills: ' + f.skills.map(s => s.name).join(', ') })),
-        el('button', {
-          type: 'button', class: 'mini-btn red', text: 'Eat',
-          onclick: async () => {
-            modalOnClose = null;
-            closeModal();
-            G.p.fruit = k;
-            save();
-            Sfx.play('haki');
-            screenFlash(f.color, 0.8);
-            particles(G.hero.x, 100, 30, { colors: [f.color, f.color2, '#ffffff'], speed: 80 });
-            await talk(`You ate the ${f.name}! It tastes like old socks... but power surges through you!`);
-            await talk(`Your skills became: ${f.skills.map(s => s.name).join(', ')}. (You can never swim again.)`);
-            res();
-          },
-        })));
-    }
-    openModal('Devil Fruit!', body, { locked: true });
-  });
 }
 
 function ending() {
@@ -1599,10 +1645,113 @@ function stretchArms(n, ms, onHit, yOff, thick) {
   });
 }
 
-async function fxPlayer(kind, hit, hits) {
+async function fxPlayer(kind, hit, hits, color) {
   hits = hits || 1;
   const Hr = G.hero, F = G.battle.F;
   switch (kind) {
+    case 'swing':
+      await tween(Hr, { ox: 50 }, 140, easeIn);
+      hit(0);
+      slashAt(foeC(), color || '#ffffff', 0.8, 36);
+      impact(foeC(), null, 8);
+      await tween(Hr, { ox: 0 }, 200);
+      break;
+    case 'multislash':
+      await tween(Hr, { ox: 48 }, 130, easeIn);
+      for (let i = 0; i < hits && F.hp > 0; i++) {
+        Hr.ox = 46 + (i % 2) * 6;
+        hit(i);
+        slashAt(foeC(), color || '#ffffff', (i % 2 ? -0.8 : 0.8) + rand(-0.3, 0.3), 30);
+        await wait(140);
+      }
+      await tween(Hr, { ox: 0 }, 200);
+      break;
+    case 'crescent': {
+      await tween(Hr, { squash: 0.15 }, 150);
+      Sfx.play('slash');
+      tween(Hr, { squash: 0 }, 150);
+      const col = color || '#ffffff';
+      await projectile(heroHand(), foeC(), 320, (c, x, y) => {
+        for (let a = -1.3; a <= 1.3; a += 0.08) {
+          pxRect(c, x + Math.cos(a) * 9 - 6, y + Math.sin(a) * 12, 2, 2, col);
+          pxRect(c, x + Math.cos(a) * 6 - 6, y + Math.sin(a) * 9, 1, 1, '#ffffff');
+        }
+      });
+      hit(0);
+      particles(foeC().x, foeC().y, 18, { colors: [col, '#ffffff'], speed: 90 });
+      shake(4, 250);
+      break;
+    }
+    case 'shot':
+      for (let i = 0; i < hits && F.hp > 0; i++) {
+        Sfx.play('shot');
+        const h = heroHand();
+        particles(h.x + 12, h.y + 2, 6, { colors: ['#ffe14a', '#ffffff'], speed: 50, grav: 0, life: 0.2 });
+        tween(Hr, { ox: -4 }, 60).then(() => tween(Hr, { ox: 0 }, 120));
+        await projectile({ x: h.x + 12, y: h.y + 2 }, foeC(), 150, (c, x, y) => pxRect(c, x - 2, y - 1, 4, 2, color || '#ffe14a'));
+        hit(i);
+        impact(foeC(), null, 8);
+      }
+      break;
+    case 'blast': {
+      await tween(Hr, { ox: 40 }, 140, easeIn);
+      Sfx.play('boom');
+      hit(0);
+      const fc = foeC();
+      screenFlash('#ffd04a', 0.35);
+      fxRun(400, (c, k) => { pxRing(c, fc.x, fc.y, 4 + k * 22, '#ffe14a', 2); pxRing(c, fc.x, fc.y, 2 + k * 14, '#ff8a3a', 2); });
+      particles(fc.x, fc.y, 30, { colors: FIRE, speed: 100 });
+      shake(5, 320);
+      await tween(Hr, { ox: 0 }, 220);
+      break;
+    }
+    case 'wave': {
+      Sfx.play('splash');
+      const x0 = G.hero.x + 12, x1 = foeC().x;
+      await fxRun(620, (c, k) => {
+        const x = x0 + (x1 - x0) * k;
+        const h = 12 + Math.sin(k * Math.PI) * 12;
+        for (let i = 0; i < 18; i++) {
+          const hh = h * (1 - i / 18);
+          pxRect(c, x - i * 2, 122 - hh, 2, hh, i % 3 ? '#4fa3e0' : '#2f7ac0');
+          pxRect(c, x - i * 2, 122 - hh, 2, 1, '#ffffff');
+        }
+      });
+      hit(0);
+      particles(foeC().x, foeC().y, 24, { colors: ['#4fa3e0', '#bfe6ff', '#ffffff'], speed: 90, grav: 120 });
+      break;
+    }
+    case 'sandslash': {
+      Sfx.play('fire');
+      const h = heroHand();
+      fxRun(500, () => {
+        for (let i = 0; i < 3; i++) FX.parts.push({ x: h.x, y: h.y + rand(-6, 6), vx: 200 + rand(-30, 30), vy: rand(-20, 20), grav: 0, life: 0.45, max: 0.45, color: pick(SAND), size: 2 });
+      });
+      await wait(260);
+      for (let i = 0; i < hits && F.hp > 0; i++) {
+        hit(i);
+        slashAt(foeC(), color || '#e8c27b', rand(-1, 1), 30);
+        await wait(120);
+      }
+      break;
+    }
+    case 'thunder':
+      screenFlash('#fff6a0', 0.5);
+      await fxBolt(foeC().x, foeC().y, 1.3);
+      hit(0);
+      particles(foeC().x, foeC().y, 20, { colors: ['#ffe14a', '#ffffff'], speed: 90 });
+      shake(4, 260);
+      break;
+    case 'smash':
+      await tween(Hr, { ox: 28, oy: -26 }, 220);
+      await tween(Hr, { ox: 52, oy: 0 }, 130, easeIn);
+      Sfx.play('boom');
+      hit(0);
+      impact(foeC(), ['#ffffff', '#ffe14a', '#c9b88a'], 14);
+      particles(foeC().x, 118, 14, { colors: ['#c9b88a', '#e8d9b0'], speed: 60, grav: 80, dir: -Math.PI / 2, spread: 2 });
+      shake(5, 300);
+      await tween(Hr, { ox: 0 }, 220);
+      break;
     case 'punch':
       await tween(Hr, { ox: 56 }, 150, easeIn);
       hit(0); impact(foeC());
@@ -1813,6 +1962,18 @@ async function fxPlayer(kind, hit, hits) {
   }
 }
 
+function slashAt(pos, color, angle, len) {
+  Sfx.play('slash');
+  const dx = Math.cos(angle) * len / 2, dy = Math.sin(angle) * len / 2;
+  const x0 = pos.x - dx, y0 = pos.y - dy;
+  fxRun(260, (c, k) => {
+    if (k > 0.7 && Math.floor(k * 20) % 2) return;
+    const e = easeOut(Math.min(1, k * 1.8));
+    pxLine(c, x0, y0, x0 + dx * 2 * e, y0 + dy * 2 * e, color, 3);
+    pxLine(c, x0, y0, x0 + dx * 2 * e, y0 + dy * 2 * e, '#ffffff', 1);
+  });
+}
+
 async function fxSlash() {
   const fc = foeC();
   for (let i = 0; i < 3; i++) {
@@ -1862,9 +2023,9 @@ function sceneName() {
 }
 
 function heroSprite() {
-  if (G.hero.flash > 0) return getSprite(PLAYER_SPR, 'flash');
-  if (G.battle && G.battle.armament > 0) return getSprite(PLAYER_SPR, 'tint', '#2a1a3a');
-  return getSprite(PLAYER_SPR);
+  if (G.hero.flash > 0) return getSprite(heroSpec(), 'flash');
+  if (G.battle && G.battle.armament > 0) return getSprite(heroSpec(), 'tint', '#2a1a3a');
+  return getSprite(heroSpec());
 }
 
 function drawActors(list) {
@@ -1890,6 +2051,8 @@ function drawHome() {
   });
   actors.push({ spr: heroSprite(), x: Hr.x + Hr.ox, y: 121 + Hr.oy - step, scale: 2, squash: Hr.squash + (moving ? 0 : Math.sin(G.t * 3) * 0.025), alpha: Hr.alpha });
   drawActors(actors);
+  if (Hr.alpha > 0.5) drawHeldWeapon(ctx, Hr.x + Hr.ox, 121 + Hr.oy - step, 2);
+  drawLoot(ctx);
   if (hasCrew('kenji') && timeIdx() === 1) drawText(ctx, 'Z', HOME_CREW_SPOTS[0][0] + 10, 80 - (G.t * 6) % 8, { color: '#ffffff' });
   if (G.bubble && G.t < G.bubble.until) drawBubble(ctx, Hr.x + Hr.ox, 82 + Hr.oy, G.bubble.text);
 }
@@ -1902,6 +2065,7 @@ function drawBattle() {
   });
   actors.push({ spr: heroSprite(), x: G.hero.x + G.hero.ox, y: 121 + G.hero.oy, scale: 2, squash: G.hero.squash + Math.sin(G.t * 5) * 0.02, alpha: G.hero.alpha });
   drawActors(actors);
+  if (G.hero.alpha > 0.5) drawHeldWeapon(ctx, G.hero.x + G.hero.ox, 121 + G.hero.oy, 2);
 
   // foe
   const lift = foeLift();
@@ -1947,7 +2111,7 @@ function drawBattle() {
 function drawTrain() {
   const T = G.train, Hr = G.hero;
   const x = 96, y = 121;
-  const spr = getSprite(PLAYER_SPR);
+  const spr = getSprite(heroSpec());
   let squash = 0, oy = 0, ox = 0;
   if (T.anim === 'lift') {
     squash = -T.pose * 0.08 + 0.04;
@@ -1966,6 +2130,22 @@ function drawTrain() {
     oy = -(Math.floor(G.t * 14) % 2) * 2;
     ox = T.pose * 20;
     for (let i = 0; i < 4; i++) pxRect(ctx, x - 40 - ((G.t * 120 + i * 30) % 60), 92 + i * 7, 10, 1, '#ffffff');
+  } else if (T.anim === 'drill') {
+    ox = T.pose * 14;
+    const wob = Math.round(T.pose * 4);
+    pxRect(ctx, 133, 98, 3, 23, '#6a4422');
+    pxRect(ctx, 127 + wob, 90, 15, 17, PAL.k);
+    pxRect(ctx, 128 + wob, 91, 13, 15, '#c9a26a');
+    pxRect(ctx, 128 + wob, 98, 13, 1, '#8a6a3a');
+    pxCircle(ctx, 134 + wob, 86, 4, PAL.k);
+    pxCircle(ctx, 134 + wob, 86, 3, '#c9a26a');
+    if (T.pose > 0.55) { pxLine(ctx, 120, 86, 146, 110, '#ffffff', 2); particles(130, 98, 1, { colors: ['#e8d9b0'], speed: 40, life: 0.3 }); }
+  } else if (T.anim === 'fruit') {
+    const f = fruit();
+    const r = 12 + Math.sin(G.t * 5) * 2 + T.pose * 14;
+    pxRing(ctx, x, 104, r, f.color, 2);
+    pxRing(ctx, x, 104, r * 0.6, f.color2, 1);
+    if (Math.random() < 0.3) particles(x + rand(-14, 14), 116, 1, { colors: [f.color, f.color2], speed: 20, grav: -40, life: 0.6 });
   } else {
     squash = 0.22;
     const r = 14 + Math.sin(G.t * 4) * 2 + T.pose * 12;
@@ -1973,6 +2153,7 @@ function drawTrain() {
     pxRing(ctx, x, 104, r * 0.7, '#7a4ac0', 1);
   }
   drawSpriteAt(ctx, spr, x + ox + Hr.ox, y + oy, 2, { squash });
+  if (T.anim === 'drill') drawHeldWeapon(ctx, x + ox + Hr.ox, y + oy, 2);
 
   // timing bar panel
   pxRect(ctx, 22, 4, 148, 34, PAL.k);
@@ -1993,7 +2174,7 @@ function drawTrain() {
 function drawFish() {
   const F = G.fish;
   const hx = 150, hy = 121;
-  drawSpriteAt(ctx, getSprite(PLAYER_SPR), hx, hy, 2, { squash: Math.sin(G.t * 3) * 0.02 });
+  drawSpriteAt(ctx, getSprite(heroSpec()), hx, hy, 2, { squash: Math.sin(G.t * 3) * 0.02 });
   const tip = { x: 120, y: 74 };
   pxLine(ctx, hx - 10, 104, tip.x, tip.y, '#7a4a24', 2);
   const bite = F.state === 'bite';
@@ -2020,7 +2201,7 @@ function drawSail() {
   const S = G.sail;
   const bob = Math.round(Math.sin(G.t * 4));
   drawShip(ctx, S.x, 106 + bob, G.p.owned);
-  drawSpriteAt(ctx, getSprite(PLAYER_SPR), S.x + 33, 97 + bob, 1, { shadow: false });
+  drawSpriteAt(ctx, getSprite(heroSpec()), S.x + 33, 97 + bob, 1, { shadow: false });
   if (Math.random() < 0.6) particles(S.x + 36, 104, 1, { colors: ['#ffffff', '#bfe6ff'], speed: 30, grav: 80, dir: -2.4, spread: 0.8, life: 0.5 });
   drawText(ctx, `TO ${ISLANDS[S.dest].name}`, W / 2, 6, { color: '#ffffff', align: 'center' });
 }
@@ -2028,6 +2209,7 @@ function drawSail() {
 function draw() {
   const ti = G.mode === 'title' ? 0 : timeIdx();
   const scene = sceneName();
+  pxRect(ctx, 0, 0, W, H, '#05081a');
   ctx.save();
   if (FX.shakeMag > 0) ctx.translate(Math.round(rand(-1, 1) * FX.shakeMag), Math.round(rand(-1, 1) * FX.shakeMag));
   ctx.drawImage(backdrop(scene, ti), 0, 0);

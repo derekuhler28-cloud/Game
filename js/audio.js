@@ -71,6 +71,8 @@ const Sfx = (() => {
     ice:     () => { tone(1800, 0.12, 'triangle', 0.05, 2400); tone(1200, 0.2, 'triangle', 0.04, 1600, 0.06); },
     boom:    () => { noise(0.5, 0.2); tone(70, 0.5, 'square', 0.07, 30); },
     stretch: () => tone(180, 0.18, 'triangle', 0.07, 760),
+    shot:    () => { noise(0.07, 0.16); tone(900, 0.07, 'square', 0.04, 160); },
+    find:    () => notes([523, 784, 659, 1047], 0.08, 'square', 0.045),
     slash:   () => { noise(0.08, 0.1); tone(1200, 0.08, 'sawtooth', 0.03, 400); },
     perfect: () => { tone(880, 0.06, 'square', 0.04); tone(1760, 0.14, 'square', 0.04, null, 0.05); },
     good:    () => tone(660, 0.1, 'square', 0.04),

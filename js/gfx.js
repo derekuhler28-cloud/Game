@@ -181,6 +181,22 @@ const OVERLAYS = {
   horns:  [[2, 2, 1, 1, 'x'], [3, 3, 1, 1, 'x'], [6, 2, 1, 1, 'x'], [5, 3, 1, 1, 'x']],
 };
 
+// Hand-held weapons. `grip` is the [x, y] cell that sits in the pirate's hand.
+const WEAPON_SHAPES = {
+  sword:   { grip: [1, 9], rows: ['.w.', '.w.', '.w.', '.w.', '.w.', '.w.', '.w.', 'GGG', '.n.', '.n.'] },
+  curved:  { grip: [1, 9], rows: ['...w', '..ww', '..w.', '.ww.', '.w..', '.w..', '.w..', 'GGG.', '.n..', '.n..'] },
+  saw:     { grip: [1, 9], rows: ['ww.', 'wwg', 'ww.', 'wwg', 'ww.', 'wwg', 'ww.', 'GGG', '.n.', '.n.'] },
+  staff:   { grip: [0, 11], rows: Array(16).fill('n') },
+  gstaff:  { grip: [1, 11], rows: ['.y.', 'yGy', '.y.'].concat(Array(13).fill('.G.')) },
+  trident: { grip: [2, 11], rows: ['w.w.w', 'w.w.w', 'wwwww'].concat(Array(13).fill('..n..')) },
+  club:    { grip: [1, 9], rows: ['.nn.', 'nnnn', 'nnnn', 'nnnn', 'nnnn', '.nn.', '.n..', '.n..', '.n..', '.n..', '.n..'] },
+  kanabo:  { grip: [1, 11], rows: ['.gg.', 'gwgg', 'gggg', 'ggwg', 'gggg', 'gwgg', 'gggg', 'ggwg', '.gg.', '.n..', '.n..', '.n..', '.n..'] },
+  axe:     { grip: [3, 9], rows: ['.gg..', 'gggn.', 'gggn.', 'gggn.', '.ggn.', '...n.', '...n.', '...n.', '...n.', '...n.', '...n.'] },
+  gun:     { grip: [0, 2], rows: ['gggggg', 'nng...', 'nn....'] },
+  hook:    { grip: [1, 4], rows: ['.G.', 'G.G', '..G', '.GG', 'nnn'] },
+  shell:   { grip: [1, 3], rows: ['.CC.', 'CwCC', 'CCwC', '.CC.'] },
+};
+
 // 8x8 item icons
 const ICONS = {
   meat:     ['......ww', '.....ww.', '..rrrw..', '.rrrrrr.', 'rrRrrrr.', 'rRrrrr..', '.rrrr...', '........'],
@@ -194,6 +210,7 @@ const ICONS = {
   chest:    ['........', '.nnnnnn.', 'nGGGGGGn', 'nnnGGnnn', 'nnnGGnnn', 'nnnnnnnn', 'nnnnnnnn', '........'],
   sails:    ['...n....', '..wwww..', '.rrrrrr.', '.wwwwww.', '.rrrrrr.', '..wwww..', '...n....', 'nnnnnnnn'],
   galley:   ['.w..w...', '..w..w..', '.w..w...', 'gggggggg', '.hhhhhh.', '.hhhhhh.', '.hhhhhh.', '..hhhh..'],
+  wraps:    ['..wwww..', '.wwwwww.', 'wwswswsw', 'wwwwwwww', 'wwwwwww.', '.wwwww..', '..sss...', '..sss...'],
   cannon:   ['........', '.......g', 'hhhhhhhh', 'hhhhhhh.', 'hhhhhh..', '.nn.nn..', 'nnnnnn..', '.nn.nn..'],
 };
 
@@ -201,10 +218,11 @@ const ICONS = {
 
 function buildGrid(spec) {
   let rows;
-  if (spec.kind === 'player') rows = PLAYER_ROWS;
+  if (spec.kind === 'player') rows = spec.hat === false ? HUMAN_HEADS.hair.concat(PLAYER_ROWS.slice(5)) : PLAYER_ROWS;
   else if (spec.kind === 'human') rows = HUMAN_HEADS[spec.head || 'hair'].concat(HUMAN_BODY);
   else if (spec.kind === 'brute') rows = BRUTE_HEADS[spec.head || 'ape'].concat(BRUTE_BODY);
   else if (spec.kind === 'icon') rows = ICONS[spec.icon];
+  else if (spec.kind === 'weapon') rows = WEAPON_SHAPES[spec.shape].rows;
   else rows = SHAPES[spec.kind];
   const width = rows[0].length;
   const g = rows.map(r => r.padEnd(width, '.').slice(0, width).split(''));

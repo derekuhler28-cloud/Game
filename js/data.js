@@ -6,37 +6,37 @@ const TICKS_PER_DAY = 8; // two ticks per time slot; tick 8 = late night
 
 const ISLANDS = [
   {
-    name: 'Dawn Village', scene: 'village', enemies: ['seaslug', 'bandit', 'boar'], boss: 'grizzle', recruit: 'kenji',
+    name: 'Dawn Village', scene: 'village', enemies: ['seaslug', 'bandit', 'boar'], boss: 'grizzle', recruit: 'kenji', weapons: ['cutlass', 'bostaff'],
     shop: ['meat', 'bigmeat', 'medicine', 'cola'],
-    intro: 'Windmills, quiet farms and a bandit problem. Every legend starts somewhere.',
+    intro: 'Windmills, quiet farms and a bandit problem. Explore to find a weapon. Locals whisper about a strange fruit hidden somewhere...',
     job: 'You fixed the windmill sails for the village chief.',
   },
   {
-    name: 'Shell Port', scene: 'marine', enemies: ['recruit', 'dog', 'sergeant'], boss: 'ironjaw', recruit: 'coral',
+    name: 'Shell Port', scene: 'marine', enemies: ['recruit', 'dog', 'sergeant'], boss: 'ironjaw', recruit: 'coral', weapons: ['flintlock', 'saber'],
     shop: ['meat', 'bigmeat', 'medicine', 'cola', 'weights', 'sails', 'galley'],
     intro: 'A Marine base town. Captain Ironjaw rules it with an iron... jaw.',
     job: 'You scrubbed the Marine base decks. Nobody recognized you.',
   },
   {
-    name: 'Coral Reef Park', scene: 'reef', enemies: ['fishthug', 'crab', 'seapup'], boss: 'sharko', recruit: 'basil',
+    name: 'Coral Reef Park', scene: 'reef', enemies: ['fishthug', 'crab', 'seapup'], boss: 'sharko', recruit: 'basil', weapons: ['trident', 'wraps'],
     shop: ['meat', 'bigmeat', 'medicine', 'cola', 'water', 'weights', 'sails', 'galley', 'cannon'],
     intro: 'Pink coral and sea-salt air. Fishman pirates took over the floating restaurant.',
     job: 'You washed 400 dishes at the floating restaurant.',
   },
   {
-    name: 'Sandora Kingdom', scene: 'desert', enemies: ['sandcroc', 'raider', 'scorpion'], boss: 'sandor', recruit: 'moss',
+    name: 'Sandora Kingdom', scene: 'desert', enemies: ['sandcroc', 'raider', 'scorpion'], boss: 'sandor', recruit: 'moss', weapons: ['scimitar'],
     shop: ['meat', 'bigmeat', 'medicine', 'cola', 'water', 'weights', 'sails', 'galley', 'cannon'],
     intro: 'A kingdom drying out. Warlord Sandor is a Logia: hits pass through him unless you use Armament Haki or soak him with Water.',
     job: 'You hauled water barrels across the dunes for thirsty villagers.',
   },
   {
-    name: 'Cloud Isle', scene: 'sky', enemies: ['skyguard', 'cloudeel', 'thunderbird'], boss: 'voltz', recruit: 'pip',
+    name: 'Cloud Isle', scene: 'sky', enemies: ['skyguard', 'cloudeel', 'thunderbird'], boss: 'voltz', recruit: 'pip', weapons: ['shockshell'],
     shop: ['meat', 'bigmeat', 'medicine', 'cola', 'water', 'weights', 'sails', 'galley', 'cannon'],
     intro: 'An island floating on a sea of clouds. Sky God Voltz is pure lightning. Haki is a must.',
     job: 'You ferried cloud-boats for the sky folk.',
   },
   {
-    name: 'Last Isle', scene: 'volcano', enemies: ['beastpirate', 'gorilla', 'dragonwhelp'], boss: 'drakko', recruit: null,
+    name: 'Last Isle', scene: 'volcano', enemies: ['beastpirate', 'gorilla', 'dragonwhelp'], boss: 'drakko', recruit: null, weapons: ['nightedge'],
     shop: ['meat', 'bigmeat', 'medicine', 'cola', 'water', 'weights', 'sails', 'galley', 'cannon'],
     intro: 'The end of the Grand Line. Emperor Drakko guards the legendary treasure.',
     job: 'You stacked cannonballs for a very nervous merchant.',
@@ -68,35 +68,35 @@ const ENEMIES = {
 // Raid bosses. hpMult scales HP over a normal enemy of the same level.
 const BOSSES = {
   grizzle: {
-    name: 'Bandit King Grizzle', lvl: 5, hpMult: 2.2, atkMult: 0.9, bounty: 15000000, berries: 600, scale: 3,
+    name: 'Bandit King Grizzle', drop: 'club', lvl: 5, hpMult: 2.2, atkMult: 0.9, bounty: 15000000, berries: 600, scale: 3,
     spr: { kind: 'brute', head: 'grizzle', weapon: 'club', pal: { x: '#b23a3a', h: '#5a3a22', c: '#7a4a2a', C: '#c9a26a', p: '#3a4a2a', s: '#e8b080' } },
     intro: '"Gwahaha! This village pays ME now, brat!"',
     basic: 'Club Swing', charge: 'raises his giant club overhead!', big: 'Mountain Crusher',
     enrage: 'Grizzle roars and goes berserk!',
   },
   ironjaw: {
-    name: 'Captain Ironjaw', lvl: 10, hpMult: 2.8, atkMult: 0.95, bounty: 40000000, berries: 1100, scale: 3,
+    name: 'Captain Ironjaw', drop: 'ironaxe', lvl: 10, hpMult: 2.8, atkMult: 0.95, bounty: 40000000, berries: 1100, scale: 3,
     spr: { kind: 'brute', head: 'ironjaw', weapon: 'axe', pal: { x: '#2f5fb3', c: '#e9edf5', C: '#2f5fb3', p: '#2f5fb3', s: '#e8b080' } },
     intro: '"Justice is whatever I say it is!"',
     basic: 'Axe Chop', charge: 'spins his axe-arm faster and faster!', big: 'Iron Cleave',
     enrage: 'Ironjaw bites down so hard his steel jaw sparks!',
   },
   sharko: {
-    name: 'Sawtooth Sharko', lvl: 15, hpMult: 3.5, bounty: 90000000, berries: 2000, scale: 3, heals: true,
+    name: 'Sawtooth Sharko', drop: 'sawblade', lvl: 15, hpMult: 3.5, bounty: 90000000, berries: 2000, scale: 3, heals: true,
     spr: { kind: 'brute', head: 'sharko', pal: { s: '#7ab0c8', h: '#2c3e66', x: '#4a6a9a', g: '#e8e8f0', c: '#e9edf5', C: '#3a7a5a', p: '#2c3e66' } },
     intro: '"Humans are lower than plankton!"',
     basic: 'Saw Slash', charge: 'dives into the water and circles you...', big: 'Shark Torpedo', fx: 'water',
     enrage: 'Sharko\'s eyes go red. Fishman fury!',
   },
   sandor: {
-    name: 'Warlord Sandor', lvl: 21, hpMult: 3.9, bounty: 180000000, berries: 3500, scale: 3, logia: 'sand',
+    name: 'Warlord Sandor', drop: 'goldhook', lvl: 21, hpMult: 3.9, bounty: 180000000, berries: 3500, scale: 3, logia: 'sand',
     spr: { kind: 'brute', head: 'sandor', weapon: 'hook', pal: { h: '#1b1424', c: '#3a2f2a', C: '#e6b422', p: '#3a2f2a', S: '#a86a4a' } },
     intro: '"Water? In MY desert? Don\'t make me laugh."',
     basic: 'Sand Grip', charge: 'turns his arm into a howling sandstorm!', big: 'Desert Blade', fx: 'sand',
     enrage: 'The whole desert starts to swirl around Sandor!',
   },
   voltz: {
-    name: 'Sky God Voltz', lvl: 27, hpMult: 4.3, bounty: 400000000, berries: 6000, scale: 3, logia: 'lightning', element: 'lightning',
+    name: 'Sky God Voltz', drop: 'thunderstaff', lvl: 27, hpMult: 4.3, bounty: 400000000, berries: 6000, scale: 3, logia: 'lightning', element: 'lightning',
     spr: { kind: 'brute', head: 'voltz', pal: { c: '#f3c08c', C: '#f08a3a', p: '#ffffff', f: '#e6b422' } },
     drums: true,
     intro: '"I am GOD. You are an insect who wandered into heaven."',
@@ -104,7 +104,7 @@ const BOSSES = {
     enrage: 'Voltz laughs. His drums crackle with ten million volts!',
   },
   drakko: {
-    name: 'Emperor Drakko', lvl: 34, hpMult: 5, bounty: 1500000000, berries: 15000, scale: 3,
+    name: 'Emperor Drakko', drop: 'kanabo', lvl: 34, hpMult: 5, bounty: 1500000000, berries: 15000, scale: 3,
     spr: { kind: 'brute', head: 'drakko', weapon: 'kanabo', pal: { x: '#f2e6c8', h: '#1b1424', c: '#5a3a7a', C: '#e6b422', p: '#2a2433' } },
     phase2: { spr: { kind: 'serpent', horns: true, pal: { c: '#4a8ad9', C: '#bfe0ff', x: '#f2e6c8' } }, scale: 4, name: 'Dragon Drakko', basic: 'Dragon Claw', flies: true },
     intro: '"Entertain me, rookie. Then die."',
@@ -148,58 +148,199 @@ const CREW = {
   },
 };
 
-// Skills unlock at levels 1 / 4 / 9.
-const SKILL_LEVELS = [1, 4, 9];
-const BASE_SKILLS = [
-  { name: 'Power Punch', sp: 25, mult: 1.5, fx: 'haymaker' },
-  { name: 'Fury Rush', sp: 45, mult: 0.7, hits: 3, fx: 'rush' },
-  { name: 'Haymaker', sp: 75, mult: 2.5, fx: 'haymaker' },
+// Moves unlock with mastery: use a style in battle, win with it, or do Drills.
+const FIST_MOVES = [
+  { name: 'Power Punch', at: 10, sp: 25, mult: 1.5, fx: 'haymaker' },
+  { name: 'Fury Rush', at: 40, sp: 45, mult: 0.7, hits: 3, fx: 'rush' },
+  { name: 'Haymaker', at: 90, sp: 75, mult: 2.5, fx: 'haymaker' },
 ];
 
+// One fruit hides on each of the first five islands (shuffled every new game). Only one can ever be eaten.
+const FRUIT_PRICE = 4000;
 const FRUITS = {
   rubber: {
     name: 'Rubber-Rubber Fruit', color: '#8e4ec6', color2: '#c48ae8',
     desc: 'Your body stretches like rubber. Lightning can\'t hurt you.',
-    skills: [
-      { name: 'Rubber Pistol', sp: 25, mult: 1.7, fx: 'arm' },
-      { name: 'Rubber Gatling', sp: 45, mult: 0.55, hits: 5, fx: 'gatling' },
-      { name: 'Rubber Bazooka', sp: 75, mult: 3.0, fx: 'bazooka' },
+    moves: [
+      { name: 'Rubber Pistol', at: 0, sp: 25, mult: 1.7, fx: 'arm' },
+      { name: 'Rubber Gatling', at: 40, sp: 45, mult: 0.55, hits: 5, fx: 'gatling' },
+      { name: 'Rubber Bazooka', at: 120, sp: 75, mult: 3.0, fx: 'bazooka' },
     ],
   },
   flame: {
     name: 'Blaze-Blaze Fruit', color: '#f07a2a', color2: '#ffd04a', dodge: 0.12,
     desc: 'Become living fire. Attacks sometimes pass right through you.',
-    skills: [
-      { name: 'Fire Fist', sp: 30, mult: 2.0, fx: 'fireball' },
-      { name: 'Flame Spray', sp: 40, mult: 1.3, burn: 3, fx: 'flamespray' },
-      { name: 'Great Blaze', sp: 80, mult: 3.1, fx: 'pillar' },
+    moves: [
+      { name: 'Fire Fist', at: 0, sp: 30, mult: 2.0, fx: 'fireball' },
+      { name: 'Flame Spray', at: 40, sp: 40, mult: 1.3, burn: 3, fx: 'flamespray' },
+      { name: 'Great Blaze', at: 120, sp: 80, mult: 3.1, fx: 'pillar' },
     ],
   },
   frost: {
     name: 'Frost-Frost Fruit', color: '#5fd3f0', color2: '#e8fbff',
     desc: 'Freeze anything. Ice Age can freeze foes solid for a turn.',
-    skills: [
-      { name: 'Ice Spear', sp: 25, mult: 1.6, fx: 'icespear' },
-      { name: 'Ice Age', sp: 50, mult: 1.0, freeze: true, fx: 'iceage' },
-      { name: 'Glacier Drop', sp: 80, mult: 2.9, fx: 'glacier' },
+    moves: [
+      { name: 'Ice Spear', at: 0, sp: 25, mult: 1.6, fx: 'icespear' },
+      { name: 'Ice Age', at: 40, sp: 50, mult: 1.0, freeze: true, fx: 'iceage' },
+      { name: 'Glacier Drop', at: 120, sp: 80, mult: 2.9, fx: 'glacier' },
     ],
   },
   quake: {
     name: 'Quake-Quake Fruit', color: '#e8e3d3', color2: '#9aa4b1', defMult: 1.15,
     desc: 'Crack the very air. +15% defense from your sturdy body.',
-    skills: [
-      { name: 'Quake Punch', sp: 30, mult: 1.9, fx: 'quake' },
-      { name: 'Seaquake', sp: 55, mult: 2.3, fx: 'seaquake' },
-      { name: 'World Splitter', sp: 90, mult: 3.6, fx: 'split' },
+    moves: [
+      { name: 'Quake Punch', at: 0, sp: 30, mult: 1.9, fx: 'quake' },
+      { name: 'Seaquake', at: 40, sp: 55, mult: 2.3, fx: 'seaquake' },
+      { name: 'World Splitter', at: 120, sp: 90, mult: 3.6, fx: 'split' },
     ],
   },
   smoke: {
     name: 'Smoke-Smoke Fruit', color: '#c9ccd6', color2: '#ffffff', dodge: 0.12,
     desc: 'Drift like smoke. Smoke Bind weakens the enemy\'s attacks.',
-    skills: [
-      { name: 'White Blow', sp: 25, mult: 1.6, fx: 'smokeblow' },
-      { name: 'Smoke Bind', sp: 45, mult: 1.1, atkDown: true, fx: 'smokebind' },
-      { name: 'White Launcher', sp: 75, mult: 2.9, fx: 'launcher' },
+    moves: [
+      { name: 'White Blow', at: 0, sp: 25, mult: 1.6, fx: 'smokeblow' },
+      { name: 'Smoke Bind', at: 40, sp: 45, mult: 1.1, atkDown: true, fx: 'smokebind' },
+      { name: 'White Launcher', at: 120, sp: 75, mult: 2.9, fx: 'launcher' },
+    ],
+  },
+};
+
+// Weapons hide on islands (ISLANDS[].weapons) or drop from raid bosses (BOSSES[].drop).
+// `shape` picks the hand-held sprite, `hit` the basic attack effect, `color` the slash color.
+const WEAPONS = {
+  cutlass: {
+    name: 'Rusty Cutlass', atk: 3, shape: 'sword', pal: { w: '#c8bca4', G: '#8a6a3a' }, hit: 'swing',
+    desc: 'A chipped blade from a shipwreck. Better than nothing!',
+    moves: [
+      { name: 'Rusty Slash', at: 0, sp: 20, mult: 1.45, fx: 'swing' },
+      { name: 'Double Cut', at: 30, sp: 40, mult: 0.85, hits: 2, fx: 'multislash' },
+      { name: 'Flying Slash', at: 80, sp: 70, mult: 2.4, fx: 'crescent' },
+    ],
+  },
+  bostaff: {
+    name: 'Oak Bo Staff', atk: 2, def: 2, shape: 'staff', pal: { n: '#9a6a3a' }, hit: 'swing', color: '#e8d9b0',
+    desc: 'A sturdy staff. Good reach, and it can daze enemies.',
+    moves: [
+      { name: 'Staff Sweep', at: 0, sp: 20, mult: 1.3, stun: 0.3, fx: 'swing' },
+      { name: 'Pole Vault Strike', at: 30, sp: 45, mult: 1.9, fx: 'smash' },
+      { name: 'Whirlwind', at: 80, sp: 70, mult: 0.6, hits: 4, fx: 'multislash' },
+    ],
+  },
+  flintlock: {
+    name: 'Flintlock Pistol', atk: 4, shape: 'gun', pal: { g: '#5a5a6a', n: '#7a4a24' }, hit: 'shot',
+    desc: 'One shot at a time, but its special moves never miss.',
+    moves: [
+      { name: 'Quick Draw', at: 0, sp: 20, mult: 1.4, sure: true, fx: 'shot' },
+      { name: 'Trick Shot', at: 30, sp: 40, mult: 1.6, crit: 0.4, sure: true, fx: 'shot' },
+      { name: 'Point Blank', at: 80, sp: 75, mult: 2.8, fx: 'blast' },
+    ],
+  },
+  saber: {
+    name: 'Marine Saber', atk: 6, shape: 'sword', pal: { w: '#e8edf5', G: '#2f5fb3' }, hit: 'swing',
+    desc: 'Standard Marine issue. Polished and sharp.',
+    moves: [
+      { name: 'Iron Rule Slash', at: 0, sp: 25, mult: 1.6, fx: 'swing' },
+      { name: 'Saber Flurry', at: 30, sp: 45, mult: 0.75, hits: 3, fx: 'multislash' },
+      { name: 'Justice Crescent', at: 80, sp: 75, mult: 2.7, fx: 'crescent', color: '#9ad0ff' },
+    ],
+  },
+  trident: {
+    name: 'Coral Trident', atk: 7, shape: 'trident', pal: { w: '#ff7a9a', n: '#c98a5a' }, hit: 'swing', color: '#ff9ab0',
+    desc: 'Pulls the sea with it. Riptide soaks Logia users so your hits connect.',
+    moves: [
+      { name: 'Trident Thrust', at: 0, sp: 25, mult: 1.6, fx: 'swing' },
+      { name: 'Riptide', at: 30, sp: 40, mult: 1.2, wet: true, fx: 'wave' },
+      { name: 'Tsunami Spear', at: 80, sp: 80, mult: 3.0, fx: 'wave' },
+    ],
+  },
+  wraps: {
+    name: 'Karate Wraps', atk: 5, def: 3, shape: null, hit: 'punch',
+    desc: 'Fishman karate hand wraps. Strikes that rattle armor.',
+    moves: [
+      { name: 'Tidal Palm', at: 0, sp: 25, mult: 1.6, fx: 'haymaker' },
+      { name: 'Coral Breaker', at: 30, sp: 45, mult: 1.6, pierce: true, fx: 'quake' },
+      { name: 'Thousand Wave Fist', at: 80, sp: 80, mult: 2.9, fx: 'seaquake' },
+    ],
+  },
+  scimitar: {
+    name: 'Sunset Scimitar', atk: 9, shape: 'curved', pal: { w: '#f2e6c8', G: '#e6b422' }, hit: 'swing', color: '#ffb84a',
+    desc: 'A royal blade of Sandora, curved like the dunes.',
+    moves: [
+      { name: 'Mirage Slash', at: 0, sp: 25, mult: 1.7, fx: 'swing' },
+      { name: 'Sandstorm Dance', at: 30, sp: 50, mult: 0.65, hits: 4, fx: 'sandslash' },
+      { name: 'Sunset Cleave', at: 80, sp: 80, mult: 3.1, fx: 'crescent', color: '#ff9a3a' },
+    ],
+  },
+  shockshell: {
+    name: 'Shock Shell', atk: 8, shape: 'shell', pal: { C: '#f2c7d8', w: '#ffffff' }, hit: 'shot',
+    desc: 'A sky-island seashell that stores blasts of force.',
+    moves: [
+      { name: 'Shell Blast', at: 0, sp: 25, mult: 1.7, fx: 'shot' },
+      { name: 'Echo Burst', at: 30, sp: 50, mult: 2.2, stun: 0.25, fx: 'blast' },
+      { name: 'Recoil Burst', at: 80, sp: 85, mult: 4.0, recoil: 0.1, fx: 'blast' },
+    ],
+  },
+  nightedge: {
+    name: 'Night Edge', atk: 14, shape: 'sword', pal: { w: '#3a3048', G: '#e6b422', n: '#7a2630' }, hit: 'swing', color: '#9a6ae0', logiaHit: true,
+    desc: 'A legendary black blade. It cuts right through Logia users.',
+    moves: [
+      { name: 'Black Crescent', at: 0, sp: 30, mult: 2.0, fx: 'crescent' },
+      { name: 'Night Rain', at: 30, sp: 55, mult: 0.6, hits: 5, fx: 'multislash' },
+      { name: 'Edge of the World', at: 80, sp: 90, mult: 3.8, fx: 'split' },
+    ],
+  },
+  club: {
+    name: "Grizzle's Club", atk: 5, shape: 'club', pal: { n: '#7a4a24' }, hit: 'swing', color: '#e8d9b0',
+    desc: 'Heavy, dumb and very effective. Ground Pound can stun.',
+    moves: [
+      { name: 'Club Smash', at: 0, sp: 25, mult: 1.6, fx: 'smash' },
+      { name: 'Ground Pound', at: 30, sp: 45, mult: 1.8, stun: 0.35, fx: 'quake' },
+      { name: 'Mountain Crusher', at: 80, sp: 80, mult: 3.0, fx: 'smash' },
+    ],
+  },
+  ironaxe: {
+    name: "Ironjaw's Axe", atk: 8, shape: 'axe', pal: { g: '#b8c0cc', n: '#5a3818' }, hit: 'swing',
+    desc: 'The captain\'s axe. Made for cleaving.',
+    moves: [
+      { name: 'Axe Chop', at: 0, sp: 25, mult: 1.7, fx: 'swing' },
+      { name: 'Spinning Axe', at: 30, sp: 50, mult: 0.85, hits: 3, fx: 'multislash' },
+      { name: 'Iron Cleave', at: 80, sp: 80, mult: 3.0, fx: 'smash' },
+    ],
+  },
+  sawblade: {
+    name: 'Shark Saw', atk: 10, shape: 'saw', pal: { w: '#e8e8f0', g: '#9aa4b1', G: '#4a6a9a' }, hit: 'swing', color: '#bfe6ff',
+    desc: 'Sharko\'s saw-toothed blade. Shark Bite heals you.',
+    moves: [
+      { name: 'Saw Slash', at: 0, sp: 25, mult: 1.7, fx: 'swing' },
+      { name: 'Shark Bite', at: 30, sp: 45, mult: 0.9, hits: 2, drain: 0.3, fx: 'multislash' },
+      { name: 'Shark Torpedo', at: 80, sp: 80, mult: 3.1, fx: 'wave' },
+    ],
+  },
+  goldhook: {
+    name: 'Golden Hook', atk: 12, shape: 'hook', pal: { G: '#e6b422', n: '#3a2f2a' }, hit: 'swing', color: '#e6b422',
+    desc: 'The Warlord\'s hook. Drains the strength out of anything it grabs.',
+    moves: [
+      { name: 'Hook Rake', at: 0, sp: 25, mult: 1.8, fx: 'swing' },
+      { name: 'Desert Grip', at: 30, sp: 50, mult: 1.5, atkDown: true, drain: 0.25, fx: 'sandslash' },
+      { name: 'Desert Blade', at: 80, sp: 85, mult: 3.3, fx: 'sandslash' },
+    ],
+  },
+  thunderstaff: {
+    name: 'Thunder Staff', atk: 13, def: 2, shape: 'gstaff', pal: { G: '#e6b422', y: '#fff3a0' }, hit: 'swing', color: '#ffe14a',
+    desc: 'A golden staff that crackles with stolen lightning.',
+    moves: [
+      { name: 'Static Jab', at: 0, sp: 25, mult: 1.8, stun: 0.2, fx: 'swing' },
+      { name: 'Lightning Lance', at: 30, sp: 50, mult: 2.4, fx: 'thunder' },
+      { name: 'Thunder Judgment', at: 80, sp: 90, mult: 3.6, fx: 'thunder' },
+    ],
+  },
+  kanabo: {
+    name: 'Dragon Kanabo', atk: 18, shape: 'kanabo', pal: { g: '#3a3440', w: '#c9ccd6' }, hit: 'swing', color: '#bfe0ff',
+    desc: 'The Emperor\'s spiked club. Only a Pirate King could lift it.',
+    moves: [
+      { name: 'Kanabo Smash', at: 0, sp: 30, mult: 2.0, fx: 'smash' },
+      { name: 'Dragon Quake', at: 30, sp: 55, mult: 2.6, fx: 'seaquake' },
+      { name: "Emperor's Wrath", at: 80, sp: 95, mult: 4.2, fx: 'split' },
     ],
   },
 };
@@ -228,10 +369,12 @@ const TRAININGS = {
   def:  { name: 'Toughness', stat: 'DEF + HP', desc: 'Boulder hold', anim: 'boulder' },
   spd:  { name: 'Speed', stat: 'SPD', desc: 'Beach sprints', anim: 'run' },
   haki: { name: 'Haki', stat: 'HAKI', desc: 'Meditation', anim: 'meditate' },
+  drill: { name: 'Drills', stat: 'MASTERY', desc: 'weapon drills', anim: 'drill' },
+  fruit: { name: 'Fruit Power', stat: 'MASTERY', desc: 'Devil Fruit practice', anim: 'fruit' },
 };
 
 const TALK_LINES = [
-  ['KING!', "I'm gonna be the Pirate King!"],
+  ['KING!', "I'm gonna be the Pirate King! Even if I'm a nobody right now."],
   ['MEAT!', 'Hey cook, MEAT! ...Oh wait.'],
   ['SHISHI', 'Shishishi! This is fun!'],
   ['ADVENTURE', "Let's go find an adventure!"],
