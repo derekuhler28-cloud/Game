@@ -87,6 +87,17 @@ const BRUTE_HEADS = {
   krieg:   ['................', '.....h.hh.h.....', '.....hhhhhh.....', '.....hssssh.....', '.....sesses.....', '.....GGGGGG.....'],
   smoker:  ['................', '.....h.hh.h.....', '.....hhhhhh.....', '.....hssssh.....', '.....sesses.....', '...GGsSmmSsGG...'],
   wapol:   ['....G.G..G.G....', '....GGGGGGGG....', '.....hhhhhh.....', '....hssssssh....', '....ssessess....', '...gggggggggg...'],
+  franky:  ['....hhhhhhh.....', '...hhhhhhhhhh...', '.....hhhhhh.....', '.....hssssh.....', '.....sesses.....', '....ssssmmss....'],
+  lucci:   ['.....xxxxxx.....', '.....xxxxxx.....', '...xxxxxxxxxx...', '....hhssssh.....', '....hsessesh....', '....hhsmmshh....'],
+  moria:   ['..h.h.hh.h.h....', '...hhhhhhhhh....', '....hhhhhhhh....', '....ssssssss....', '....sessssess...', '....smmmmmms....'],
+  kizaru:  ['................', '......hhhh......', '.....hhhhhh.....', '.....hssssh.....', '.....GGsGGs.....', '.....ssmmss.....'],
+  magellan: ['....x......x....', '....xx....xx....', '.....xxxxxx.....', '.....xxxxxx.....', '.....sesses.....', '.....ssmmss.....'],
+  akainu:  ['................', '....xxxxxxxx....', '...xxxxxxxxxx...', '.....hssssh.....', '.....sesses.....', '.....ssmmss.....'],
+  hody:    ['......hh........', '.....hhhh.......', '.....hhhhhh.....', '.....hssssh.....', '.....srssrs.....', '....wwwwwwww....'],
+  caesar:  ['.......hh.......', '......hhhh......', '.....hhhhhh.....', '....hhssssh.....', '....hsesses.....', '....hsmmmms.....'],
+  doflamingo: ['................', '.....h.hh.h.....', '.....hhhhhh.....', '.....hssssh.....', '.....ggsggs.....', '.....smmmms.....'],
+  katakuri: ['.....h.hh.h.....', '....hhhhhhhh....', '.....hhhhhh.....', '.....hssssh.....', '.....sesses.....', '....xxxxxxxx....'],
+  pacifista: ['....x......x....', '....xxxxxxxx....', '...xxxxxxxxxx...', '.....ssssss.....', '.....ggsggs.....', '.....ssmmss.....'],
   drakko:  ['..x..........x..', '..xx..hhhh..xx..', '....xhhhhhhx....', '.....hssssh.....', '....hsesses.....', '....hssmmssh....'],
 };
 
@@ -187,6 +198,7 @@ const OVERLAYS = {
   claws:  [[0, 10, 1, 5, 'w'], [2, 11, 1, 4, 'w']],
   spear:  [[1, 0, 1, 12, 'n'], [0, 0, 3, 2, 'g']],
   jitte:  [[1, 2, 1, 10, 'g'], [2, 5, 1, 2, 'g'], [1, 12, 1, 2, 'n']],
+  mask:   [[5, 6, 6, 1, 'g'], [6, 7, 4, 2, 'g']],
   horns:  [[2, 2, 1, 1, 'x'], [3, 3, 1, 1, 'x'], [6, 2, 1, 1, 'x'], [5, 3, 1, 1, 'x']],
   // race marks for the player sprite
   minkEars:    [[3, 0, 2, 2, 'S'], [11, 0, 2, 2, 'S']],
@@ -217,6 +229,22 @@ const WEAPON_SHAPES = {
   jitte:   { grip: [1, 9], rows: ['.w..', '.g..', '.g.g', '.ggg', '.g..', '.g..', '.g..', 'GGG.', '.n..', '.n..'] },
   hammer:  { grip: [2, 8], rows: ['.ggg.', 'gwggg', 'ggggg', 'ggggg', '.ggg.', '..n..', '..n..', '..n..', '..n..', '..n..'] },
   scepter: { grip: [2, 9], rows: ['.G.G.', 'GrGrG', '.GwG.', '..G..', '..G..', '..G..', '..G..', '..G..', '..G..', '..G..', '..G..'] },
+  rope:    { grip: [2, 6], rows: ['.nnn.', 'n...n', 'n.n.n', 'n...n', '.nnn.', '..n..', '..n..'] },
+  cannonarm: { grip: [0, 2], rows: ['.gggggg', 'gbbbbbg', 'gbbbbbg', '.gggggg'] },
+  gloves:  { grip: [2, 3], rows: ['w.w.w', 'wwwww', 'wwwww', '.www.'] },
+  scissors: { grip: [3, 5], rows: ['g.....g', '.g...g.', '..g.g..', '...G...', '..n.n..', '.n...n.', 'n.....n'] },
+  bubbler: { grip: [2, 6], rows: ['.www.', 'w...w', 'w...w', '.www.', '..n..', '..n..', '..n..'] },
+  chain:   { grip: [2, 8], rows: ['w.g.w', '.ggg.', 'ggwgg', '.ggg.', 'w.g.w', '..n..', '..n..', '..n..', '..n..'] },
+  dagger:  { grip: [1, 6], rows: ['..v', '.vv', '.vv', '.v.', 'GGG', '.n.', '.n.'] },
+  bisento: { grip: [1, 13], rows: ['..ww', '.www', '.ww.', 'GGG.'].concat(Array(12).fill('.n..')) },
+  gauntlet: { grip: [1, 3], rows: ['rRrr', 'rrRr', 'rrrr', '.gg.'] },
+  knuckles: { grip: [2, 2], rows: ['wgwgw', 'ggggg', 'ggggg'] },
+  nodachi: { grip: [1, 14], rows: Array(11).fill('.w.').concat(['GGG', '.n.', '.n.', '.n.', '.n.']) },
+  lamp:    { grip: [2, 5], rows: ['..g..', '.ggg.', 'gyyyg', 'gyyyg', '.ggg.', '..n..'] },
+  slingshot: { grip: [2, 4], rows: ['n...n', 'nw.wn', '.n.n.', '..n..', '..n..'] },
+  whip:    { grip: [2, 5], rows: ['.rrr.', 'r...r', 'r.r.r', 'r...r', '.rr..', '..n..'] },
+  bicorne: { grip: [2, 10], rows: ['.xxx.', 'xxGxx', '..w..', '..w..', '..w..', '..w..', '..w..', '..w..', '.GGG.', '..n..', '..n..'] },
+  mogura:  { grip: [2, 13], rows: ['r.r.r', 'r.r.r', 'rrrrr', '..r..'].concat(Array(11).fill('..n..')) },
   spear:   { grip: [1, 11], rows: ['.G.', 'ggg', '.g.'].concat(Array(13).fill('.n.')) },
 };
 
@@ -226,6 +254,7 @@ const FIGURES = {
   lion:   { pal: { o: '#f08a3a', y: '#ffd04a', k: '#1b1424', R: '#c0453a' }, rows: ['..o.o.o...', '.oooooooo.', 'ooyyyyyyoo', '.oyyykyyo.', 'ooyyyyyRoo', '.oyyyyyyo.', 'ooyyyyyyoo', '.oooooooo.', '..o.o.o...', '..........'] },
   shark:  { pal: { g: '#7a9ab8', w: '#ffffff', k: '#1b1424' }, rows: ['....g.....', '...gg.....', '..ggggg...', '.gggggkgg.', '.ggggggggg', '.gggwwwww.', '.ggggwww..', '.ggggg....', '.ggg......', '.gg.......'] },
   swan:   { pal: { w: '#ffffff', k: '#1b1424', o: '#f08a3a' }, rows: ['......ww..', '.....wwkoo', '.....www..', '.....ww...', '....ww....', '....ww....', '...www....', '.wwwwww...', 'wwwwwww...', '.wwwww....'] },
+  skull:  { pal: { w: '#f2f2f2', k: '#1b1424' }, rows: ['..wwwwww..', '.wwwwwwww.', 'wwwwwwwwww', 'wkkwwwkkww', 'wkkwwwkkww', 'wwwwkwwwww', '.wwwwwwww.', '..wkwkwk..', '..wwwwww..', '..........'] },
   dragon: { pal: { b: '#4a8ad9', x: '#f2e6c8', w: '#bfe0ff', k: '#1b1424' }, rows: ['..x...x...', '...x.x....', '..bbbbbb..', '.bbbbkbbbb', '.bbbbbbbbw', '.bbbbbww..', '.bbbb.....', '.bbb......', '.bb.......', '.bb.......'] },
 };
 
@@ -256,6 +285,8 @@ const ICONS = {
   figurehead: ['..y..y..', '.y.ww.y.', '..wwww..', '.wwkwkw.', '.wwwwww.', '..wwww..', '..nnnn..', '.nnnnnn.'],
   paint:    ['..cccc..', '.c....c.', 'gggggggg', 'gccccccg', 'gccccccg', 'gccccccg', '.gccccg.', '..gggg..'],
   ship:     ['...n....', '..wwww..', '.wwwwww.', '..wwww..', '...n....', 'nnnnnnnn', '.nnnnnn.', '..bbbb..'],
+  burst:    ['........', 'rr......', 'Rrhhhhhh', 'RRhhhhhh', 'Rrhhhhhh', 'rr......', '.nnnnnn.', '........'],
+  bubble:   ['..wwww..', '.w....w.', 'w..ww..w', 'w.w....w', 'w......w', 'w......w', '.w....w.', '..wwww..'],
   cannon:   ['........', '.......g', 'hhhhhhhh', 'hhhhhhh.', 'hhhhhh..', '.nn.nn..', 'nnnnnn..', '.nn.nn..'],
 };
 

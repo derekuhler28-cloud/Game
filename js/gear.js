@@ -93,7 +93,7 @@ function drawHeldWeapon(c, x, y, scale) {
 // Which crewmate (if any) is holding weapon `key`.
 const holderOf = key => G.p.crew.find(m => m.weapon === key);
 // Blade weapons and slashing moves; Buggy splits apart when they hit him.
-const BLADES = ['sword', 'curved', 'saw', 'axe', 'hook', 'claws', 'cleaver'];
+const BLADES = ['sword', 'curved', 'saw', 'axe', 'hook', 'claws', 'cleaver', 'scissors', 'dagger', 'bisento', 'nodachi', 'bicorne'];
 // Blade moves (Buggy splits away from them) and shots (Wapol swallows them); lists live in moves.js.
 function isSlash(fx, key) {
   if (!SLASH_MOVES.includes(fx) || key === 'fists' || key === 'race') return false;
@@ -297,7 +297,8 @@ async function sellFruit(k) {
 // A small progress bar from the last unlocked move toward the next one.
 function masteryBar(key) {
   const n = mastery(key), moves = styleMoves(key);
-  const next = moves.find(m => m.at > n);
+  // Once every move is unlocked, a Devil Fruit keeps counting toward its awakening.
+  const next = moves.find(m => m.at > n) || (FRUITS[key] && FRUITS[key].awaken && n < AWAKEN_REQ.mastery ? { at: AWAKEN_REQ.mastery } : null);
   const lo = moves.filter(m => m.at <= n).reduce((a, m) => Math.max(a, m.at), 0);
   const frac = next ? (n - lo) / (next.at - lo) : 1;
   return el('div', { class: 'mastery', title: `${rankOf(key)} mastery` },
@@ -340,6 +341,7 @@ function gearMenu(note) {
       el('img', { src: iconURL('fruit', { c: f.color, C: f.color2 }), alt: '' }),
       el('div', null, el('h3', { text: f.name }), masteryBar(p.fruit), movesList(p.fruit)),
       null));
+    if (f.awaken) body.append(awakenPanel());
   } else {
     body.append(el('p', { class: 'note', text: 'No powers yet. Devil Fruits hide on every island. Keep exploring!' }));
   }

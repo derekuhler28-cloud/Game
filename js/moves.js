@@ -122,20 +122,22 @@ const SWING_STYLE = {
   staff: 'thrust', gstaff: 'thrust', trident: 'thrust', spear: 'thrust', jitte: 'thrust',
   club: 'smash', kanabo: 'smash', hammer: 'smash', scepter: 'smash',
   gun: 'gun', cannon: 'cannon', knives: 'throw', ring: 'throw', shell: 'shell',
+  rope: 'throw', cannonarm: 'cannon', gloves: 'punch', scissors: 'slash', bubbler: 'shell', chain: 'smash', dagger: 'slash', bisento: 'slash',
+  gauntlet: 'punch', knuckles: 'punch', nodachi: 'slash', lamp: 'shell', slingshot: 'gun', whip: 'slash', bicorne: 'slash', mogura: 'thrust',
 };
 
 async function basicAttack(key, m) {
   const w = WEAPONS[key];
-  if (!w || !w.shape) return MOVE_FX.punch(m);
+  if (!w || !w.shape || SWING_STYLE[w.shape] === 'punch') return MOVE_FX.punch(m);
   const img = getSprite(weaponSpec(key)), col = w.color || '#ffffff', H = G.hero;
   const style = SWING_STYLE[w.shape] || 'slash';
   if (style === 'gun' || style === 'cannon' || style === 'shell') {
     const h = heroHand(), fc = fc0();
     Sfx.play(style === 'cannon' ? 'boom' : 'shot');
     tween(H, { ox: -5 }, 60).then(() => tween(H, { ox: 0 }, 160));
-    particles(h.x + 12, h.y + 1, 8, { colors: style === 'shell' ? ['#f2c7d8', '#ffffff'] : ['#ffe14a', '#ffffff', '#9aa4b1'], speed: 50, grav: 0, life: 0.25 });
+    particles(h.x + 12, h.y + 1, 8, { colors: style === 'shell' ? [col, '#ffffff'] : ['#ffe14a', '#ffffff', '#9aa4b1'], speed: 50, grav: 0, life: 0.25 });
     if (style === 'shell') {
-      await fxRun(260, (c, k) => { for (let i = 0; i < 3; i++) pxRing(c, lerp(h.x + 10, fc.x, k) - i * 5, h.y, 3 + i * 2, '#f2c7d8'); });
+      await fxRun(260, (c, k) => { for (let i = 0; i < 3; i++) pxRing(c, lerp(h.x + 10, fc.x, k) - i * 5, h.y, 3 + i * 2, col); });
     } else {
       await projectile({ x: h.x + 12, y: h.y + 1 }, fc, style === 'cannon' ? 260 : 140, (c, x, y) => {
         if (style === 'cannon') { pxCircle(c, x, y, 4, PAL.k); pxCircle(c, x - 1, y - 1, 1, '#9aa4b1'); particles(x, y, 1, { colors: SMOKE, speed: 10, grav: -10, life: 0.3 }); }

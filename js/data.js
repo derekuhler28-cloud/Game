@@ -66,9 +66,69 @@ const ISLANDS = [
     job: 'You ferried cloud-boats for the sky folk.',
   },
   {
+    name: 'Water 7', scene: 'water7', bar: 'Blue Station Bar', enemies: ['shipwright', 'frankythug', 'yagara'], boss: 'franky', weapons: ['ropes'],
+    shop: ['meat', 'bigmeat', 'medicine', 'cola', 'water', 'weights', 'sails', 'galley', 'cannon', 'burst', 'paint_green'],
+    intro: 'The city of water, home of the world\'s greatest shipwrights. Cyborg Franky rules the back alleys. He refuels on cola, so his big attacks come twice as often!',
+    job: 'You hauled timber for the Galley-La shipwrights.',
+  },
+  {
+    name: 'Enies Lobby', scene: 'enies', bar: 'Justice Canteen', enemies: ['cpagent', 'oimo', 'justiceguard'], boss: 'lucci', weapons: ['funkfreed'],
+    shop: ['meat', 'bigmeat', 'medicine', 'cola', 'water', 'weights', 'sails', 'galley', 'cannon'],
+    intro: 'The island of justice where the sun never sets. CP9\'s Rob Lucci masters the Six Powers: every other turn he hardens his body with Tekkai. Strike between his guards, or use piercing moves!',
+    job: 'You filed paperwork for the World Government. Sneaky.',
+  },
+  {
+    name: 'Thriller Bark', scene: 'thriller', bar: 'Ghost Ship Galley', enemies: ['zombie', 'hollow', 'zombiewolf'], boss: 'moria', weapons: ['shusui'],
+    shop: ['meat', 'bigmeat', 'medicine', 'cola', 'water', 'weights', 'sails', 'galley', 'cannon', 'fh_skull'],
+    intro: 'A ghost island wrapped in fog. Gecko Moria steals shadows, and your stolen shadow fights for him: part of every hit you land comes back at you.',
+    job: 'You helped a skeleton musician tune his violin.',
+  },
+  {
+    name: 'Sabaody Archipelago', scene: 'sabaody', bar: "Shakky's Rip-off Bar", enemies: ['pacifista', 'auctionguard', 'bubblecrab'], boss: 'kizaru', weapons: ['bubbler'],
+    shop: ['meat', 'bigmeat', 'medicine', 'cola', 'water', 'weights', 'sails', 'galley', 'cannon', 'coating'],
+    intro: 'Giant mangroves that blow bubbles. Admiral Kizaru is a light Logia who dodges at light speed. Buy a Bubble Coating here: your ship needs it to dive to Fish-Man Island.',
+    job: 'You helped coat a ship in bubble resin.',
+  },
+  {
+    name: 'Impel Down', scene: 'impel', bar: 'Newkama Land', enemies: ['blugori', 'minotaur', 'jailer'], boss: 'magellan', weapons: ['chains'],
+    shop: ['meat', 'bigmeat', 'medicine', 'cola', 'water', 'weights', 'sails', 'galley', 'cannon'],
+    intro: 'The great underwater prison. Chief Warden Magellan is made of poison: his hits poison you, and the poison hurts every turn.',
+    job: 'You scrubbed cells on Level 1. The Crimson Hell was not fun.',
+  },
+  {
+    name: 'Marineford', scene: 'marineford', bar: 'HQ Mess Hall', enemies: ['viceadmiral', 'marineelite', 'marinegiant'], boss: 'akainu', weapons: ['bisento'],
+    shop: ['meat', 'bigmeat', 'medicine', 'cola', 'water', 'weights', 'sails', 'galley', 'cannon'],
+    intro: 'Marine Headquarters, scarred by the great war. Admiral Akainu is a magma Logia, and every blow of his sets you on fire.',
+    job: 'You cleared rubble from the frozen bay.',
+  },
+  {
+    name: 'Fish-Man Island', scene: 'fishman', bar: 'Mermaid Cafe', enemies: ['newfishman', 'kraken', 'lanternfish'], boss: 'hody', weapons: ['neptune'],
+    shop: ['meat', 'bigmeat', 'medicine', 'cola', 'water', 'weights', 'sails', 'galley', 'cannon'],
+    intro: 'An island in a bubble 10,000 meters under the sea. Hody Jones gobbles Energy Steroids: when he rages he hits far harder, but the pills hurt him every turn.',
+    job: 'You polished coral at the Ryugu Palace.',
+  },
+  {
+    name: 'Punk Hazard', scene: 'punkhazard', bar: 'Biscuit Room', enemies: ['centaur', 'smiley', 'labguard'], boss: 'caesar', weapons: ['kikoku'],
+    shop: ['meat', 'bigmeat', 'medicine', 'cola', 'water', 'weights', 'sails', 'galley', 'cannon'],
+    intro: 'An island half on fire and half frozen. Caesar Clown is a gas Logia who steals the air: your SP drains away every turn.',
+    job: 'You helped a group of giant kids escape the lab.',
+  },
+  {
+    name: 'Dressrosa', scene: 'dressrosa', bar: 'Spider Cafe', enemies: ['gladiator', 'toysoldier', 'donquixote'], boss: 'doflamingo', weapons: ['kabuto'],
+    shop: ['meat', 'bigmeat', 'medicine', 'cola', 'water', 'weights', 'sails', 'galley', 'cannon', 'paint_pink'],
+    intro: 'A kingdom of love, passion and toys. Doflamingo traps you in his Birdcage, and the strings cut deeper every turn. Win fast!',
+    job: 'You swept the stands of the Corrida Colosseum.',
+  },
+  {
+    name: 'Whole Cake Island', scene: 'wholecake', bar: 'Sweet City Patisserie', enemies: ['chesssoldier', 'homie', 'cookiesoldier'], boss: 'katakuri', weapons: ['napoleon'],
+    shop: ['meat', 'bigmeat', 'medicine', 'cola', 'water', 'weights', 'sails', 'galley', 'cannon'],
+    intro: 'An island made of sweets, ruled by the Big Mom Pirates. Charlotte Katakuri sees the future: he dodges almost everything unless you have Observation Haki.',
+    job: 'You taste-tested forty cakes for a tea party.',
+  },
+  {
     name: 'Last Isle', scene: 'volcano', bar: "Dragon's Den", enemies: ['beastpirate', 'gorilla', 'dragonwhelp'], boss: 'drakko', weapons: ['nightedge'],
     shop: ['meat', 'bigmeat', 'medicine', 'cola', 'water', 'weights', 'sails', 'galley', 'cannon', 'fh_dragon'],
-    intro: 'The end of the Grand Line. Emperor Drakko guards the legendary treasure.',
+    intro: 'The end of the Grand Line, a land of samurai and dragons. Emperor Drakko guards the legendary treasure.',
     job: 'You stacked cannonballs for a very nervous merchant.',
   },
 ];
@@ -105,9 +165,39 @@ const ENEMIES = {
   skyguard: { name: 'Sky Guard', lvl: 30, spr: { kind: 'human', head: 'helmet', pal: { x: '#e6b422', w: '#ffffff', c: '#ffffff', C: '#e6b422', p: '#6aa0e0' } }, moves: ['Dial Blast', 'Spear Thrust'] },
   cloudeel: { name: 'Cloud Eel', lvl: 31, spr: { kind: 'serpent', pal: { c: '#e8f0ff', C: '#a9bde8' } }, moves: ['Wrap', 'Static Bite'] },
   thunderbird: { name: 'Thunder Bird', lvl: 32, spr: { kind: 'bird', pal: { c: '#f2d03b', w: '#fff3a8', y: '#e07a2a' } }, flies: true, moves: ['Thunder Peck', 'Gale Wing'] },
-  beastpirate: { name: 'Beast Pirate', lvl: 34, spr: { kind: 'human', head: 'horns', pal: { x: '#e8e0c8', h: '#2a2433', c: '#5a3a7a', C: '#c0453a', p: '#2a2433' } }, moves: ['Club Bash', 'Beast Roar'] },
-  gorilla:  { name: 'Iron Gorilla', lvl: 35, spr: { kind: 'brute', head: 'ape', pal: { h: '#3a3440', c: '#3a3440', C: '#5a5262', s: '#9a8a9a', p: '#3a3440', f: '#1b1424' } }, moves: ['Gorilla Punch', 'Chest Pound'] },
-  dragonwhelp: { name: 'Dragon Whelp', lvl: 36, spr: { kind: 'serpent', horns: true, pal: { c: '#c94a4a', C: '#f2b25a', x: '#f2e6c8' } }, flies: true, moves: ['Flame Bite', 'Wing Slam'] },
+  shipwright: { name: 'Galley-La Shipwright', lvl: 33, spr: { kind: 'human', head: 'cap', pal: { x: '#f2f2f2', w: '#e07a3a', h: '#3a2a22', c: '#e07a3a', C: '#f2f2f2', p: '#3a4a6a' } }, moves: ['Hammer Swing', 'Plank Toss'] },
+  frankythug: { name: 'Franky Family Thug', lvl: 34, spr: { kind: 'human', head: 'swoop', pal: { h: '#3b6fd6', c: '#f2c27a', C: '#e07a3a', p: '#2a2433' } }, moves: ['Pompadour Rush', 'Cola Bottle'] },
+  yagara:   { name: 'Rogue Yagara Bull', lvl: 35, spr: { kind: 'serpent', pal: { c: '#f2d03b', C: '#fff3a8' } }, moves: ['Tail Splash', 'Bull Rush'] },
+  cpagent:  { name: 'CP Agent', lvl: 36, spr: { kind: 'human', head: 'hair', pal: { h: '#1b1424', c: '#2a2433', C: '#f2f2f2', p: '#2a2433' } }, moves: ['Finger Pistol', 'Tempest Kick'] },
+  oimo:     { name: 'Giant Gatekeeper', lvl: 37, spr: { kind: 'brute', head: 'ape', pal: { h: '#3a2a22', c: '#5a6a8a', C: '#e6b422', s: '#e8b080', p: '#3a4a6a' } }, moves: ['Giant Axe', 'Stomp'] },
+  justiceguard: { name: 'Justice Guard', lvl: 38, spr: { kind: 'human', head: 'helmet', pal: { x: '#f2f2f2', w: '#c9ccd6', c: '#3b6fd6', C: '#f2f2f2', p: '#f2f2f2' } }, moves: ['Bayonet', 'Iron Shield'] },
+  zombie:   { name: 'Zombie Soldier', lvl: 39, spr: { kind: 'human', head: 'hair', pal: { s: '#8ab88a', S: '#5a8a5a', h: '#3a2a3a', c: '#5a4a6a', C: '#8a7a5a', p: '#3a3440' } }, moves: ['Grave Claw', 'Rotten Bite'] },
+  hollow:   { name: 'Negative Hollow', lvl: 40, spr: { kind: 'slug', pal: { c: '#f2f2f8', C: '#c9ccd6', m: '#5a4a6a' } }, flies: true, moves: ['Negative Hollow', 'Ghost Rap'] },
+  zombiewolf: { name: 'Zombie Wolf', lvl: 41, spr: { kind: 'quad', pal: { c: '#6a7a6a', C: '#8a9a8a', h: '#4a5a4a', n: '#1b1424' } }, moves: ['Howl', 'Feral Bite'] },
+  pacifista: { name: 'Pacifista', lvl: 42, spr: { kind: 'brute', head: 'pacifista', pal: { x: '#1b1424', g: '#9aa4b1', s: '#c98a5a', c: '#3a3440', C: '#f2f2f2', p: '#3a3440' } }, moves: ['Paw Laser', 'Axe Swing'] },
+  auctionguard: { name: 'Auction Guard', lvl: 43, spr: { kind: 'human', head: 'tophat', pal: { x: '#1b1424', a: '#1b1424', w: '#e6b422', h: '#3a2a22', c: '#3a3440', C: '#e6b422', p: '#1b1424' } }, moves: ['Slaver Whip', 'Net Throw'] },
+  bubblecrab: { name: 'Bubble Crab', lvl: 44, spr: { kind: 'crab', pal: { c: '#9ad8f0', C: '#e8f6ff' } }, moves: ['Bubble Pinch', 'Soap Spray'] },
+  blugori:  { name: 'Blugori', lvl: 45, spr: { kind: 'brute', head: 'ape', pal: { h: '#3a6ab8', c: '#3a6ab8', C: '#9ad8f0', s: '#7a9ab8', p: '#2a4a8a' } }, moves: ['Scythe Swing', 'Jail Pound'] },
+  minotaur: { name: 'Minotaurus', lvl: 46, spr: { kind: 'brute', head: 'ape', horns: true, pal: { h: '#5a3a22', x: '#f2e6c8', s: '#8a5a32', c: '#8a5a32', C: '#c0453a', p: '#3a2a22' } }, moves: ['Iron Ball Swing', 'Horn Charge'] },
+  jailer:   { name: 'Prison Jailer', lvl: 47, spr: { kind: 'human', head: 'cap', pal: { x: '#1b1424', w: '#3a3440', h: '#1b1424', c: '#3a3440', C: '#c0453a', p: '#1b1424' } }, moves: ['Baton Strike', 'Tear Gas'] },
+  viceadmiral: { name: 'Vice Admiral', lvl: 48, spr: { kind: 'human', head: 'cap', pal: { x: '#2f5fb3', w: '#f2f2f2', h: '#9aa4b1', c: '#f2f2f2', C: '#2f5fb3', p: '#2f5fb3' } }, moves: ['Justice Fist', 'Moon Walk Kick'] },
+  marineelite: { name: 'Marine Elite', lvl: 49, spr: { kind: 'human', head: 'helmet', pal: { x: '#2f5fb3', w: '#f2f2f2', c: '#e9edf5', C: '#2f5fb3', p: '#2f5fb3' } }, moves: ['Rifle Volley', 'Saber Rush'] },
+  marinegiant: { name: 'Marine Giant', lvl: 50, spr: { kind: 'brute', head: 'ape', pal: { h: '#3a2a22', c: '#e9edf5', C: '#2f5fb3', s: '#e8b080', p: '#2f5fb3' } }, moves: ['Giant Blade', 'Crushing Step'] },
+  newfishman: { name: 'New Fish-Man Pirate', lvl: 51, spr: { kind: 'brute', head: 'ape', pal: { s: '#5a8ab8', h: '#2a3a5a', c: '#2a2433', C: '#c0453a', p: '#2a3a5a' } }, moves: ['Fishman Karate', 'Water Bullet'] },
+  kraken:   { name: 'Giant Kraken', lvl: 52, spr: { kind: 'crab', pal: { c: '#9a4ad0', C: '#d9b3ff' } }, moves: ['Tentacle Slam', 'Ink Cloud'] },
+  lanternfish: { name: 'Deep-Sea Lanternfish', lvl: 53, spr: { kind: 'serpent', pal: { c: '#2a3a5a', C: '#ffe14a' } }, moves: ['Lure Flash', 'Abyss Bite'] },
+  centaur:  { name: 'Centaur Guard', lvl: 54, spr: { kind: 'quad', pal: { c: '#8a5a32', C: '#c98a5a', h: '#3a2a22', n: '#1b1424' } }, moves: ['Spear Charge', 'Hoof Stomp'] },
+  smiley:   { name: 'Smiley Slime', lvl: 55, spr: { kind: 'slug', pal: { c: '#c94a9a', C: '#8a2a6a' } }, moves: ['Gas Burst', 'Slime Smother'] },
+  labguard: { name: 'Lab Guard', lvl: 56, spr: { kind: 'human', head: 'helmet', marks: ['mask'], pal: { x: '#5a6a7a', w: '#9aa4b1', g: '#3a4a5a', c: '#5a6a7a', C: '#e6b422', p: '#3a4a5a' } }, moves: ['Gas Grenade', 'Stun Baton'] },
+  gladiator: { name: 'Gladiator', lvl: 57, spr: { kind: 'human', head: 'helmet', pal: { x: '#e6b422', w: '#c0453a', c: '#8a5a32', C: '#e6b422', p: '#5a3a22' } }, moves: ['Colosseum Strike', 'Shield Bash'] },
+  toysoldier: { name: 'Toy Soldier', lvl: 58, spr: { kind: 'human', head: 'cap', pal: { x: '#c0453a', w: '#1b1424', h: '#5a3a22', c: '#c0453a', C: '#e6b422', p: '#2a2433', s: '#e8b080' } }, moves: ['Tin Bayonet', 'March'] },
+  donquixote: { name: 'Donquixote Officer', lvl: 59, spr: { kind: 'brute', head: 'ape', pal: { h: '#e6b422', c: '#ff8ab0', C: '#f2f2f2', s: '#e8b080', p: '#3a3440' } }, moves: ['String Shot', 'Stone Fist'] },
+  chesssoldier: { name: 'Chess Soldier', lvl: 60, spr: { kind: 'human', head: 'helmet', pal: { x: '#1b1424', w: '#f2f2f2', c: '#f2f2f2', C: '#1b1424', p: '#1b1424' } }, moves: ['Chess Lance', 'Checkmate'] },
+  homie:    { name: 'Homie Tree', lvl: 61, spr: { kind: 'brute', head: 'ape', pal: { h: '#3f9a3a', c: '#7a4a24', C: '#5aa846', s: '#a0663a', p: '#5a3a22', f: '#3a2a1a' } }, moves: ['Branch Slap', 'Root Grab'] },
+  cookiesoldier: { name: 'Cookie Soldier', lvl: 62, spr: { kind: 'quad', pal: { c: '#c98a5a', C: '#e8b070', h: '#7a4a24', n: '#5a3a22' } }, moves: ['Crumble Bash', 'Sugar Rush'] },
+  beastpirate: { name: 'Beast Pirate', lvl: 64, spr: { kind: 'human', head: 'horns', pal: { x: '#e8e0c8', h: '#2a2433', c: '#5a3a7a', C: '#c0453a', p: '#2a2433' } }, moves: ['Club Bash', 'Beast Roar'] },
+  gorilla:  { name: 'Iron Gorilla', lvl: 65, spr: { kind: 'brute', head: 'ape', pal: { h: '#3a3440', c: '#3a3440', C: '#5a5262', s: '#9a8a9a', p: '#3a3440', f: '#1b1424' } }, moves: ['Gorilla Punch', 'Chest Pound'] },
+  dragonwhelp: { name: 'Dragon Whelp', lvl: 66, spr: { kind: 'serpent', horns: true, pal: { c: '#c94a4a', C: '#f2b25a', x: '#f2e6c8' } }, flies: true, moves: ['Flame Bite', 'Wing Slam'] },
 };
 
 // Raid bosses. hpMult scales HP over a normal enemy of the same level.
@@ -184,8 +274,79 @@ const BOSSES = {
     basic: 'Lightning Lance', charge: 'gathers a black thundercloud overhead!', big: 'Thunder Judgment', fx: 'bolt',
     enrage: 'Voltz laughs. His drums crackle with ten million volts!',
   },
+  franky: {
+    name: 'Cyborg Franky', drop: 'colaarm', lvl: 38, hpMult: 7.0, bounty: 380000000, berries: 7000, scale: 3, fastCharge: true,
+    spr: { kind: 'brute', head: 'franky', pal: { h: '#3b6fd6', c: '#f2c27a', C: '#e07a3a', s: '#f3c08c', p: '#3b6fd6' } },
+    intro: '"SUPER! You wanna fight Franky? Cola-powered and ready to roll!"',
+    basic: 'Strong Right', charge: 'chugs three bottles of cola...', big: 'Radical Beam', fx: 'beam',
+    enrage: 'Franky slams his forearms together. "Time to get SUPER serious!"',
+  },
+  lucci: {
+    name: 'Rob Lucci', drop: 'rokushiki', lvl: 41, hpMult: 7.2, bounty: 450000000, berries: 8000, scale: 3, tekkai: true,
+    spr: { kind: 'brute', head: 'lucci', pal: { x: '#1b1424', h: '#1b1424', c: '#1b1424', C: '#f2f2f2', s: '#e8b080', p: '#1b1424' } },
+    phase2: { spr: { kind: 'quad', pal: { c: '#e6b422', C: '#f2d15a', h: '#1b1424', n: '#1b1424' } }, scale: 4, name: 'Leopard Lucci', basic: 'Leopard Claw' },
+    intro: '"Justice is whatever the World Government says it is. And you are a criminal."',
+    basic: 'Shigan', charge: 'sinks into a Rokushiki stance...', big: 'Rokuogan', fx: 'rokuogan',
+    enrage: 'Lucci transforms into a leopard-man! His Tekkai still guards every other turn.',
+  },
+  moria: {
+    name: 'Gecko Moria', drop: 'scissors', lvl: 44, hpMult: 7.4, bounty: 520000000, berries: 9000, scale: 3, reflect: 0.2,
+    spr: { kind: 'brute', head: 'moria', pal: { h: '#f08a3a', s: '#9ab0c8', S: '#7a90a8', c: '#3a2a4a', C: '#e6b422', p: '#2a2433' } },
+    intro: '"Kishishishi! Your shadow is mine now, and it fights for ME!"',
+    basic: 'Shadow Box', charge: 'pulls a thousand shadows into his body...', big: 'Shadows Asgard', fx: 'shadows',
+    enrage: 'Moria swells into a giant, packed with a thousand shadows!',
+  },
+  kizaru: {
+    name: 'Admiral Kizaru', drop: 'lightblade', lvl: 47, hpMult: 7.2, bounty: 700000000, berries: 10000, scale: 3, logia: 'light', dodge: 0.18,
+    spr: { kind: 'brute', head: 'kizaru', pal: { h: '#5a3a22', G: '#e6b422', c: '#e6b422', C: '#f2f2f2', s: '#e8b080', p: '#e6b422' } },
+    intro: '"Ooooh, how scaaary. A rookie coming at an Admiral?"',
+    basic: 'Light Kick', charge: 'gathers light at his fingertips...', big: 'Yasakani no Magatama', fx: 'lightrain',
+    enrage: '"Speed is weight. Ever been kicked at the speed of light?"',
+  },
+  magellan: {
+    name: 'Magellan', drop: 'venomfang', lvl: 50, hpMult: 7.8, bounty: 800000000, berries: 11000, scale: 3, poison: true,
+    spr: { kind: 'brute', head: 'magellan', pal: { x: '#1b1424', h: '#1b1424', c: '#3a3440', C: '#9a4ad0', s: '#e8b080', p: '#1b1424' } },
+    intro: '"Nobody escapes Impel Down. ...Excuse me. I need the bathroom first."',
+    basic: 'Venom Coat', charge: 'grows a three-headed venom dragon...', big: 'Hydra', fx: 'venom',
+    enrage: 'Magellan calls up the Venom Demon: Hell\'s Judgment!',
+  },
+  akainu: {
+    name: 'Admiral Akainu', drop: 'magmagauntlet', lvl: 53, hpMult: 7.6, bounty: 1000000000, berries: 12500, scale: 3, logia: 'magma', scorch: true,
+    spr: { kind: 'brute', head: 'akainu', pal: { x: '#f2f2f2', h: '#3a2a22', c: '#c0453a', C: '#f2f2f2', s: '#e8b080', p: '#c0453a' } },
+    intro: '"Absolute Justice. Evil must be burned out at the root."',
+    basic: 'Magma Fist', charge: 'his fist turns into roaring magma...', big: 'Meteor Volcano', fx: 'magma',
+    enrage: 'Akainu\'s whole body boils into magma!',
+  },
+  hody: {
+    name: 'Hody Jones', drop: 'sharkknuckles', lvl: 56, hpMult: 8.2, bounty: 1100000000, berries: 13500, scale: 3, steroids: true,
+    spr: { kind: 'brute', head: 'hody', pal: { s: '#9ab0c8', h: '#5a7a98', c: '#3a3440', C: '#c0453a', p: '#3a3440', r: '#d63c2f' } },
+    intro: '"The New Fish-Man Pirates will drag you down to the deep!"',
+    basic: 'Shark Arrow', charge: 'swallows a handful of Energy Steroids...', big: 'Shark Water Bullets', fx: 'tide',
+    enrage: 'Hody pops ten more Energy Steroids! His eyes go bloodshot, and the pills start eating him alive.',
+  },
+  caesar: {
+    name: 'Caesar Clown', drop: 'gaslamp', lvl: 59, hpMult: 7.8, bounty: 1300000000, berries: 15000, scale: 3, logia: 'gas', suffocate: true,
+    spr: { kind: 'brute', head: 'caesar', pal: { h: '#2a2433', s: '#c9ccd6', c: '#3a3440', C: '#b06ad0', p: '#5a4a6a' } },
+    intro: '"Shurororo! I am the greatest scientist alive! Breathe deep... oh wait, you can\'t!"',
+    basic: 'Gas Robe', charge: 'gathers poison gas into a giant slime...', big: 'Shinokuni', fx: 'gasbomb',
+    enrage: 'Caesar sucks every bit of oxygen out of the room!',
+  },
+  doflamingo: {
+    name: 'Doflamingo', drop: 'overheat', lvl: 62, hpMult: 8.6, bounty: 1600000000, berries: 17000, scale: 3, birdcage: true,
+    spr: { kind: 'brute', head: 'doflamingo', pal: { h: '#f2d15a', g: '#c0453a', c: '#ff8ab0', C: '#f2f2f2', s: '#e8b080', p: '#3a6ab8' } },
+    intro: '"Fufufu... Pirates, Marines, kings. Everyone dances on my strings."',
+    basic: 'Five Color Strings', charge: 'pulls the Birdcage tighter...', big: 'God Thread', fx: 'strings',
+    enrage: 'Doflamingo awakens his fruit: the ground itself turns to string!',
+  },
+  katakuri: {
+    name: 'Charlotte Katakuri', drop: 'mogura', lvl: 65, hpMult: 8.8, bounty: 2000000000, berries: 19000, scale: 3, futureSight: true,
+    spr: { kind: 'brute', head: 'katakuri', pal: { h: '#7a2630', x: '#e8d9b0', c: '#3a3440', C: '#7a2630', s: '#e8b080', p: '#3a3440' } },
+    intro: '"I already know how this ends. I can see the future."',
+    basic: 'Mogura', charge: 'swells his arm into a huge spiked mochi fist...', big: 'Zan Giri Mochi', fx: 'mochi',
+    enrage: 'Katakuri unwraps his scarf. His Observation Haki sharpens even further!',
+  },
   drakko: {
-    name: 'Emperor Drakko', drop: 'kanabo', lvl: 40, hpMult: 7.6, bounty: 1500000000, berries: 15000, scale: 3,
+    name: 'Emperor Drakko', drop: 'kanabo', lvl: 70, hpMult: 9.6, bounty: 4611100000, berries: 30000, scale: 3,
     spr: { kind: 'brute', head: 'drakko', weapon: 'kanabo', pal: { x: '#f2e6c8', h: '#1b1424', c: '#5a3a7a', C: '#e6b422', p: '#2a2433' } },
     phase2: { spr: { kind: 'serpent', horns: true, pal: { c: '#4a8ad9', C: '#bfe0ff', x: '#f2e6c8' } }, scale: 4, name: 'Dragon Drakko', basic: 'Dragon Claw', flies: true },
     intro: '"Entertain me, rookie. Then die."',
@@ -235,8 +396,28 @@ const CREW = {
   lina:  { name: 'Lina', role: 'sniper', race: 'Human', island: 8, cost: 3400, call: 'Peacock Slasher', spr: { kind: 'human', head: 'long', long: true, pal: { h: '#5ab8d8', c: '#f2f2f2', C: '#e6b422', p: '#3b6fd6' } }, join: 'Lina, a runaway princess, ties up her hair. "Help me save my kingdom, and I will follow you anywhere."' },
   wyn:   { name: 'Wyn', role: 'sniper', race: 'Skypian', island: 9, cost: 3800, spr: { kind: 'human', head: 'hair', marks: ['wings'], pal: { h: '#f2f2f2', c: '#6aa0e0', C: '#ffffff', p: '#ffffff' } }, join: 'Wyn spins a dial. "Earth below looks fun. Let\'s go."' },
   gale:  { name: 'Gale', role: 'navigator', race: 'Skypian', island: 9, cost: 4000, spr: { kind: 'human', head: 'long', long: true, marks: ['wings'], pal: { h: '#e6b422', c: '#ffffff', C: '#6aa0e0', p: '#6aa0e0' } }, join: 'Gale reads the clouds. "Storms are just weather that hasn\'t met me yet."' },
-  rook:  { name: 'Rook', role: 'brawler', race: 'Human', island: 10, cost: 5000, spr: { kind: 'brute', head: 'grizzle', pal: { x: '#3a3440', h: '#5a3a22', c: '#3a3440', C: '#c0453a', s: '#e8b080', p: '#2a2433' } }, join: 'Rook, a deserter from the Beast Pirates, grins. "Drakko\'s mine to punch."' },
-  mei:   { name: 'Mei', role: 'doctor', race: 'Human', island: 10, cost: 5000, spr: { kind: 'human', head: 'long', long: true, pal: { h: '#1b1424', c: '#c0453a', C: '#e6b422', p: '#2a2433' } }, join: 'Mei closes her medical book. "You will need a doctor where you are going."' },
+  rivet: { name: 'Rivet', role: 'brawler', race: 'Cyborg', island: 10, cost: 5800, call: 'Coup de Vent', spr: { kind: 'brute', head: 'ape', pal: { h: '#3b6fd6', c: '#f2c27a', C: '#e07a3a', s: '#f3c08c', p: '#3b6fd6' } }, join: 'Rivet bolts a new plate onto his arm. "A ship that carries dreams needs a SUPER mechanic!"' },
+  paula: { name: 'Paula', role: 'navigator', race: 'Human', island: 10, cost: 6000, spr: { kind: 'human', head: 'long', long: true, pal: { h: '#f2d15a', c: '#2a2433', C: '#f2f2f2', p: '#2a2433' } }, join: 'Paula snaps her notebook shut. "I have charted every canal in Water 7. Let me chart the sea."' },
+  nosu:  { name: 'Nosu', role: 'swordsman', race: 'Zoan', island: 11, cost: 6600, call: 'Rankyaku: Amanedachi', spr: { kind: 'human', head: 'cap', pal: { x: '#1b1424', w: '#1b1424', h: '#f2a03a', c: '#f2f2f2', C: '#1b1424', p: '#1b1424' } }, join: 'Nosu, a giraffe-man who quit the government, tips his cap. "Freedom suits me better."' },
+  lily:  { name: 'Lily', role: 'sniper', race: 'Human', island: 11, cost: 6400, spr: { kind: 'human', head: 'long', long: true, pal: { h: '#3a2a22', c: '#c94a6a', C: '#f2f2f2', p: '#2a2433' } }, join: 'Lily strings her bow. "I will fire a flag at the World Government for you."' },
+  bones: { name: 'Bones', role: 'swordsman', race: 'Skeleton', island: 12, cost: 7200, call: 'Soul Solid', spr: { kind: 'human', head: 'hair', pal: { h: '#1b1424', s: '#f2f2f2', S: '#c9ccd6', c: '#1b1424', C: '#e6b422', p: '#1b1424' } }, join: 'Bones the skeleton tips his hat. "May I join your crew? Yohoho! Though I have no ears to hear your answer!"' },
+  perri: { name: 'Perri', role: 'navigator', race: 'Human', island: 12, cost: 7000, spr: { kind: 'human', head: 'long', long: true, pal: { h: '#ff8ab0', c: '#1b1424', C: '#c94a6a', p: '#1b1424' } }, join: 'Perri floats a little ghost. "Horohoro! Your ship is cute. I am coming."' },
+  duval: { name: 'Duval', role: 'brawler', race: 'Human', island: 13, cost: 7800, spr: { kind: 'brute', head: 'ape', pal: { h: '#f2d15a', c: '#ff8ab0', C: '#f2f2f2', s: '#e8b080', p: '#3a6ab8' } }, join: 'Duval flashes a handsome grin. "Let me protect your ship, like you protected Sabaody."' },
+  kimi:  { name: 'Kimi', role: 'cook', race: 'Mermaid', island: 13, cost: 7600, spr: { kind: 'human', head: 'long', long: true, pal: { h: '#5ab8a8', c: '#ff8ab0', C: '#f2f2f2', p: '#5ab8a8' } }, join: 'Kimi the mermaid claps. "I make the best takoyaki under the sea!"' },
+  ivo:   { name: 'Ivo', role: 'doctor', race: 'Human', island: 14, cost: 8600, call: 'Hormone Hope', spr: { kind: 'brute', head: 'ape', pal: { h: '#9a4ad0', c: '#ff8ab0', C: '#f2f2f2', s: '#e8b080', p: '#2a2433' } }, join: 'Ivo winks. "Candy boy! My hormones can heal anyone. Hee-haw!"' },
+  inazo: { name: 'Inazo', role: 'swordsman', race: 'Human', island: 14, cost: 8400, spr: { kind: 'human', head: 'swoop', pal: { h: '#e8e8f0', c: '#2a2433', C: '#c0453a', p: '#2a2433' } }, join: 'Inazo snaps a pair of scissors. "Scissors cut anything. Even prison walls."' },
+  phoenix: { name: 'Phoenix', role: 'doctor', race: 'Zoan', island: 15, cost: 9400, call: 'Blue Flames of Rebirth', spr: { kind: 'human', head: 'swoop', pal: { h: '#f2d15a', c: '#5ab8e8', C: '#f2c27a', p: '#3a3440' } }, join: 'Phoenix bursts into blue flame. "The war is over. Let me heal your crew instead."' },
+  jozo:  { name: 'Jozo', role: 'brawler', race: 'Human', island: 15, cost: 9200, call: 'Diamond Punch', spr: { kind: 'brute', head: 'ape', pal: { h: '#3a2a22', c: '#f2f2f2', C: '#9ad8f0', s: '#e8b080', p: '#3a3440' } }, join: 'Jozo turns his fist to diamond. "Nothing gets past me."' },
+  jinn:  { name: 'Jinn', role: 'brawler', race: 'Fishman', island: 16, cost: 10000, call: 'Fishman Karate: Vagabond Drill', spr: { kind: 'brute', head: 'ape', pal: { s: '#5a8ab8', h: '#2a2433', c: '#e07a3a', C: '#f2f2f2', p: '#3a3440' } }, join: 'Jinn bows low. "I owe you a debt. A man of the sea repays his debts."' },
+  ryu:   { name: 'Ryu', role: 'sniper', race: 'Fishman', island: 16, cost: 9800, spr: { kind: 'human', head: 'fin', pal: { s: '#7ab0c8', h: '#2a3a5a', x: '#2a3a5a', c: '#3a3440', C: '#e6b422', p: '#3a3440' } }, join: 'Ryu, an archerfish fishman, spits a perfect water shot. "Never miss underwater."' },
+  trafal: { name: 'Trafal', role: 'doctor', race: 'Human', island: 17, cost: 11000, call: 'Room: Scan', spr: { kind: 'human', head: 'cap', pal: { x: '#f2f2f2', w: '#f2f2f2', h: '#1b1424', c: '#f2d15a', C: '#1b1424', p: '#5a4a3a' } }, join: 'Trafal shoulders his nodachi. "An alliance, then. I am a surgeon, after all."' },
+  kine:  { name: 'Kine', role: 'swordsman', race: 'Human', island: 17, cost: 10800, call: 'Foxfire Style', spr: { kind: 'human', head: 'hair', pal: { h: '#1b1424', c: '#3a6ab8', C: '#c0453a', p: '#3a3440' } }, join: 'Kine the samurai bows. "My sword is yours until we reach the land of Wano."' },
+  becca: { name: 'Becca', role: 'swordsman', race: 'Human', island: 18, cost: 12000, spr: { kind: 'human', head: 'long', long: true, pal: { h: '#ff8ab0', c: '#c9ccd6', C: '#e6b422', p: '#c9ccd6' } }, join: 'Becca, undefeated in the Colosseum, sheathes her sword. "I fight without hurting anyone. Mostly."' },
+  barto: { name: 'Barto', role: 'brawler', race: 'Human', island: 18, cost: 11800, call: 'Barrier Bash', spr: { kind: 'human', head: 'fin', pal: { x: '#5aa846', h: '#5aa846', c: '#2a2433', C: '#e6b422', p: '#2a2433' } }, join: 'Barto bursts into tears. "Senpai! I have been your fan FOREVER!"' },
+  puri:  { name: 'Puri', role: 'cook', race: 'Human', island: 19, cost: 13000, spr: { kind: 'human', head: 'long', long: true, pal: { h: '#c9853a', c: '#ff8ab0', C: '#f2f2f2', p: '#7a4a24' } }, join: 'Puri ties on an apron. "My chocolate can make anyone happy. Even you."' },
+  pedro: { name: 'Pedro', role: 'swordsman', race: 'Mink', island: 19, cost: 12800, spr: { kind: 'human', head: 'hair', marks: ['minkEars'], pal: { s: '#e6b422', S: '#b8860b', h: '#2a2433', c: '#3a6a3a', C: '#e6b422', p: '#2a2433' } }, join: 'Pedro the jaguar mink draws his sword. "I will guide you to the dawn."' },
+  rook:  { name: 'Rook', role: 'brawler', race: 'Human', island: 20, cost: 15000, spr: { kind: 'brute', head: 'grizzle', pal: { x: '#3a3440', h: '#5a3a22', c: '#3a3440', C: '#c0453a', s: '#e8b080', p: '#2a2433' } }, join: 'Rook, a deserter from the Beast Pirates, grins. "Drakko\'s mine to punch."' },
+  mei:   { name: 'Mei', role: 'doctor', race: 'Human', island: 20, cost: 15000, spr: { kind: 'human', head: 'long', long: true, pal: { h: '#1b1424', c: '#c0453a', C: '#e6b422', p: '#2a2433' } }, join: 'Mei closes her medical book. "You will need a doctor where you are going."' },
 };
 
 // Moves unlock with mastery: use a style in battle, win with it, or do Drills.
@@ -250,8 +431,9 @@ const FIST_MOVES = [
 const FRUIT_PRICE = 4000;
 const FRUITS = {
   rubber: {
-    name: 'Rubber-Rubber Fruit', color: '#8e4ec6', color2: '#c48ae8',
-    desc: 'Your body stretches like rubber. Lightning can\'t hurt you.',
+    name: 'Rubber-Rubber Fruit', color: '#8e4ec6', color2: '#c48ae8', guard: 0.1,
+    desc: 'Your body stretches like rubber: blunt hits bounce off (10% less damage) and lightning can\'t hurt you.',
+    awaken: { name: 'Gear 5', look: { h: '#f2f2f2', v: '#f2f2f2', b: '#f2f2f2', e: '#c0453a' }, moves: [{ name: 'Toon Force', sp: 45, mult: 3.2, stun: 0.6, fx: 'toonforce' }, { name: 'Bajrang Gun', sp: 70, mult: 5.2, fx: 'bajrang' }] },
     moves: [
       { name: 'Rubber Pistol', at: 0, sp: 25, mult: 1.7, fx: 'arm' },
       { name: 'Rubber Gatling', at: 40, sp: 45, mult: 0.55, hits: 5, fx: 'gatling' },
@@ -261,6 +443,7 @@ const FRUITS = {
   flame: {
     name: 'Flame-Flame Fruit', color: '#f07a2a', color2: '#ffd04a', dodge: 0.12,
     desc: 'Become living fire. Attacks sometimes pass right through you.',
+    awaken: { name: 'Flame Emperor', look: { h: '#ff9a3a', v: '#ff5a2a', b: '#3a2a22' }, moves: [{ name: 'Firefly Swarm', sp: 45, mult: 3.0, burn: 3, fx: 'fireflies' }, { name: 'Entei', sp: 70, mult: 5.0, fx: 'entei' }] },
     moves: [
       { name: 'Fire Fist', at: 0, sp: 30, mult: 2.0, fx: 'fireball' },
       { name: 'Flame Spray', at: 40, sp: 40, mult: 1.3, burn: 3, fx: 'flamespray' },
@@ -270,6 +453,7 @@ const FRUITS = {
   frost: {
     name: 'Frost-Frost Fruit', color: '#5fd3f0', color2: '#e8fbff',
     desc: 'Freeze anything. Ice Age can freeze foes solid for a turn.',
+    awaken: { name: 'Ice Age Lord', look: { h: '#bff2ff', v: '#5fd3f0', b: '#e8fbff' }, moves: [{ name: 'Ice Time Capsule', sp: 45, mult: 3.0, freeze: true, fx: 'icecapsule' }, { name: 'Frozen World', sp: 70, mult: 4.9, fx: 'frozenworld' }] },
     moves: [
       { name: 'Ice Spear', at: 0, sp: 25, mult: 1.6, fx: 'icespear' },
       { name: 'Ice Age', at: 40, sp: 50, mult: 1.0, freeze: true, fx: 'iceage' },
@@ -279,6 +463,7 @@ const FRUITS = {
   quake: {
     name: 'Quake-Quake Fruit', color: '#e8e3d3', color2: '#9aa4b1', defMult: 1.15,
     desc: 'Crack the very air. +15% defense from your sturdy body.',
+    awaken: { name: 'World Shaker', look: { h: '#e8e3d3', v: '#f2f2f2', b: '#9aa4b1' }, moves: [{ name: 'Sky Crack', sp: 45, mult: 3.3, fx: 'skycrack' }, { name: 'Island Shaker', sp: 70, mult: 5.3, fx: 'islandshaker' }] },
     moves: [
       { name: 'Quake Punch', at: 0, sp: 30, mult: 1.9, fx: 'quake' },
       { name: 'Seaquake', at: 40, sp: 55, mult: 2.3, fx: 'seaquake' },
@@ -288,6 +473,7 @@ const FRUITS = {
   smoke: {
     name: 'Smoke-Smoke Fruit', color: '#c9ccd6', color2: '#ffffff', dodge: 0.12,
     desc: 'Drift like smoke. Smoke Bind weakens the enemy\'s attacks.',
+    awaken: { name: 'Smoke Leviathan', look: { h: '#f2f2f2', v: '#c9ccd6', b: '#5a6a7a' }, moves: [{ name: 'Smoke Prison', sp: 45, mult: 2.8, atkDown: true, stun: 0.4, fx: 'smokeprison' }, { name: 'White Leviathan', sp: 70, mult: 4.9, fx: 'smokeserpent' }] },
     moves: [
       { name: 'White Blow', at: 0, sp: 25, mult: 1.6, fx: 'smokeblow' },
       { name: 'Smoke Bind', at: 40, sp: 45, mult: 1.1, atkDown: true, fx: 'smokebind' },
@@ -297,6 +483,7 @@ const FRUITS = {
   light: {
     name: 'Light-Light Fruit', color: '#fff3a0', color2: '#ffd04a', dodge: 0.12,
     desc: 'Become living light. Blinding speed, and attacks sometimes pass right through you.',
+    awaken: { name: 'Speed of Light', look: { h: '#fff3a0', v: '#ffd04a', b: '#fff3a0' }, moves: [{ name: 'Sacred Yasakani', sp: 50, mult: 0.55, hits: 8, fx: 'yasakani' }, { name: 'Ama no Murakumo', sp: 70, mult: 5.0, sure: true, fx: 'lightsword' }] },
     moves: [
       { name: 'Flash Kick', at: 0, sp: 25, mult: 1.8, sure: true, fx: 'lightkick' },
       { name: 'Light Rain', at: 40, sp: 50, mult: 0.5, hits: 6, fx: 'lightrain' },
@@ -306,6 +493,7 @@ const FRUITS = {
   dough: {
     name: 'Dough-Dough Fruit', color: '#efe2c8', color2: '#c9a26a', guard: 0.12,
     desc: 'A squishy, sticky body that soaks up hits (12% less damage). Sticky Snare traps foes.',
+    awaken: { name: 'Awakened Dough', look: { h: '#7a2630', v: '#efe2c8', b: '#3a3440' }, moves: [{ name: 'Dough World', sp: 45, mult: 3.0, stun: 0.6, fx: 'doughworld' }, { name: 'Heavenly Pestle', sp: 70, mult: 5.1, fx: 'pestle' }] },
     moves: [
       { name: 'Dough Fist', at: 0, sp: 25, mult: 1.7, fx: 'doughfist' },
       { name: 'Sticky Snare', at: 40, sp: 45, mult: 1.1, stun: 0.6, fx: 'doughsnare' },
@@ -315,6 +503,7 @@ const FRUITS = {
   dragon: {
     name: 'Dragon-Dragon Fruit', color: '#4a8ad9', color2: '#bfe0ff', hpBonus: 0.2, form: true,
     desc: 'A mythical Zoan. Turn into an azure dragon to attack. +20% max HP.',
+    awaken: { name: 'Hybrid Dragon', look: { h: '#4a8ad9', v: '#bfe0ff', b: '#2a4a8a' }, moves: [{ name: 'Thunder Bagua', sp: 45, mult: 3.4, stun: 0.3, fx: 'thunderbagua' }, { name: 'Bolo Breath', sp: 70, mult: 5.2, fx: 'bolobreath' }] },
     moves: [
       { name: 'Dragon Claw', at: 0, sp: 25, mult: 1.8, fx: 'dragonclaw', color: '#bfe0ff' },
       { name: 'Blaze Breath', at: 40, sp: 50, mult: 1.5, burn: 3, fx: 'breath' },
@@ -324,6 +513,7 @@ const FRUITS = {
   split: {
     name: 'Split-Split Fruit', color: '#e8504a', color2: '#3b6fd6', dodge: 0.1,
     desc: 'Split your body into flying pieces, so attacks sometimes miss you. Split Bomb blows up in their face.',
+    awaken: { name: 'Flashy Festival', look: { h: '#3b6fd6', v: '#e8504a', b: '#3b6fd6' }, moves: [{ name: 'Grand Parade', sp: 50, mult: 0.65, hits: 6, fx: 'grandparade' }, { name: 'Muggy Ball', sp: 70, mult: 5.0, fx: 'muggyball' }] },
     moves: [
       { name: 'Split Cannon', at: 0, sp: 25, mult: 1.7, fx: 'splitfist' },
       { name: 'Split Festival', at: 40, sp: 50, mult: 0.5, hits: 6, fx: 'festival' },
@@ -333,6 +523,7 @@ const FRUITS = {
   magma: {
     name: 'Magma-Magma Fruit', color: '#ff5a2a', color2: '#5a1a1a', dodge: 0.12,
     desc: 'Become molten rock, the hottest Logia. Magma sets foes on fire.',
+    awaken: { name: 'Volcano Lord', look: { h: '#5a1a1a', v: '#c0301a', b: '#1b1424' }, moves: [{ name: 'Inugami Guren', sp: 45, mult: 3.2, burn: 2, fx: 'magmahound' }, { name: 'Great Eruption', sp: 70, mult: 4.8, burn: 3, fx: 'eruption' }] },
     moves: [
       { name: 'Magma Fist', at: 0, sp: 30, mult: 2.0, burn: 2, fx: 'magmafist' },
       { name: 'Meteor Shower', at: 40, sp: 55, mult: 0.8, hits: 4, burn: 3, fx: 'meteor' },
@@ -342,6 +533,7 @@ const FRUITS = {
   string: {
     name: 'String-String Fruit', color: '#f2f2f2', color2: '#c94ac9',
     desc: 'Make razor-sharp strings. Puppet Strings can freeze a foe in place.',
+    awaken: { name: 'Awakened Strings', look: { h: '#f2d15a', v: '#ff8ab0', b: '#f2f2f2' }, moves: [{ name: 'String Tsunami', sp: 45, mult: 3.0, stun: 0.5, fx: 'stringwave' }, { name: 'God Thread', sp: 70, mult: 5.1, pierce: true, fx: 'godthread' }] },
     moves: [
       { name: 'Five Color Strings', at: 0, sp: 25, mult: 0.45, hits: 5, fx: 'strings' },
       { name: 'Puppet Strings', at: 40, sp: 45, mult: 1.1, stun: 0.65, fx: 'puppet', color: '#f2f2f2' },
@@ -351,6 +543,7 @@ const FRUITS = {
   paw: {
     name: 'Paw-Paw Fruit', color: '#5a4a7a', color2: '#d9b3ff', guard: 0.1,
     desc: 'Paw pads on your palms repel anything, even part of every hit (10% less damage).',
+    awaken: { name: 'Ursus Awakening', look: { h: '#1b1424', v: '#3a3440', b: '#1b1424' }, moves: [{ name: 'Pain Bubble', sp: 45, mult: 3.0, drain: 0.3, fx: 'painbubble' }, { name: 'Ursus Supernova', sp: 70, mult: 5.3, fx: 'supernova' }] },
     moves: [
       { name: 'Pad Cannon', at: 0, sp: 25, mult: 1.8, fx: 'pawcannon' },
       { name: 'Pressure Repel', at: 40, sp: 50, mult: 1.5, stun: 0.4, fx: 'repel' },
@@ -466,7 +659,7 @@ const WEAPONS = {
     ],
   },
   nightedge: {
-    name: 'Night Edge', atk: 19, shape: 'sword', pal: { w: '#3a3048', G: '#e6b422', n: '#7a2630' }, hit: 'swing', color: '#9a6ae0', logiaHit: true,
+    name: 'Night Edge', atk: 30, shape: 'sword', pal: { w: '#3a3048', G: '#e6b422', n: '#7a2630' }, hit: 'swing', color: '#9a6ae0', logiaHit: true,
     desc: 'A legendary black blade. It cuts right through Logia users.',
     moves: [
       { name: 'Black Crescent', at: 0, sp: 30, mult: 2.0, fx: 'blackcrescent' },
@@ -520,7 +713,7 @@ const WEAPONS = {
     ],
   },
   kanabo: {
-    name: 'Dragon Kanabo', atk: 22, shape: 'kanabo', pal: { g: '#3a3440', w: '#c9ccd6' }, hit: 'swing', color: '#bfe0ff',
+    name: 'Dragon Kanabo', atk: 33, shape: 'kanabo', pal: { g: '#3a3440', w: '#c9ccd6' }, hit: 'swing', color: '#bfe0ff',
     desc: 'The Emperor\'s spiked club. Only a Pirate King could lift it.',
     moves: [
       { name: 'Kanabo Smash', at: 0, sp: 30, mult: 2.0, fx: 'kanabosmash' },
@@ -562,6 +755,186 @@ const WEAPONS = {
       { name: 'Royal Decree', at: 0, sp: 25, mult: 1.9, fx: 'royaldecree' },
       { name: 'Tin Plate Barrage', at: 30, sp: 50, mult: 0.75, hits: 3, fx: 'tinbarrage' },
       { name: 'Kingdom Crusher', at: 80, sp: 90, mult: 3.6, fx: 'kingdomcrusher' },
+    ],
+  },
+  ropes: {
+    name: "Paulie's Ropes", atk: 17, shape: 'rope', pal: { n: '#c9a26a' }, hit: 'swing', color: '#e8d9b0',
+    desc: 'Shipwright ropes from Water 7, good for tying up pirates and tossing anchors.',
+    moves: [
+      { name: 'Rope Lasso', at: 0, sp: 25, mult: 1.8, fx: 'lasso' },
+      { name: 'Rope Snare Net', at: 30, sp: 50, mult: 1.3, stun: 0.6, fx: 'ropenet' },
+      { name: 'Anchor Drop', at: 80, sp: 85, mult: 3.3, fx: 'anchordrop' },
+    ],
+  },
+  colaarm: {
+    name: 'Cola Cannon Arm', atk: 18, shape: 'cannonarm', pal: { g: '#9aa4b1', b: '#3b6fd6' }, hit: 'shot', color: '#5ab8e8',
+    desc: "Franky's spare cyborg arm. Runs on cola. SUPER!",
+    moves: [
+      { name: 'Strong Right', at: 0, sp: 25, mult: 1.9, fx: 'strongright' },
+      { name: 'Weapons Left', at: 30, sp: 50, mult: 0.8, hits: 3, fx: 'weaponsleft' },
+      { name: 'Radical Beam', at: 80, sp: 90, mult: 3.6, fx: 'radicalbeam' },
+    ],
+  },
+  funkfreed: {
+    name: 'Funkfreed', atk: 18, shape: 'sword', pal: { w: '#c9ccd6', G: '#9aa4b1', n: '#7a8a9a' }, hit: 'swing', color: '#c9ccd6',
+    desc: 'A sword that ate the Elephant-Elephant Fruit. It trumpets when it swings.',
+    moves: [
+      { name: 'Trunk Whip', at: 0, sp: 25, mult: 1.8, fx: 'trunkwhip' },
+      { name: 'Elephant Stampede', at: 30, sp: 50, mult: 0.6, hits: 4, fx: 'stampede' },
+      { name: 'Ivory Lance', at: 80, sp: 85, mult: 3.3, pierce: true, fx: 'ivorylance' },
+    ],
+  },
+  rokushiki: {
+    name: 'Rokushiki Gloves', atk: 19, shape: 'gloves', pal: { w: '#2a2433' }, hit: 'swing', color: '#f2f2f2',
+    desc: "Rob Lucci's gloves. Wear them and your body learns the Six Powers.",
+    moves: [
+      { name: 'Shigan', at: 0, sp: 25, mult: 1.7, sure: true, fx: 'shigan' },
+      { name: 'Rankyaku', at: 30, sp: 50, mult: 2.2, fx: 'rankyaku' },
+      { name: 'Rokuogan', at: 80, sp: 90, mult: 3.8, pierce: true, fx: 'rokuogan' },
+    ],
+  },
+  shusui: {
+    name: 'Black Blade Shusui', atk: 19, shape: 'sword', pal: { w: '#2a3a2a', G: '#c9a23a', n: '#3a6a3a' }, hit: 'swing', color: '#5ab86a',
+    desc: 'The legendary black blade of the samurai Ryuma, found in a Thriller Bark grave.',
+    moves: [
+      { name: 'Ryuma Draw', at: 0, sp: 25, mult: 1.9, fx: 'ryumadraw' },
+      { name: 'Shadow Lion Strike', at: 30, sp: 55, mult: 1.2, hits: 2, fx: 'shadowlion' },
+      { name: 'Black Tornado', at: 80, sp: 90, mult: 3.6, fx: 'blacktornado' },
+    ],
+  },
+  scissors: {
+    name: 'Shadow Scissors', atk: 21, shape: 'scissors', pal: { g: '#c9ccd6', G: '#e6b422', n: '#6a4a8a' }, hit: 'swing', color: '#9a7ac0',
+    desc: "Gecko Moria's giant scissors. They cut shadows right off their owners.",
+    moves: [
+      { name: 'Snip Snip', at: 0, sp: 25, mult: 0.95, hits: 2, fx: 'snipsnip' },
+      { name: 'Shadow Cut', at: 30, sp: 50, mult: 1.6, atkDown: true, fx: 'shadowcut' },
+      { name: 'Brick Bat Swarm', at: 80, sp: 85, mult: 0.7, hits: 5, fx: 'brickbats' },
+    ],
+  },
+  bubbler: {
+    name: 'Bubble Blaster', atk: 20, shape: 'bubbler', pal: { w: '#9ad8f0', n: '#7a4a24' }, hit: 'shot', color: '#9ad8f0',
+    desc: 'A Sabaody bubble wand that blows bubbles as hard as rock.',
+    moves: [
+      { name: 'Bubble Trap', at: 0, sp: 25, mult: 1.4, stun: 0.5, fx: 'bubbletrap' },
+      { name: 'Bubble Burst', at: 30, sp: 50, mult: 2.3, fx: 'bubbleburst' },
+      { name: 'Resin Bubble Barrage', at: 80, sp: 85, mult: 0.75, hits: 5, fx: 'bubblebarrage' },
+    ],
+  },
+  lightblade: {
+    name: 'Murakumo Light Blade', atk: 22, shape: 'sword', pal: { w: '#fff3a0', G: '#e6b422', n: '#ffd04a' }, hit: 'swing', color: '#fff3a0', logiaHit: true,
+    desc: "A sword of solid light, left behind by Admiral Kizaru. It even cuts Logias.",
+    moves: [
+      { name: 'Light Edge', at: 0, sp: 30, mult: 2.0, fx: 'lightedge' },
+      { name: 'Flash Step Slash', at: 30, sp: 55, mult: 1.0, hits: 3, fx: 'flashstep' },
+      { name: 'Yata Mirror Strike', at: 80, sp: 90, mult: 3.7, sure: true, fx: 'yatamirror' },
+    ],
+  },
+  chains: {
+    name: 'Jailer Chains', atk: 21, def: 2, shape: 'chain', pal: { g: '#5a5a6a', w: '#c9ccd6', n: '#3a3440' }, hit: 'swing', color: '#9aa4b1',
+    desc: 'A ball and chain taken from an Impel Down jailer.',
+    moves: [
+      { name: 'Chain Lash', at: 0, sp: 25, mult: 1.8, fx: 'chainlash' },
+      { name: 'Iron Ball Crush', at: 30, sp: 50, mult: 2.4, fx: 'ironball' },
+      { name: 'Lockdown', at: 80, sp: 85, mult: 2.6, stun: 0.6, fx: 'lockdown' },
+    ],
+  },
+  venomfang: {
+    name: 'Hydra Fang', atk: 23, shape: 'dagger', pal: { v: '#9a4ad0', G: '#3a3440', n: '#5a3a7a' }, hit: 'swing', color: '#9a4ad0',
+    desc: "A dagger dipped in Magellan's venom. Everything it cuts gets poisoned.",
+    moves: [
+      { name: 'Venom Slash', at: 0, sp: 25, mult: 1.6, burn: 3, fx: 'venomslash' },
+      { name: 'Hydra', at: 30, sp: 55, mult: 2.3, burn: 2, fx: 'hydra' },
+      { name: 'Venom Demon', at: 80, sp: 95, mult: 3.6, burn: 3, fx: 'venomdemon' },
+    ],
+  },
+  bisento: {
+    name: 'Murakumogiri', atk: 23, def: 2, shape: 'bisento', pal: { w: '#e8e8f0', G: '#e6b422', n: '#5a3a22' }, hit: 'swing', color: '#e8e8f0',
+    desc: 'The great bisento of the strongest man in the world, left on the Marineford battlefield.',
+    moves: [
+      { name: 'Bisento Sweep', at: 0, sp: 25, mult: 1.9, fx: 'bisentosweep' },
+      { name: 'Tremor Strike', at: 30, sp: 55, mult: 2.4, fx: 'tremorstrike' },
+      { name: "Captain's Stand", at: 80, sp: 95, mult: 3.9, fx: 'captainstand' },
+    ],
+  },
+  magmagauntlet: {
+    name: 'Magma Gauntlet', atk: 25, shape: 'gauntlet', pal: { r: '#c0301a', R: '#ff9a3a', g: '#3a3440' }, hit: 'swing', color: '#ff5a2a',
+    desc: "A gauntlet still glowing from Admiral Akainu's magma.",
+    moves: [
+      { name: 'Magma Punch', at: 0, sp: 30, mult: 2.0, burn: 2, fx: 'magmapunch' },
+      { name: 'Hound Fist', at: 30, sp: 55, mult: 2.5, burn: 2, fx: 'houndfist' },
+      { name: 'Meteor Volcano', at: 80, sp: 95, mult: 0.8, hits: 5, burn: 3, fx: 'meteorvolcano' },
+    ],
+  },
+  neptune: {
+    name: "Neptune's Trident", atk: 24, shape: 'trident', pal: { w: '#ffd04a', n: '#e6b422' }, hit: 'swing', color: '#ffd04a',
+    desc: 'The golden trident of the Sea King of Fish-Man Island.',
+    moves: [
+      { name: "King's Thrust", at: 0, sp: 25, mult: 1.9, fx: 'kingsthrust' },
+      { name: 'Sea King Call', at: 30, sp: 55, mult: 2.4, fx: 'seakingcall' },
+      { name: 'Ryugu Tide', at: 80, sp: 90, mult: 3.6, wet: true, fx: 'ryugutide' },
+    ],
+  },
+  sharkknuckles: {
+    name: 'Shark Fang Knuckles', atk: 26, shape: 'knuckles', pal: { g: '#7ab0c8', w: '#ffffff' }, hit: 'swing', color: '#7ab0c8',
+    desc: "Knuckles set with Hody Jones's shark teeth.",
+    moves: [
+      { name: 'Fang Punch', at: 0, sp: 25, mult: 2.0, fx: 'fangpunch' },
+      { name: 'Water Heart', at: 30, sp: 55, mult: 2.3, wet: true, fx: 'waterheart' },
+      { name: 'Shark Darts', at: 80, sp: 85, mult: 0.8, hits: 5, fx: 'sharkdarts' },
+    ],
+  },
+  kikoku: {
+    name: 'Kikoku Nodachi', atk: 25, shape: 'nodachi', pal: { w: '#e8eef8', G: '#3a3440', n: '#f2f2f2' }, hit: 'swing', color: '#7cd0ff',
+    desc: 'A huge nodachi from Punk Hazard, owned by a surgeon who can cut without wounding.',
+    moves: [
+      { name: 'Room: Shambles', at: 0, sp: 30, mult: 1.8, sure: true, fx: 'shambles' },
+      { name: 'Counter Shock', at: 30, sp: 55, mult: 2.3, stun: 0.4, fx: 'countershock' },
+      { name: 'Injection Shot', at: 80, sp: 90, mult: 3.7, pierce: true, fx: 'injection' },
+    ],
+  },
+  gaslamp: {
+    name: 'Shinokuni Lamp', atk: 27, shape: 'lamp', pal: { y: '#b06ad0', g: '#3a3440', n: '#5a4a6a' }, hit: 'shot', color: '#b06ad0',
+    desc: "Caesar Clown's lamp of poison gas. Handle with care.",
+    moves: [
+      { name: 'Gastanet', at: 0, sp: 25, mult: 2.0, fx: 'gastanet' },
+      { name: 'Brown Cloud', at: 30, sp: 55, mult: 1.6, burn: 3, fx: 'browncloud' },
+      { name: 'Shinokuni', at: 80, sp: 95, mult: 3.8, fx: 'shinokuni' },
+    ],
+  },
+  kabuto: {
+    name: 'Kabuto Slingshot', atk: 26, shape: 'slingshot', pal: { n: '#5a3a22', w: '#7cff7a' }, hit: 'shot', color: '#7cff7a',
+    desc: 'A sniper\'s slingshot that fires Pop Green seeds. They sprout into weird plants.',
+    moves: [
+      { name: 'Pop Green: Trampolia', at: 0, sp: 25, mult: 1.8, fx: 'trampolia' },
+      { name: 'Firebird Star', at: 30, sp: 55, mult: 2.4, burn: 2, fx: 'firebird' },
+      { name: 'Pop Green: Devil', at: 80, sp: 90, mult: 3.6, stun: 0.4, fx: 'devilplant' },
+    ],
+  },
+  overheat: {
+    name: 'Overheat Rope', atk: 28, shape: 'whip', pal: { r: '#ff6a3a', n: '#c0453a' }, hit: 'swing', color: '#ff6a3a',
+    desc: "Doflamingo's strings, twisted into a red-hot rope.",
+    moves: [
+      { name: 'Overheat', at: 0, sp: 30, mult: 2.0, burn: 2, fx: 'overheat' },
+      { name: 'Spiderweb', at: 30, sp: 55, mult: 1.6, stun: 0.5, fx: 'spiderweb' },
+      { name: 'Parasite Pull', at: 80, sp: 90, mult: 3.7, fx: 'parasite' },
+    ],
+  },
+  napoleon: {
+    name: 'Napoleon Sword', atk: 27, shape: 'bicorne', pal: { x: '#1b1424', G: '#e6b422', w: '#e8eef8', n: '#5a3a22' }, hit: 'swing', color: '#ffd04a',
+    desc: 'A talking hat that turns into a sword. A Homie made from a piece of someone\'s soul.',
+    moves: [
+      { name: 'Homie Slash', at: 0, sp: 25, mult: 2.0, fx: 'homieslash' },
+      { name: 'Soul Pocus', at: 30, sp: 55, mult: 1.8, atkDown: true, fx: 'soulpocus' },
+      { name: 'Cake Crusher', at: 80, sp: 90, mult: 3.7, fx: 'cakecrush' },
+    ],
+  },
+  mogura: {
+    name: 'Mogura', atk: 29, def: 2, shape: 'mogura', pal: { r: '#7a2630', n: '#3a3440' }, hit: 'swing', color: '#c0453a',
+    desc: "Charlotte Katakuri's mochi trident. It drills like a mole.",
+    moves: [
+      { name: 'Mogura Drill', at: 0, sp: 30, mult: 2.1, fx: 'moguradrill' },
+      { name: 'Buzz Cut Mochi', at: 30, sp: 55, mult: 1.0, hits: 3, fx: 'buzzcut' },
+      { name: 'Snake Dance', at: 80, sp: 95, mult: 0.75, hits: 6, fx: 'snakedance' },
     ],
   },
   knives: {
@@ -621,6 +994,8 @@ const WEAPONS = {
 };
 
 const HAKI = { armament: 10, observation: 20, conqueror: 35 };
+// Awakening a Devil Fruit: all of these, then win the Awakening Trial (Gear menu).
+const AWAKEN_REQ = { mastery: 300, lvl: 55, boss: 'akainu' };
 const ARMAMENT_SKILL = { name: 'Armament Haki', sp: 30, buff: true, fx: 'armament' };
 const CONQUEROR_SKILL = { name: "Conqueror's Will", sp: 60, conq: true, fx: 'conqueror' };
 
@@ -644,6 +1019,11 @@ const ITEMS = {
   fh_shark: { name: 'Shark Figurehead', price: 1000, icon: 'figurehead', pal: { w: '#7a9ab8', y: '#ffffff' }, desc: 'Ship decoration: a toothy shark that bites the waves.', once: true, ship: 'head' },
   fh_swan:  { name: 'Swan Figurehead', price: 1800, icon: 'figurehead', pal: { w: '#ffffff', y: '#f08a3a' }, desc: 'Ship decoration: an elegant white swan. Very fancy.', once: true, ship: 'head' },
   fh_dragon: { name: 'Dragon Figurehead', price: 4000, icon: 'figurehead', pal: { w: '#4a8ad9', y: '#f2e6c8' }, desc: 'Ship decoration: an azure dragon worthy of a Pirate King.', once: true, ship: 'head' },
+  burst:    { name: 'Coup de Burst', price: 6000, icon: 'burst', desc: 'Ship upgrade: a giant cola cannon in the stern. Blast away from any Sea King.', once: true, ship: true },
+  coating:  { name: 'Bubble Coating', price: 8000, icon: 'bubble', desc: 'Ship upgrade: wraps the ship in a bubble so it can dive 10,000 meters to Fish-Man Island.', once: true, ship: true },
+  fh_skull: { name: 'Skull Figurehead', price: 5000, icon: 'figurehead', pal: { w: '#f2f2f2', y: '#1b1424' }, desc: 'Ship decoration: a grinning skull from Thriller Bark.', once: true, ship: 'head' },
+  paint_green: { name: 'Lawn Green Paint', price: 2500, icon: 'paint', pal: { c: '#5aa846' }, desc: 'Ship paint: a fresh green hull, like a lawn deck.', once: true, ship: 'paint' },
+  paint_pink:  { name: 'Flamingo Pink Paint', price: 9000, icon: 'paint', pal: { c: '#ff8ab0' }, desc: 'Ship paint: a loud pink hull. Fufufu.', once: true, ship: 'paint' },
   paint_red:   { name: 'Red Paint', price: 200, icon: 'paint', pal: { c: '#c0453a' }, desc: 'Ship paint: a bold red hull.', once: true, ship: 'paint' },
   paint_blue:  { name: 'Ocean Blue Paint', price: 300, icon: 'paint', pal: { c: '#3a6ab8' }, desc: 'Ship paint: a deep blue hull.', once: true, ship: 'paint' },
   paint_black: { name: 'Black Paint', price: 600, icon: 'paint', pal: { c: '#3a3440' }, desc: 'Ship paint: a scary black hull.', once: true, ship: 'paint' },

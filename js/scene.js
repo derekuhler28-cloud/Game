@@ -12,6 +12,7 @@ const SKIES = [
 
 function seaColors(scene, ti) {
   const s = SKIES[ti];
+  if (UNDERSEA[scene]) return UNDERSEA[scene];
   if (scene === 'sky') {
     return ti === 3 ? { sea: '#59679a', sea2: '#8494c8' } : { sea: '#e6eefc', sea2: '#ffffff' };
   }
@@ -28,6 +29,14 @@ function seeded(seed) {
 }
 
 // ---------- static backdrop (cached per scene + time of day) ----------
+
+// Island-specific sky tints: [color, strength]. Underwater and underground places are heavily tinted.
+const SKY_TINT = {
+  enies: ['#fff6d0', 0.2], thriller: ['#2a1a3a', 0.6], impel: ['#2a0a0a', 0.85], fishman: ['#0a4a6a', 0.75],
+  punkhazard: ['#8a8aa0', 0.2], wholecake: ['#ffc0d8', 0.35], marineford: ['#9aa4b1', 0.15],
+};
+const UNDERSEA = { fishman: { sea: '#0a3a5a', sea2: '#2a7a9a' } };
+const NO_SKY = { impel: true, fishman: true };
 
 const BG_CACHE = new Map();
 function backdrop(scene, ti) {
@@ -47,24 +56,26 @@ function backdrop(scene, ti) {
     if (scene === 'sky' && ti < 3) col = mixColor(col, '#ffe9a8', 0.18);
     if (scene === 'drum') col = mixColor(col, '#dfe8f5', ti === 3 ? 0.12 : 0.35);
     if (scene === 'logue') col = mixColor(col, '#6a7088', 0.25);
+    if (SKY_TINT[scene]) col = mixColor(col, SKY_TINT[scene][0], SKY_TINT[scene][1]);
     pxRect(c, 0, i * bandH, W, bandH, col);
     // checkerboard dither where two bands meet, for a smoother pixel gradient
     if (prev) for (let x = 0; x < W; x += 2) { pxRect(c, x, i * bandH, 1, 1, prev); pxRect(c, x + 1, i * bandH - 1, 1, 1, col); }
     prev = col;
   }
   // stars
-  if (ti === 3) {
+  if (ti === 3 && !NO_SKY[scene]) {
     const r = seeded(7);
     for (let i = 0; i < 40; i++) pxRect(c, r() * W, r() * (HORIZON - 8), 1, 1, r() > 0.7 ? '#fff6c8' : '#9aa8d8');
   }
   // sun / moon
-  if (ti === 0) pxCircle(c, 158, 44, 8, '#fff1b0');
-  if (ti === 1) { pxCircle(c, 34, 16, 8, '#fff8d8'); pxCircle(c, 34, 16, 6, '#ffffff'); }
-  if (ti === 2) pxCircle(c, 96, 64, 11, '#ffb060');
-  if (ti === 3) { pxCircle(c, 150, 18, 6, '#f0f0d8'); pxCircle(c, 148, 17, 1, '#c8c8b0'); pxCircle(c, 152, 20, 1, '#c8c8b0'); }
+  const lit = NO_SKY[scene] ? -1 : ti;
+  if (lit === 0) pxCircle(c, 158, 44, 8, '#fff1b0');
+  if (lit === 1) { pxCircle(c, 34, 16, 8, '#fff8d8'); pxCircle(c, 34, 16, 6, '#ffffff'); }
+  if (lit === 2) pxCircle(c, 96, 64, 11, '#ffb060');
+  if (lit === 3) { pxCircle(c, 150, 18, 6, '#f0f0d8'); pxCircle(c, 148, 17, 1, '#c8c8b0'); pxCircle(c, 152, 20, 1, '#c8c8b0'); }
 
   // distant islands on the horizon
-  if (scene !== 'sky') {
+  if (scene !== 'sky' && !NO_SKY[scene]) {
     const far = mixColor(S.mid, '#2a3a5a', 0.45);
     pxCircle(c, 116, HORIZON + 2, 7, far);
     pxCircle(c, 126, HORIZON + 3, 5, far);
@@ -76,7 +87,7 @@ function backdrop(scene, ti) {
   pxRect(c, 0, HORIZON, W, seaBottom - HORIZON, sc.sea);
   pxRect(c, 0, HORIZON, W, 1, sc.sea2);
   // sun glitter column
-  if (ti !== 1 && scene !== 'sky') {
+  if (ti !== 1 && scene !== 'sky' && !NO_SKY[scene]) {
     const gx = ti === 0 ? 158 : ti === 2 ? 96 : 150;
     for (let y = HORIZON + 3; y < seaBottom; y += 4) pxRect(c, gx - 4 + ((y * 7) % 5), y, 6, 1, ti === 3 ? '#8a9ac8' : '#ffe0a0');
   }
@@ -367,6 +378,165 @@ const PROPS = {
       }
     }
   },
+  water7(c) {
+    groundBase(c, '#e2d6bc', '#cfc2a4', '#b8a888');
+    pxRect(c, 0, GROUND + 5, W, 6, '#3a8ad0');
+    pxRect(c, 0, GROUND + 5, W, 1, '#8fd0f2');
+    pxRect(c, 0, GROUND + 11, W, 1, '#9a8a6a');
+    for (let y = GROUND + 15; y < H; y += 6) for (let x = (y % 12) / 2; x < W; x += 12) pxRect(c, x, y, 9, 1, '#b8a888');
+    // the city rises in tiers to the great fountain
+    const tiers = [[52, 190, 14, '#f2ead8'], [86, 182, 28, '#e8dcc4'], [112, 168, 42, '#f2ead8']];
+    for (const [x0, x1, hh, wall] of tiers) {
+      pxRect(c, x0, GROUND - hh, x1 - x0, hh - (hh > 14 ? 14 : 0), wall);
+      for (let x = x0 + 3; x < x1 - 4; x += 9) { pxRect(c, x, GROUND - hh + 3, 4, 5, '#5a8ab8'); pxRect(c, x, GROUND - hh + 2, 4, 1, '#3a6ab8'); }
+      pxRect(c, x0, GROUND - hh, x1 - x0, 2, '#3a8a9a');
+    }
+    pxRect(c, 136, GROUND - 58, 10, 16, '#e8dcc4');
+    pxRect(c, 132, GROUND - 60, 18, 3, '#3a8a9a');
+    pxRect(c, 139, GROUND - 66, 4, 6, '#e8dcc4');
+    // Galley-La crane
+    pxRect(c, 60, GROUND - 46, 3, 32, '#c0453a');
+    pxRect(c, 60, GROUND - 46, 24, 3, '#c0453a');
+    pxLine(c, 82, GROUND - 43, 82, GROUND - 30, '#3a2a1a');
+  },
+  enies(c) {
+    groundBase(c, '#f2eee4', '#e2ddd0', '#c9c2b0');
+    for (let x = 0; x < W; x += 16) pxRect(c, x, GROUND + 2, 1, H - GROUND, '#d2ccbc');
+    // the courthouse with columns
+    pxRect(c, 52, GROUND - 26, 56, 26, '#f2f2f2');
+    for (let i = 0; i < 12; i++) pxRect(c, 50 + i, GROUND - 27 - i, 60 - 2 * i, 1, i ? '#e2e2e8' : '#c9ccd6');
+    for (let x = 56; x < 106; x += 8) { pxRect(c, x, GROUND - 24, 3, 24, '#e2e2e8'); pxRect(c, x + 2, GROUND - 24, 1, 24, '#c9ccd6'); }
+    drawText(c, 'JUSTICE', 80, GROUND - 34, { color: '#5a6a8a', shadow: null, align: 'center' });
+    // the Tower of Justice
+    pxRect(c, 142, 22, 26, GROUND - 22, '#f2f2f2');
+    pxRect(c, 162, 22, 6, GROUND - 22, '#d2d6e0');
+    for (let y = 30; y < GROUND - 6; y += 10) { pxRect(c, 146, y, 4, 5, '#5a6a8a'); pxRect(c, 156, y, 4, 5, '#5a6a8a'); }
+    pxCircle(c, 155, 22, 10, '#e2e2e8');
+    pxRect(c, 154, 4, 2, 10, '#5a5a6a');
+    pxRect(c, 156, 4, 10, 6, '#2f5fb3');
+    pxCircle(c, 161, 7, 1, '#ffffff');
+  },
+  thriller(c) {
+    groundBase(c, '#4a4a58', '#3a3440', '#2a2433');
+    for (let i = 0; i < 18; i++) pxRect(c, (i * 37) % W, GROUND + 3 + (i % 4) * 6, 2, 2, '#5a6a5a');
+    // graves and a dead tree
+    for (const [gx, gh] of [[36, 11], [52, 9], [90, 12], [104, 8]]) {
+      pxRect(c, gx, GROUND - gh, 8, gh, '#8a8a98');
+      pxCircle(c, gx + 4, GROUND - gh, 4, '#8a8a98');
+      pxRect(c, gx + 3, GROUND - gh - 2, 2, 7, '#5a5a68'); pxRect(c, gx + 1, GROUND - gh + 1, 6, 2, '#5a5a68');
+    }
+    pxRect(c, 70, GROUND - 30, 4, 30, '#2a2028');
+    pxLine(c, 72, GROUND - 22, 60, GROUND - 34, '#2a2028', 2);
+    pxLine(c, 72, GROUND - 26, 84, GROUND - 38, '#2a2028', 2);
+    pxLine(c, 64, GROUND - 31, 62, GROUND - 40, '#2a2028', 1);
+    // the haunted mansion
+    pxRect(c, 128, GROUND - 40, 58, 40, '#3a2a4a');
+    pxRect(c, 180, GROUND - 40, 6, 40, '#2a1a3a');
+    for (const tx of [126, 150, 178]) { pxRect(c, tx, GROUND - 56, 10, 18, '#3a2a4a'); for (let i = 0; i < 6; i++) pxRect(c, tx + i, GROUND - 57 - i * 2, 10 - 2 * i, 2, '#2a1a3a'); }
+    for (const [wx, wy] of [[134, 30], [146, 30], [160, 30], [172, 30], [134, 18], [160, 18]]) pxRect(c, wx, GROUND - wy, 5, 6, '#1b1424');
+    pxRect(c, 152, GROUND - 12, 10, 12, '#1b1424');
+  },
+  sabaody(c) {
+    groundBase(c, '#c8e07a', '#a8c85a', '#8aa848');
+    for (let i = 0; i < 10; i++) pxLine(c, i * 21, GROUND + 4, i * 21 + 12, H, '#8aa848');
+    // giant mangroves with their roots
+    const tree = (x, w) => {
+      pxRect(c, x, 0, w, GROUND - 6, '#8a6a3a');
+      for (let y = 0; y < GROUND; y += 5) pxRect(c, x + ((y * 3) % 5), y, 2, 3, '#6a4a2a');
+      pxRect(c, x + w - 4, 0, 4, GROUND - 6, '#6a4a2a');
+      for (let i = 0; i < 4; i++) { const rx = x - 8 + i * (w + 16) / 3; pxLine(c, x + w / 2, GROUND - 14, rx, GROUND, '#7a5a2a', 3); }
+    };
+    tree(56, 14);
+    tree(134, 30);
+    pxRect(c, 140, 40, 18, 11, '#f2f2f2');
+    drawText(c, 'GR41', 149, 43, { color: '#c0453a', shadow: null, align: 'center' });
+    pxCircle(c, 104, GROUND - 22, 8, '#e8f6ff'); pxRing(c, 104, GROUND - 22, 8, '#9ad8f0');
+  },
+  impel(c) {
+    pxRect(c, 0, 0, W, GROUND, '#3a2424');
+    for (let y = 0; y < GROUND; y += 8) for (let x = (y % 16) / 2 * 2; x < W; x += 16) { pxRect(c, x, y, 15, 1, '#2a1818'); pxRect(c, x, y, 1, 8, '#2a1818'); }
+    // a cell, its bars, and the warning sign
+    pxRect(c, 40, GROUND - 40, 56, 40, '#1b1414');
+    for (let x = 42; x < 96; x += 5) pxRect(c, x, GROUND - 40, 2, 40, '#7a7a8a');
+    pxRect(c, 40, GROUND - 42, 56, 3, '#5a5a6a');
+    pxRect(c, 120, 20, 50, 12, '#c0453a');
+    drawText(c, 'LEVEL 4', 145, 24, { color: '#ffe14a', shadow: null, align: 'center' });
+    for (const tx of [26, 112, 182]) { pxRect(c, tx - 1, 44, 3, 10, '#5a3a22'); pxRect(c, tx - 3, 42, 7, 2, '#5a3a22'); }
+    groundBase(c, '#5a2a22', '#4a1e1a', '#3a1410');
+    pxLine(c, 10, GROUND + 10, 70, GROUND + 18, '#ff6a3a');
+    pxLine(c, 110, GROUND + 22, 180, GROUND + 12, '#ff6a3a');
+  },
+  marineford(c) {
+    groundBase(c, '#e8f4fa', '#cfe6f2', '#b0d0e2');
+    pxLine(c, 10, GROUND + 6, 60, GROUND + 20, '#9ac0d8'); pxLine(c, 90, GROUND + 4, 130, GROUND + 18, '#9ac0d8'); pxLine(c, 150, GROUND + 10, 190, GROUND + 6, '#9ac0d8');
+    // Marine Headquarters
+    pxRect(c, 108, 26, 84, GROUND - 26, '#f2f2f2');
+    pxRect(c, 186, 26, 6, GROUND - 26, '#d2d6e0');
+    for (const tx of [108, 146, 178]) { pxRect(c, tx, 14, 14, 14, '#f2f2f2'); pxCircle(c, tx + 7, 14, 7, '#2f5fb3'); }
+    drawText(c, 'MARINE', 150, 40, { color: '#2f5fb3', shadow: null, align: 'center' });
+    for (let x = 114; x < 186; x += 10) for (let y = 52; y < GROUND - 8; y += 12) pxRect(c, x, y, 5, 6, '#5a6a8a');
+    pxRect(c, 142, GROUND - 14, 16, 14, '#3a4a6a');
+    // rubble from the war
+    for (const [rx, rw] of [[40, 14], [60, 8], [88, 10]]) { pxRect(c, rx, GROUND - 5, rw, 5, '#8a8478'); pxRect(c, rx + 2, GROUND - 8, rw - 5, 3, '#a8a296'); }
+  },
+  fishman(c) {
+    groundBase(c, '#f0e6c0', '#e2d4a8', '#cfc090');
+    for (let x = -20; x < W + 20; x++) { const y = 210 - Math.sqrt(Math.max(0, 200 * 200 - (x - 96) * (x - 96))); if (y > 0 && y < 60) pxRect(c, x, y, 1, 2, '#9ad8f0'); }
+    drawCoral(c, 34, GROUND, '#ff7a9a'); drawCoral(c, 54, GROUND, '#ffb84a'); drawCoral(c, 100, GROUND, '#c94a9a');
+    // the Ryugu Palace
+    pxRect(c, 128, GROUND - 34, 54, 34, '#ff9ab8');
+    pxRect(c, 176, GROUND - 34, 6, 34, '#e07a9a');
+    for (const [tx, th] of [[124, 48], [150, 60], [178, 46]]) { pxRect(c, tx, GROUND - th, 12, th - 30, '#ffb0c8'); pxCircle(c, tx + 6, GROUND - th, 7, '#ff7a9a'); pxRect(c, tx + 5, GROUND - th - 12, 2, 6, '#ffe14a'); }
+    pxRect(c, 150, GROUND - 14, 10, 14, '#7a2a4a');
+    pxCircle(c, 155, GROUND - 14, 5, '#7a2a4a');
+  },
+  punkhazard(c) {
+    for (let x = 0; x < W; x++) {
+      const h = Math.round(22 + Math.sin(x * 0.07) * 8 + Math.sin(x * 0.19) * 3);
+      pxRect(c, x, GROUND - h, 1, h, x < 96 ? (x % 2 ? '#7a2a1a' : '#8a3a22') : (x % 2 ? '#c9d8ec' : '#d8e4f2'));
+      if (x >= 96) pxRect(c, x, GROUND - h, 1, 2, '#ffffff');
+    }
+    pxRect(c, 0, GROUND, 96, H - GROUND, '#6a2a1a'); pxRect(c, 0, GROUND, 96, 2, '#8a3a22');
+    pxRect(c, 96, GROUND, 96, H - GROUND, '#eef3fa'); pxRect(c, 96, GROUND, 96, 2, '#ffffff');
+    pxLine(c, 10, GROUND + 10, 80, GROUND + 16, '#ff6a3a');
+    // the lab dome
+    for (let i = 0; i < 16; i++) { const half = Math.round(Math.sqrt(256 - i * i) * 1.6); pxRect(c, 146 - half, GROUND - 4 - i, half * 2, 1, i % 4 ? '#9aa4b1' : '#7a8494'); }
+    pxRect(c, 120, GROUND - 4, 52, 4, '#5a6a7a');
+    drawText(c, 'LAB', 146, GROUND - 13, { color: '#3a4a5a', shadow: null, align: 'center' });
+    pxRect(c, 168, GROUND - 30, 3, 26, '#5a6a7a'); pxRect(c, 166, GROUND - 32, 7, 2, '#5a6a7a');
+  },
+  dressrosa(c) {
+    groundBase(c, '#e8b080', '#d89a6a', '#c0855a');
+    for (let y = GROUND + 6, r = 0; y < H; y += 6, r++) for (let x = (r % 2) * 6; x < W; x += 12) pxRect(c, x, y, 1, 6, '#c0855a');
+    const houses = [[34, '#f2d15a'], [56, '#ff9ab8'], [78, '#f0a050']];
+    for (const [hx, wall] of houses) drawHouse(c, hx, GROUND, wall, '#c0453a');
+    for (let x = 30; x < 110; x += 7) { pxRect(c, x, GROUND - 7, 1, 7, '#3f9a3a'); pxCircle(c, x, GROUND - 8, 2, '#ffd04a'); pxRect(c, x, GROUND - 8, 1, 1, '#7a4a24'); }
+    // the Corrida Colosseum
+    pxRect(c, 120, GROUND - 38, 70, 38, '#e2c48a');
+    pxRect(c, 120, GROUND - 40, 70, 3, '#c9a86a');
+    for (let row = 0; row < 3; row++) for (let x = 124; x < 186; x += 9) { pxRect(c, x, GROUND - 34 + row * 11, 5, 7, '#8a6a3a'); pxCircle(c, x + 2, GROUND - 34 + row * 11, 2, '#8a6a3a'); }
+    pxRect(c, 150, GROUND - 52, 2, 12, '#5a3a22'); pxRect(c, 152, GROUND - 52, 8, 5, '#ff8ab0');
+  },
+  wholecake(c) {
+    groundBase(c, '#fff0f5', '#ffe0ec', '#ffc0d8');
+    for (let i = 0; i < 30; i++) pxRect(c, (i * 37) % W, GROUND + 3 + (i * 13) % 22, 2, 1, ['#ff5a8a', '#5ab8e8', '#ffd04a', '#7cff7a'][i % 4]);
+    for (let x = 0; x < W; x += 9) pxRect(c, x, GROUND + 2, 4, 3 + (x % 3), '#ff9ab8');
+    // lollipop trees
+    for (const [lx, col] of [[40, '#ff5a8a'], [64, '#5ab8e8'], [96, '#ffd04a']]) {
+      pxRect(c, lx, GROUND - 22, 2, 22, '#f2f2f2');
+      pxCircle(c, lx + 1, GROUND - 26, 7, col); pxRing(c, lx + 1, GROUND - 26, 4, '#ffffff'); pxCircle(c, lx + 1, GROUND - 26, 1, '#ffffff');
+    }
+    // the cake castle
+    const tiers = [[124, 186, 18, '#ff9ab8'], [132, 178, 16, '#fff0f5'], [140, 170, 14, '#7a4a24']];
+    let y = GROUND;
+    for (const [x0, x1, th, col] of tiers) {
+      pxRect(c, x0, y - th, x1 - x0, th, col);
+      for (let x = x0; x < x1; x += 5) pxRect(c, x, y - th, 3, 3 + (x % 2), '#ffffff');
+      y -= th;
+    }
+    for (const cx of [146, 155, 164]) { pxRect(c, cx, y - 8, 2, 8, '#f2f2f2'); pxRect(c, cx, y - 10, 2, 2, '#ffb84a'); }
+    pxCircle(c, 155, y - 14, 3, '#c0453a');
+  },
   deck(c) {
     pxRect(c, 0, GROUND + 4, W, H - GROUND - 4, '#9a6a3f');
     for (let y = GROUND + 9; y < H; y += 6) pxRect(c, 0, y, W, 1, '#7a5030');
@@ -387,6 +557,15 @@ const LIGHTS = {
   marine(c) { pxRect(c, 149, 66, 10, 12, '#ffd36a'); },
   desert(c) { pxRect(c, 150, 88, 10, 14, '#ffb84a'); pxCircle(c, 155, 88, 5, '#ffb84a'); },
   logue(c) { for (const hx of [40, 62, 86]) { pxRect(c, hx + 3, GROUND - 14, 4, 5, '#ffd36a'); pxRect(c, hx + 11, GROUND - 23, 4, 5, '#ffd36a'); } pxRect(c, 146, GROUND - 38, 8, 8, '#ff9a3a'); },
+  water7(c) { for (let x = 89; x < 178; x += 9) pxRect(c, x, GROUND - 25, 4, 5, '#ffd36a'); pxRect(c, 139, GROUND - 52, 4, 5, '#ffd36a'); },
+  enies(c) { for (let y = 30; y < GROUND - 6; y += 20) { pxRect(c, 146, y, 4, 5, '#ffd36a'); pxRect(c, 156, y + 10, 4, 5, '#ffd36a'); } },
+  thriller(c) { for (const [wx, wy] of [[134, 30], [160, 30], [172, 18], [146, 18]]) pxRect(c, wx, GROUND - wy, 5, 6, '#c0e86a'); },
+  sabaody(c) { pxCircle(c, 104, GROUND - 22, 8, '#fff3c0'); },
+  marineford(c) { for (let x = 114; x < 186; x += 20) pxRect(c, x, 52, 5, 6, '#ffd36a'); },
+  fishman(c) { pxRect(c, 150, GROUND - 14, 10, 14, '#ffe14a'); },
+  punkhazard(c) { pxRect(c, 136, GROUND - 10, 20, 3, '#9ad8f0'); },
+  dressrosa(c) { for (const hx of [34, 56, 78]) pxRect(c, hx + 13, GROUND - 11, 5, 4, '#ffd36a'); },
+  wholecake(c) { for (const cx of [146, 155, 164]) pxRect(c, cx, GROUND - 58, 2, 2, '#ffe14a'); },
   drum(c) { pxRect(c, 148, GROUND - 70, 4, 6, '#ffd36a'); pxRect(c, 139, GROUND - 78, 2, 3, '#ffd36a'); pxRect(c, 159, GROUND - 78, 2, 3, '#ffd36a'); },
 };
 
@@ -400,13 +579,14 @@ function drawCloud(c, x, y, s, col) {
 }
 
 function drawAnimated(c, scene, ti, t, seaSpeed) {
+  const open = !NO_SKY[scene];
   const cloudCol = ti === 3 ? '#2a3466' : ti === 2 ? '#ffd0b0' : '#ffffff';
   const clouds = [[10, 14, 1], [90, 26, 1], [150, 8, 1]];
-  for (const [x0, y, s] of clouds) {
+  if (open) for (const [x0, y, s] of clouds) {
     const x = ((x0 + t * 3) % (W + 40)) - 20;
     drawCloud(c, Math.round(x), y, s, cloudCol);
   }
-  if (ti === 3) {
+  if (ti === 3 && open) {
     for (let i = 0; i < 6; i++) {
       if (Math.sin(t * 2 + i * 1.7) > 0.6) pxRect(c, (i * 37 + 11) % W, (i * 13 + 5) % 50, 1, 1, '#ffffff');
     }
@@ -415,7 +595,7 @@ function drawAnimated(c, scene, ti, t, seaSpeed) {
   const seaBottom = scene === 'sea' ? H : scene === 'deck' ? GROUND - 5 : GROUND;
   const rows = Math.max(1, Math.floor((seaBottom - HORIZON - 6) / 5));
   const spd = seaSpeed || 1;
-  for (let i = 0; i < rows * 3; i++) {
+  for (let i = 0; i < (scene === 'impel' ? 0 : rows * 3); i++) {
     const y = HORIZON + 4 + (i % rows) * 5 + (i % 3);
     if (y >= seaBottom - 1) continue;
     const len = 4 + (i % 4) * 2;
@@ -450,6 +630,64 @@ function drawAnimated(c, scene, ti, t, seaSpeed) {
     for (let i = 0; i < 4; i++) pxRect(c, 172 + Math.round(Math.sin(t * 3 + i) * 1), 28 + i * 2, 10 - i, 1, '#2f5fb3');
     if (k < 0.04) for (let i = 0; i < 3; i++) pxRect(c, 20 + i * 60, 0, 1, 2, '#ffffff');
   }
+  if (scene === 'water7') {
+    for (let i = 0; i < 10; i++) {
+      const k = (t * 0.6 + i / 10) % 1, dir = i % 2 ? 1 : -1;
+      pxRect(c, 141 + dir * k * 26, GROUND - 66 + k * k * 30 - Math.sin(k * Math.PI) * 8, 2, 2, '#8fd0f2');
+    }
+    for (let i = 0; i < 6; i++) pxRect(c, ((i * 37 + t * 10) % (W + 10)) - 5, GROUND + 7 + (i % 2) * 2, 5, 1, '#bfe6ff');
+  }
+  if (scene === 'thriller') {
+    for (let i = 0; i < 4; i++) {
+      c.globalAlpha = 0.25;
+      pxRect(c, ((i * 70 + t * (4 + i)) % (W + 80)) - 80, GROUND - 14 + i * 6, 80, 5, '#c9ccd6');
+      c.globalAlpha = 1;
+    }
+    for (let i = 0; i < 3; i++) {
+      const bx = ((i * 64 + t * 20) % (W + 20)) - 10, by = 20 + i * 9 + Math.sin(t * 4 + i) * 3, f = Math.floor(t * 8 + i) % 2;
+      pxRect(c, bx, by, 2, 2, '#1b1424'); pxRect(c, bx - 3, by - f, 3, 1, '#1b1424'); pxRect(c, bx + 2, by - f, 3, 1, '#1b1424');
+    }
+  }
+  if (scene === 'sabaody') {
+    for (let i = 0; i < 9; i++) {
+      const k = (t * 0.12 + i / 9) % 1;
+      const x = (i * 23 + 8) % W + Math.sin(k * 6 + i) * 4, y = GROUND - k * 100;
+      pxRing(c, x, y, 2 + (i % 3), '#e8f6ff'); pxRect(c, x - 1, y - 1, 1, 1, '#ffffff');
+    }
+  }
+  if (scene === 'impel') {
+    for (const tx of [26, 112, 182]) { pxRect(c, tx - 2, 37 + Math.sin(t * 12 + tx) * 1, 5, 6, '#ff9a3a'); pxRect(c, tx - 1, 35 + Math.sin(t * 9 + tx) * 1, 3, 4, '#ffd04a'); }
+    for (let i = 0; i < 8; i++) { const k = (t * 0.3 + i / 8) % 1; pxRect(c, (i * 29) % W + Math.sin(k * 7) * 3, GROUND + 10 - k * 60, 1, 1, '#ff6a3a'); }
+  }
+  if (scene === 'marineford') {
+    for (let i = 0; i < 6; i++) {
+      const k = (t * 0.2 + i / 6) % 1, x = [46, 64, 92][i % 3] + k * 8;
+      c.globalAlpha = 0.6 * (1 - k); pxCircle(c, x, GROUND - 8 - k * 50, 2 + k * 5, '#8a8a98'); c.globalAlpha = 1;
+    }
+  }
+  if (scene === 'fishman') {
+    for (let i = 0; i < 4; i++) {
+      c.globalAlpha = 0.12 + 0.06 * Math.sin(t + i);
+      for (let y = 0; y < GROUND; y += 2) pxRect(c, 20 + i * 44 + y * 0.35, y, 6, 2, '#bfe6ff');
+      c.globalAlpha = 1;
+    }
+    for (let i = 0; i < 5; i++) {
+      const dir = i % 2 ? 1 : -1, x = dir > 0 ? ((t * (10 + i * 3) + i * 50) % (W + 20)) - 10 : W + 10 - ((t * (10 + i * 3) + i * 50) % (W + 20)), y = 30 + i * 11;
+      const col = ['#ffd04a', '#ff8a5a', '#7cd0ff', '#f2f2f2', '#ff7a9a'][i];
+      pxRect(c, x, y, 4, 2, col); pxRect(c, x - dir * 2, y, 1, 2, col);
+    }
+    for (let i = 0; i < 6; i++) { const k = (t * 0.25 + i / 6) % 1; pxRect(c, (i * 33 + 12) % W, GROUND - k * 90, 1, 1, '#d8f4ff'); }
+  }
+  if (scene === 'punkhazard') {
+    for (let i = 0; i < 6; i++) pxRect(c, 8 + i * 14, GROUND - 2 - Math.abs(Math.sin(t * 7 + i)) * 4, 3, 3, i % 2 ? '#ff9a3a' : '#ffd04a');
+    for (let i = 0; i < 14; i++) pxRect(c, 96 + ((i * 41 + t * 6) % 96), (i * 23 + t * 14) % H, 1, 1, '#ffffff');
+  }
+  if (scene === 'dressrosa') {
+    for (let i = 0; i < 8; i++) pxRect(c, ((i * 47 + t * 12) % (W + 10)) - 5, (i * 19 + t * 9) % 90, 2, 1, i % 2 ? '#ff8ab0' : '#ffd04a');
+  }
+  if (scene === 'wholecake') {
+    for (let i = 0; i < 12; i++) pxRect(c, ((i * 41 + t * 5) % W), (i * 27 + t * 16) % (GROUND + 10), 1, 2, ['#ff5a8a', '#5ab8e8', '#ffd04a', '#7cff7a'][i % 4]);
+  }
   if (scene === 'reef') {
     for (let i = 0; i < 6; i++) {
       const k = ((t * 0.3 + i / 6) % 1);
@@ -467,6 +705,8 @@ const PAINTS = {
   black: { name: 'Black', hull: '#3a3440', dark: '#1b1424', trim: '#d63c2f' },
   white: { name: 'Snow White', hull: '#e8eef8', dark: '#b8c4d8', trim: '#3b6fd6' },
   gold:  { name: 'Gold Leaf', hull: '#e6b422', dark: '#b8860b', trim: '#fff3a0' },
+  green: { name: 'Lawn Green', hull: '#5aa846', dark: '#3a7a2a', trim: '#f2e6c8' },
+  pink:  { name: 'Flamingo Pink', hull: '#ff8ab0', dark: '#c94a7a', trim: '#f2f2f2' },
 };
 const LANTERN_COLS = ['#ff5a5a', '#ffd04a', '#7cff7a', '#7cd0ff', '#ff8ab0'];
 
@@ -554,6 +794,8 @@ function drawShip(c, x, y, o) {
   pxLine(c, x + L - 3, y - 10, x + L + 9, y - 17, '#5a3818');
   if (o.head) c.drawImage(getSprite({ kind: 'figure', head: o.head }), x + L - 6, y - 23);
   else { pxRect(c, x + L - 3, y - 13, 3, 3, P.trim); }
+  if (up.burst) { pxRect(c, x - 3, y - 12, 4, 4, '#3a3440'); pxRect(c, x - 4, y - 11, 1, 2, '#ff9a3a'); }
+  if (o.bubble) { c.globalAlpha = 0.5; pxRing(c, x + 24, y - 20, 34, '#bfe6ff', 1); c.globalAlpha = 1; }
   // foam at the waterline
   for (let i = 0; i < L + 6; i += 4) pxRect(c, x - 2 + i + Math.round(Math.sin(t * 3 + i) * 1), y - 1, 2, 1, '#e8f6ff');
 }
@@ -771,6 +1013,48 @@ function drawReverseMountain(c, k, t, shipCanvas) {
     }
   }
 }
+
+
+// ---------- the dive to Fish-Man Island ----------
+// k runs 0..1: the coating bubble forms, the ship sinks 10,000 meters, then the glowing island appears.
+function drawDive(c, k, t, shipCanvas) {
+  const depth = Math.min(1, Math.max(0, (k - 0.15) / 0.7));
+  const top = mixColor('#2f8fd0', '#04101f', depth), bot = mixColor('#1f5f9a', '#020812', depth);
+  for (let i = 0; i < 16; i++) pxRect(c, 0, i * 8, W, 8, mixColor(top, bot, i / 15));
+  if (k < 0.15) {
+    pxRect(c, 0, 0, W, 50, '#9ad8f5');
+    pxRect(c, 0, 50, W, 2, '#ffffff');
+  }
+  // light rays fade as we sink
+  c.globalAlpha = 0.18 * (1 - depth);
+  for (let i = 0; i < 5; i++) for (let y = 0; y < H; y += 2) pxRect(c, 10 + i * 40 + y * 0.3, y, 8, 2, '#bfe6ff');
+  c.globalAlpha = 1;
+  // fish and bubbles rush upward past the ship
+  for (let i = 0; i < 14; i++) {
+    const y = ((i * 37 - t * (30 + (i % 4) * 10)) % (H + 20) + H + 20) % (H + 20) - 10;
+    const x = (i * 53) % W;
+    if (i % 3) pxRect(c, x, y, 1, 1, '#d8f4ff'); else { pxRect(c, x, y, 4, 2, depth > 0.6 ? '#ffe14a' : '#ff8a5a'); pxRect(c, x - 1, y, 1, 2, '#c9ccd6'); }
+  }
+  // a Sea King glides past in the dark
+  if (k > 0.42 && k < 0.66) {
+    const q = (k - 0.42) / 0.24, sx = lerpN(W + 40, -120, q);
+    for (let i = 0; i < 12; i++) pxCircle(c, sx + i * 9, 30 + Math.sin(i * 0.8 + t * 3) * 5, 7 - i * 0.3, '#1a3a4a');
+    pxRect(c, sx - 4, 27, 3, 2, '#ffe14a');
+  }
+  // the island glows below
+  if (k > 0.8) {
+    const q = (k - 0.8) / 0.2, iy = lerpN(H + 40, 92, q);
+    c.globalAlpha = 0.35; pxCircle(c, 96, iy, 46, '#7cd0ff'); c.globalAlpha = 1;
+    pxRing(c, 96, iy, 40, '#bfe6ff', 2);
+    pxRect(c, 80, iy - 14, 32, 14, '#ff9ab8'); pxCircle(c, 96, iy - 16, 7, '#ff7a9a');
+    drawText(c, 'FISH-MAN ISLAND', W / 2, 8, { color: '#ffe14a', align: 'center' });
+  }
+  const sy = k < 0.15 ? 50 : 56 + Math.sin(t * 2) * 2;
+  c.drawImage(shipCanvas, 58, Math.round(sy - 48));
+  if (k > 0.05) { c.globalAlpha = 0.6; pxRing(c, 96, sy - 16, Math.min(40, (k / 0.15) * 40), '#bfe6ff', 1); c.globalAlpha = 1; }
+  if (k > 0.15 && k <= 0.8) drawText(c, `DEPTH ${Math.round(depth * 10000)}M`, W / 2, 6, { color: '#bfe6ff', align: 'center' });
+}
+const lerpN = (a, b, k) => a + (b - a) * k;
 
 // ---------- small UI-in-world helpers ----------
 

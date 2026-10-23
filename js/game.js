@@ -38,19 +38,21 @@ function newPlayer(name, raceKey) {
   const st = R.stats;
   const hp = Math.round((60 + (st.hp || 0)) * (st.hpMult || 1));
   return {
-    v: 4, name, race: RACES[raceKey] ? raceKey : 'human',
+    v: 5, name, race: RACES[raceKey] ? raceKey : 'human',
     lvl: 1, xp: 0, hp, maxHp: hp, atk: 10 + (st.atk || 0), def: 4, spd: 5 + (st.spd || 0), haki: 0,
     energy: 100, food: 70, mood: 60, berries: 50, bounty: 0,
     day: 1, tick: 0, island: 0, unlocked: 1, bosses: {}, crew: [], fruit: null,
     bag: { meat: 1 }, owned: {}, wins: 0, trained: 0, king: false,
     hat: false, weapon: null, weapons: [], mastery: {}, explored: {}, fruitMap: dealFruits({}, []), fruitsFound: [], fruitBag: [],
-    ship: { paint: 'wood', head: null },
+    ship: { paint: 'wood', head: null }, awakened: {},
   };
 }
 
 // The first Grand Line island comes right after Smoker's Logue Town, over Reverse Mountain.
 const GL_START = ISLANDS.findIndex(i => i.boss === 'smoker') + 1;
 const inGrandLine = idx => idx >= GL_START;
+// Fish-Man Island sits 10,000 m under the Red Line, between Paradise and the New World.
+const FISHMAN = ISLANDS.findIndex(i => i.scene === 'fishman');
 
 // Puts every Devil Fruit that is not yet on the map (or found) onto an island: emptiest islands first.
 function dealFruits(map, found) {
@@ -129,7 +131,7 @@ function save() {
 }
 
 function restore(raw) {
-  if (!raw || ![1, 2, 3, 4].includes(raw.v)) return null;
+  if (!raw || ![1, 2, 3, 4, 5].includes(raw.v)) return null;
   const p = Object.assign(newPlayer(raw.name || 'Nobody'), raw);
   p.bag = Object.assign({}, p.bag);
   p.owned = Object.assign(raw.weights ? { weights: true } : {}, p.owned);
@@ -164,7 +166,18 @@ function restore(raw) {
     p.explored = remap(p.explored);
     raw = Object.assign({}, raw, { fruitMap: remap(raw.fruitMap) });
   }
+  if (p.v === 4) {
+    // Ten islands, from Water 7 to Whole Cake Island, now sit between Cloud Isle and Last Isle.
+    const moved = i => (+i <= 9 ? +i : +i + 10);
+    const remap = obj => Object.fromEntries(Object.entries(obj || {}).map(([i, v]) => [moved(i), v]));
+    p.v = 5;
+    p.island = moved(p.island);
+    p.unlocked = p.unlocked <= 10 ? p.unlocked : p.unlocked + 10;
+    p.explored = remap(p.explored);
+    raw = Object.assign({}, raw, { fruitMap: remap(raw.fruitMap) });
+  }
   p.ship = Object.assign({ paint: 'wood', head: null }, p.ship);
+  p.awakened = Object.assign({}, p.awakened);
   p.crew = (p.crew || []).filter(m => m && CREW[m.key]).slice(0, CREW_MAX);
   for (const m of p.crew) {
     if (!p.weapons.includes(m.weapon) || m.weapon === p.weapon) m.weapon = null;
@@ -1015,45 +1028,56 @@ async function feast(cost) {
 
 // ---------- map & sailing ----------
 
-// Chart positions: the East Blue along the bottom, the Red Line on the right, the Grand Line along the top.
+// Chart positions: the East Blue along the bottom, up Reverse Mountain on the right, Paradise across the middle,
+// down under the Red Line to Fish-Man Island on the left, then the New World along the top.
 function chartPoint(i) {
-  if (!inGrandLine(i)) return [14 + i * 24, i % 2 ? 58 : 64];
-  const j = i - GL_START;
-  return [150 - j * 36, j % 2 ? 22 : 16];
+  if (!inGrandLine(i)) return [14 + i * 24, i % 2 ? 86 : 92];
+  if (i < FISHMAN) { const j = i - GL_START; return [158 - j * 17.5, j % 2 ? 50 : 56]; }
+  if (i === FISHMAN) return [9, 33];
+  const j = i - FISHMAN - 1;
+  return [36 + j * 40, j % 2 ? 13 : 19];
 }
-const MOUNTAIN_PT = [177, 38];
+const MOUNTAIN_PT = [177, 72];
 
 function drawRouteMap() {
-  const cv = makeCanvas(192, 76);
+  const cv = makeCanvas(192, 108);
   cv.className = 'routemap';
   const c = cv.getContext('2d');
-  pxRect(c, 0, 0, 192, 76, '#1f76c4');
-  pxRect(c, 0, 0, 192, 34, '#2a82cc');
-  for (let i = 0; i < 40; i++) pxRect(c, (i * 37) % 192, (i * 17) % 76, 4, 1, '#4aa3e8');
-  // the Red Line and Reverse Mountain
-  pxRect(c, 170, 0, 14, 76, '#b0443a');
-  pxRect(c, 170, 0, 2, 76, '#8a2a24');
-  for (let y = 4; y < 76; y += 7) pxRect(c, 173 + (y % 3), y, 6, 1, '#9a3a32');
+  pxRect(c, 0, 0, 192, 108, '#1f76c4');
+  pxRect(c, 0, 0, 192, 32, '#16609e');
+  pxRect(c, 0, 36, 192, 32, '#2a82cc');
+  for (let i = 0; i < 50; i++) pxRect(c, (i * 37) % 192, (i * 17) % 108, 4, 1, '#4aa3e8');
+  // the Red Line: Reverse Mountain on the right, Fish-Man Island beneath it on the left
+  const redLine = (x, y0, y1) => { pxRect(c, x, y0, 14, y1 - y0, '#b0443a'); pxRect(c, x, y0, 2, y1 - y0, '#8a2a24'); for (let y = y0 + 4; y < y1; y += 7) pxRect(c, x + 3 + (y % 3), y, 6, 1, '#9a3a32'); };
+  redLine(170, 34, 108);
+  redLine(2, 0, 66);
   pxRect(c, MOUNTAIN_PT[0] - 2, MOUNTAIN_PT[1] - 10, 4, 20, '#4aa3e8');
   for (let i = 0; i < 6; i++) pxRect(c, MOUNTAIN_PT[0] - 1, MOUNTAIN_PT[1] - 9 + ((i * 4 + Math.floor(G.t * 8)) % 20), 2, 1, '#ffffff');
-  drawText(c, 'EAST BLUE', 4, 69, { color: '#bfe6ff', shadow: null });
-  drawText(c, 'GRAND LINE', 4, 2, { color: '#ffe9a8', shadow: null });
+  drawText(c, 'EAST BLUE', 96, 101, { color: '#bfe6ff', shadow: null, align: 'center' });
+  drawText(c, 'PARADISE', 96, 37, { color: '#ffe9a8', shadow: null, align: 'center' });
+  drawText(c, 'NEW WORLD', 120, 1, { color: '#ffb0a0', shadow: null, align: 'center' });
   const pts = ISLANDS.map((_, i) => chartPoint(i));
   const route = pts.slice(0, GL_START).concat([MOUNTAIN_PT], pts.slice(GL_START));
   for (let i = 0; i < route.length - 1; i++) {
     const [x0, y0] = route[i], [x1, y1] = route[i + 1];
     for (let k = 0; k < 1; k += 0.1) pxRect(c, x0 + (x1 - x0) * k, y0 + (y1 - y0) * k, 2, 1, '#f2e4c0');
   }
-  const cols = ['#5aa846', '#a9afb9', '#f08a3a', '#b98a4a', '#e8e0c8', '#ff7a9a', '#8a8478', '#eef3fa', '#e9c27b', '#ffffff', '#5a4a50'];
   pts.forEach(([x, y], i) => {
     const open = i < G.p.unlocked;
+    const col = ISLAND_COLS[ISLANDS[i].scene] || '#e9c27b';
     pxCircle(c, x, y, 6, PAL.k);
-    pxCircle(c, x, y, 5, open ? cols[i % cols.length] : '#3a4a6a');
+    pxCircle(c, x, y, 5, open ? col : '#3a4a6a');
+    if (i === FISHMAN) pxRing(c, x, y, 7, '#bfe6ff');
     if (G.p.bosses[ISLANDS[i].boss]) { pxLine(c, x - 3, y - 3, x + 3, y + 3, '#d8432f', 2); pxLine(c, x + 3, y - 3, x - 3, y + 3, '#d8432f', 2); }
-    if (i === G.p.island) { pxRect(c, x - 1, y - 14, 3, 6, PAL.k); pxRect(c, x, y - 13, 1, 4, '#ffe14a'); drawText(c, 'YOU', x, y + (inGrandLine(i) ? 8 : -20), { color: '#ffe14a', align: 'center' }); }
+    if (i === G.p.island) { pxRect(c, x - 1, y - 14, 3, 6, PAL.k); pxRect(c, x, y - 13, 1, 4, '#ffe14a'); drawText(c, 'YOU', x + (i === FISHMAN ? 6 : 0), y + 8, { color: '#ffe14a', align: 'center' }); }
   });
   return cv;
 }
+const ISLAND_COLS = {
+  village: '#5aa846', marine: '#a9afb9', town: '#f08a3a', syrup: '#b98a4a', baratie: '#e8e0c8', reef: '#ff7a9a', logue: '#8a8478',
+  drum: '#eef3fa', desert: '#e9c27b', sky: '#ffffff', water7: '#5ab8e8', enies: '#f2eee4', thriller: '#5a4a6a', sabaody: '#c8e07a',
+  impel: '#c0453a', marineford: '#2f5fb3', fishman: '#ff9ab8', punkhazard: '#c94a2a', dressrosa: '#ffd04a', wholecake: '#ffb0c8', volcano: '#5a4a50',
+};
 
 function mapMenu() {
   const p = G.p;
@@ -1079,13 +1103,15 @@ function mapMenu() {
     const lc = lootCount(i);
     const status = (p.bosses[isl.boss] ? `${boss.name} defeated` : `Raid boss: ${boss.name} (Lv ${boss.lvl})`) + `. Secrets found: ${lc.found}/${lc.total}.`;
     let right;
+    const needsCoat = i === FISHMAN && !p.owned.coating;
     if (here) right = el('span', { class: 'count', text: 'Here' });
-    else if (open) right = el('button', { type: 'button', class: 'mini-btn', text: 'Sail', disabled: isLate() || null, onclick: () => sailTo(i) });
+    else if (open && needsCoat) right = el('span', { class: 'count', text: 'Coat ship' });
+    else if (open) right = el('button', { type: 'button', class: 'mini-btn', text: i === FISHMAN ? 'Dive' : 'Sail', disabled: isLate() || null, onclick: () => sailTo(i) });
     else right = el('span', { class: 'count', text: 'Locked' });
     body.append(el('div', { class: 'row' + (here ? ' current' : '') },
       el('img', { src: iconURL('chest', open ? {} : { n: '#8a8a8a', G: '#bdbdbd' }), alt: '' }),
       el('div', null, el('h3', { text: `${i + 1}. ${open ? isl.name : '???'}` }),
-        el('p', { text: open ? status : i === GL_START ? 'Cross Reverse Mountain to reach the Grand Line.' : `Beat ${BOSSES[ISLANDS[i - 1].boss].name} to unlock.` })),
+        el('p', { text: open && needsCoat ? `10,000 m under the sea. Your ship needs a Bubble Coating from ${ISLANDS[FISHMAN - 3].name} to dive.` : open ? status : i === GL_START ? 'Cross Reverse Mountain to reach the Grand Line.' : `Beat ${BOSSES[ISLANDS[i - 1].boss].name} to unlock.` })),
       right));
   });
   openModal('Sea Chart', body, { onClose: backToMenu });
@@ -1095,6 +1121,8 @@ async function sailTo(idx) {
   if (!needEnergy(10)) { closeModal(); return; }
   closeModal();
   const p = G.p;
+  if (idx === FISHMAN && !p.owned.coating) { Sfx.play('bad'); say('Your ship needs a Bubble Coating to dive to Fish-Man Island.'); return; }
+  const dive = idx === FISHMAN, surface = p.island === FISHMAN;
   const climb = !inGrandLine(p.island) && inGrandLine(idx);
   const descend = inGrandLine(p.island) && !inGrandLine(idx);
   spend(10, p.owned.sails ? 2 : 4, 15);
@@ -1110,9 +1138,21 @@ async function sailTo(idx) {
     homeMenu();
     return;
   }
+  if (dive) {
+    await diveToFishman();
+    await arrive(idx);
+    lock(false);
+    homeMenu();
+    return;
+  }
+  if (surface) await talk(idx > FISHMAN ? 'Your bubble floats up and up... and pops out into the New World!' : 'Your bubble floats back up into Paradise.');
   if (descend) await talk('You ride the gentle current back over the Red Line into the East Blue.');
   const r = Math.random();
-  if (r < (p.owned.nest ? 0.11 : 0.22)) {
+  if (r < (p.owned.nest ? 0.11 : 0.22) && p.owned.burst) {
+    shake(4, 600);
+    Sfx.play('boom');
+    await talk('A Sea King rises out of the waves... COUP DE BURST! Your ship blasts into the sky and lands far away.');
+  } else if (r < (p.owned.nest ? 0.11 : 0.22)) {
     shake(4, 800);
     Sfx.play('boss');
     await talk('The sea starts to churn and bubble...');
@@ -1167,6 +1207,20 @@ async function crossReverseMountain() {
   G.cut = null;
 }
 
+async function diveToFishman() {
+  G.mode = 'dive';
+  G.cut = { k: 0 };
+  Sfx.play('splash');
+  const run = tween(G.cut, { k: 1 }, 9500, linear);
+  await talk('The coating wraps your ship in a giant bubble. Down you go!');
+  await talk('Deeper and deeper. The sunlight fades away...');
+  await talk('A Sea King swims right past the bubble. Nobody breathes.');
+  await run;
+  Sfx.play('win');
+  await talk('There it is, glowing at the bottom of the sea: Fish-Man Island!');
+  G.cut = null;
+}
+
 async function arrive(idx) {
   const p = G.p;
   p.island = idx;
@@ -1179,6 +1233,64 @@ async function arrive(idx) {
   Sfx.play('coin');
   await talk(`Land ho! Welcome to ${ISLANDS[idx].name}.`);
   await talk(ISLANDS[idx].intro);
+}
+
+// ---------- Devil Fruit awakening ----------
+
+const TRIAL_FX = { rubber: 'flurry', flame: 'fire', frost: 'water', quake: 'rokuogan', smoke: 'smoke', light: 'lightrain', dough: 'mochi', dragon: 'bolt', split: 'bomb', magma: 'magma', string: 'strings', paw: 'beam' };
+
+function awakenChecks() {
+  const p = G.p;
+  return [
+    [`Fruit mastery ${mastery(p.fruit)}/${AWAKEN_REQ.mastery}`, mastery(p.fruit) >= AWAKEN_REQ.mastery],
+    [`Level ${p.lvl}/${AWAKEN_REQ.lvl}`, p.lvl >= AWAKEN_REQ.lvl],
+    [`Conqueror's Haki (Haki ${p.haki}/${HAKI.conqueror})`, p.haki >= HAKI.conqueror],
+    [`Survive the war: defeat ${BOSSES[AWAKEN_REQ.boss].name}`, !!p.bosses[AWAKEN_REQ.boss]],
+  ];
+}
+
+// The awakening panel shown under your Devil Fruit in the Gear menu.
+function awakenPanel() {
+  const p = G.p, f = fruit(), aw = f.awaken;
+  if (p.awakened[p.fruit]) {
+    return el('p', { class: 'note', text: `AWAKENED: ${aw.name}. In battle, use "Awaken: ${aw.name}" for 3 turns of power and the ultimate moves ${aw.moves.map(m => m.name).join(' and ')}.` });
+  }
+  const checks = awakenChecks(), ready = checks.every(c => c[1]);
+  return el('div', { class: 'awaken' },
+    el('h3', { class: 'sect' }, 'Awakening ', el('span', { text: aw.name })),
+    el('p', { class: 'note', text: `A Devil Fruit can awaken when its user is strong enough. Then you must beat the fruit's own Will in a solo trial. Unlocks ${aw.moves.map(m => m.name).join(' and ')}.` }),
+    el('ul', { class: 'checks' }, checks.map(([t, ok]) => el('li', { class: ok ? 'ok' : '', text: (ok ? '[x] ' : '[ ] ') + t }))),
+    el('button', { type: 'button', class: 'mini-btn red', text: 'Begin the Awakening Trial (40 EN)', disabled: !ready || isLate() || null, onclick: startAwakeningTrial }));
+}
+
+function startAwakeningTrial() {
+  const p = G.p, f = fruit(), aw = f.awaken;
+  modalOnClose = null;
+  closeModal();
+  if (!needEnergy(40)) { homeMenu(); return; }
+  spend(40, 2, 10);
+  const short = f.name.split('-')[0];
+  const dark = mixColor(f.color, '#1b1424', 0.55);
+  const lvl = Math.max(66, p.lvl + 6);
+  const def = {
+    name: `Will of the ${short} Fruit`, lvl, hpMult: 13, atkMult: 1.6, bounty: 0, berries: 5000, scale: 3, heals: true, dodge: 0.1,
+    spr: { kind: 'player', hat: false, pal: { s: dark, S: mixColor(f.color, '#1b1424', 0.7), h: f.color2, v: f.color, b: dark, y: f.color2, Y: f.color, r: f.color, w: '#ffffff', e: '#ffffff', f: '#1b1424' } },
+    intro: '"So you want ALL of my power? Then beat me. Alone."',
+    basic: f.moves[0].name, charge: 'gathers the full power of the fruit...', big: aw.moves[1].name, fx: TRIAL_FX[p.fruit] || 'bolt',
+    enrage: 'The Will roars. "Is that all? Show me more!"',
+  };
+  startBattle({
+    def, key: 'trial', lvl, boss: true, solo: true,
+    after: async res => {
+      if (res !== 'win') { await talk('The fruit\'s Will fades. "Come back when you are stronger."'); return; }
+      p.awakened[p.fruit] = true;
+      save();
+      Sfx.play('level');
+      await MOVE_FX.awaken({ fruit: p.fruit, name: aw.name, colors: [f.color, f.color2] });
+      await talk(`Your ${f.name} has AWAKENED: ${aw.name}!`);
+      await talk(`In battle, use "Awaken: ${aw.name}" to transform. While awakened you hit harder, take less damage, and can use ${aw.moves.map(m => m.name).join(' and ')}.`);
+    },
+  });
 }
 
 // ---------- your ship ----------
@@ -1314,6 +1426,7 @@ function wantedMenu(confirmReset) {
     ['Fruit', fruit() ? fruit().name : 'None yet'],
     ['Haki', hakiNext],
     ['Crew', p.crew.length ? p.crew.map(m => CREW[m.key].name).join(', ') : 'Nobody yet'],
+    ['Awakened', Object.keys(p.awakened).length ? Object.keys(p.awakened).map(k => FRUITS[k].awaken.name).join(', ') : 'Not yet'],
     ['Record', `${ISLANDS.filter(i => p.bosses[i.boss]).length}/${ISLANDS.length} bosses, ${p.wins} wins, day ${p.day}`],
   ];
   body.append(el('dl', { class: 'facts' }, facts.map(([k, v]) => el('div', null, el('dt', { text: k }), el('dd', { text: v })))));
@@ -1359,6 +1472,7 @@ function raidMenu() {
   if (!beaten && def.drop) facts.push(['Loot', WEAPONS[def.drop].name + (key === 'grizzle' ? ' + ???' : '')]);
   if (def.logia) facts.push(['Logia', p.haki >= HAKI.armament ? 'Use Armament Haki to land hits' : `Hits pass through. Get Haki ${HAKI.armament} or Water Barrels`]);
   if (def.element === 'lightning' && p.fruit === 'rubber') facts.push(['Rubber', "Lightning can't hurt you"]);
+  for (const t in TWIST_TIPS) if (def[t]) facts.push(TWIST_TIPS[t]);
   facts.push(['Tip', 'Guard when the boss charges up']);
   body.append(el('dl', { class: 'facts' }, facts.map(([k, v]) => el('div', null, el('dt', { text: k }), el('dd', { text: v })))));
   body.append(el('div', { class: 'btn-row' },
@@ -1366,6 +1480,23 @@ function raidMenu() {
     el('button', { type: 'button', class: 'mini-btn', text: 'Not yet', onclick: closeModal })));
   openModal(beaten ? 'Raid Rematch' : 'Raid Boss', body, { onClose: () => G.mode === 'home' && homeMenu() });
 }
+
+const TWIST_TIPS = {
+  unsliceable: ['Splits', 'Blades barely hurt. Punch, shoot or blast'],
+  dodge: ['Fast', 'Dodges a lot. Sure-hit moves, stuns and freezes help'],
+  armor: ['Armor', 'Blunts hits until half HP. Piercing moves get through'],
+  seastone: ['Seastone', 'Drains a Devil Fruit user\'s SP on every hit'],
+  eatsShots: ['Big mouth', 'Swallows shots and cannonballs. Fight up close'],
+  fastCharge: ['Cola', 'Charges his big attack every other turn'],
+  tekkai: ['Tekkai', 'Every other turn his body turns to iron. Piercing moves get through'],
+  reflect: ['Shadow', 'Part of every hit you land comes back at you'],
+  poison: ['Venom', 'His hits poison you for 3 turns'],
+  scorch: ['Magma', 'His hits set you on fire'],
+  steroids: ['Steroids', 'Hits much harder after half HP, but hurts himself'],
+  suffocate: ['No air', 'Your SP drains every turn'],
+  birdcage: ['Birdcage', 'The cage cuts you harder every turn. Win fast'],
+  futureSight: ['Future sight', `Dodges almost everything unless you have Observation Haki (${HAKI.observation})`],
+};
 
 function startRaid(key, lvl) {
   modalOnClose = null;
@@ -1398,7 +1529,7 @@ function startBattle(o) {
     phase: 1, charging: false, turn: 0, freeze: 0, stun: 0, burn: 0, burnDmg: 0, solid: 0, weak: 0, healed: false,
     x: 142, y: 121, ox: 0, oy: 0, flash: 0, alpha: 1, squash: 0,
   };
-  G.battle = { F, sp: 20, guard: false, armament: 0, conqUsed: false, over: false, note: null, scene: o.scene || island().scene, after: o.after || null };
+  G.battle = { F, sp: 20, guard: false, armament: 0, awake: 0, conqUsed: false, over: false, note: null, scene: o.scene || island().scene, after: o.after || null, solo: !!o.solo };
   G.mode = 'battle';
   G.hero.x = 58;
   resetHeroPose();
@@ -1440,6 +1571,11 @@ function availableSkills() {
   const add = key => styleMoves(key).forEach(m => out.push(Object.assign({}, m, { style: key, locked: mastery(key) < m.at ? m.at : 0 })));
   add(styleKey());
   if (p.fruit) add(p.fruit);
+  if (p.fruit && p.awakened[p.fruit]) {
+    const aw = fruit().awaken;
+    out.push({ name: `Awaken: ${aw.name}`, sp: 50, awaken: true, style: p.fruit });
+    aw.moves.forEach(m => out.push(Object.assign({}, m, { style: p.fruit, needAwake: true })));
+  }
   if (race().move) add('race');
   if (p.haki >= HAKI.armament) out.push(ARMAMENT_SKILL);
   if (p.haki >= HAKI.conqueror) out.push(CONQUEROR_SKILL);
@@ -1450,8 +1586,11 @@ function skillMenu() {
   const B = G.battle;
   const list = availableSkills().map(s => ({
     label: s.name,
-    sub: s.locked ? `${mastery(s.style)}/${s.locked} mastery` : `${s.sp} SP`,
+    sub: s.locked ? `${mastery(s.style)}/${s.locked} mastery` : s.needAwake && !(B.awake > 0) ? 'Awakened only' : `${s.sp} SP`,
+    cls: s.awaken || s.needAwake ? 'raid' : '',
     blocked: s.locked ? `${s.name} unlocks at ${s.locked} ${styleName(s.style)} mastery (you have ${mastery(s.style)}). Fight with it or do Drills.`
+      : s.needAwake && !(B.awake > 0) ? `${s.name} only works while your fruit is awakened. Use Awaken first.`
+      : s.awaken && B.awake > 0 ? 'Your fruit is already awakened!'
       : (s.conq && B.conqUsed) ? "You already unleashed your Conqueror's Will this battle."
       : B.sp < s.sp ? `Not enough spirit (${B.sp}/${s.sp} SP). Attack or Guard to build SP.` : null,
     onClick: () => playerTurn({ type: 'skill', skill: s }),
@@ -1491,15 +1630,17 @@ function hitFoe(mult, o) {
   o = o || {};
   const B = G.battle, F = B.F, p = G.p;
   if (F.hp <= 0) return 0;
-  const dodge = clamp(0.04 + (F.spd - p.spd) * 0.012, 0.02, 0.2) + (F.info.dodge || 0);
+  const sight = F.info.futureSight ? (p.haki >= HAKI.observation ? 0.12 : 0.4) : 0;
+  const dodge = clamp(0.04 + (F.spd - p.spd) * 0.012, 0.02, 0.2) + (F.info.dodge || 0) + sight;
   if (!F.freeze && !F.stun && !o.sure && Math.random() < dodge) {
+    if (sight && !B.dodgeHint) { B.dodgeHint = true; B.note = p.haki >= HAKI.observation ? `${F.name} sees the future, but your Observation Haki reads him right back!` : `${F.name} saw that coming! He dodges almost everything unless you have Observation Haki (${HAKI.observation} Haki).`; }
     if (F.info.dodge && !B.dodgeHint) { B.dodgeHint = true; B.note = `${F.name} vanishes and reappears behind you! Sure-hit moves, stuns and freezes pin him down.`; }
     floatText(foeC().x, foeTop() - 4, 'MISS', '#cfd6e6');
     Sfx.play('miss');
     tween(F, { ox: 10 }, 90).then(() => tween(F, { ox: 0 }, 140));
     return 0;
   }
-  let atk = (o.atk || effAtk() * moodMult()) * (B.armament > 0 ? 1.35 : 1);
+  let atk = (o.atk || effAtk() * moodMult()) * (B.armament > 0 ? 1.35 : 1) * (!o.atk && B.awake > 0 ? 1.4 : 1);
   if (!o.atk && p.race === 'mink' && (p.tick >= 6 || F.night)) atk *= 1.15;
   if (!o.atk && p.race === 'fishman' && (B.scene === 'desert' || B.scene === 'sky')) atk *= 0.9;
   let dmg = atk * mult * rand(0.9, 1.1) - (o.pierce ? 0 : F.defense * 0.5);
@@ -1508,6 +1649,10 @@ function hitFoe(mult, o) {
   if (F.info.armor && F.phase === 1 && !o.pierce) {
     dmg *= 1 - F.info.armor;
     if (!B.armorHint) { B.armorHint = true; B.note = `${F.name}'s steel armor blunts the blow! Piercing moves get through, and it cracks at half HP.`; }
+  }
+  if (F.tekkai && !o.pierce) {
+    dmg *= 0.4;
+    if (!B.tekkaiHint) { B.tekkaiHint = true; B.note = `Tekkai! ${F.name}'s body is hard as iron this turn. Piercing moves get through, or wait for his guard to drop.`; }
   }
   dmg = Math.max(1, Math.round(dmg));
   let phased = false;
@@ -1526,6 +1671,13 @@ function hitFoe(mult, o) {
   }
   F.hp = Math.max(0, F.hp - dmg);
   F.flash = 0.12;
+  if (F.info.reflect && !o.atk && !phased && dmg > 1) {
+    const back = Math.max(1, Math.round(dmg * F.info.reflect));
+    p.hp = Math.max(1, p.hp - back);
+    G.hero.flash = 0.08;
+    floatText(heroC().x, 70, '-' + back, '#9a7ac0');
+    if (!B.reflectHint) { B.reflectHint = true; B.note = 'Your stolen shadow strikes back! Part of every hit you land comes back at you.'; }
+  }
   const c = foeC();
   if (phased) {
     floatText(c.x, foeTop() - 4, dmg, '#9aa4b1');
@@ -1563,9 +1715,10 @@ function hitPlayer(mult, o) {
     if (!B.rubberHint) { B.rubberHint = true; B.note = "Shishishi! You're made of rubber. Lightning can't hurt you!"; }
     return 0;
   }
-  const atk = F.atk * (F.weak > 0 ? 0.75 : 1) * (F.phase === 2 ? 1.25 : 1);
+  const atk = F.atk * (F.weak > 0 ? 0.75 : 1) * (F.phase === 2 ? (F.info.steroids ? 1.6 : 1.25) : 1);
   let dmg = atk * mult * rand(0.9, 1.1) - effDef() * 0.5;
   if (fruit() && fruit().guard) dmg *= 1 - fruit().guard;
+  if (B.awake > 0) dmg *= 0.75;
   if (B.guard) dmg *= o.big ? 0.3 : 0.5;
   dmg = Math.max(1, Math.round(dmg));
   p.hp = Math.max(0, p.hp - dmg);
@@ -1575,6 +1728,12 @@ function hitPlayer(mult, o) {
   floatText(hc.x, 74, '-' + dmg, '#ff6a5a', o.big ? 2 : 1);
   impact(hc, ['#ffffff', '#ff6a5a'], o.big ? 18 : 8);
   if (B.guard) floatText(hc.x, 64, 'GUARD', '#7cd0ff');
+  if (F.info.poison || F.info.scorch) {
+    const fresh = !B.dot || B.dot.turns <= 0;
+    B.dot = F.info.poison ? { turns: 3, pct: 0.05, name: 'poison', color: '#c48ae8' } : { turns: 2, pct: 0.06, name: 'burn', color: '#ff9a3a' };
+    if (fresh) floatText(hc.x, 58, F.info.poison ? 'POISON' : 'BURN', B.dot.color);
+    if (!B.dotHint) { B.dotHint = true; B.note = F.info.poison ? "Magellan's venom seeps into you! You'll take poison damage every turn." : "Akainu's magma sets you on fire! You'll burn every turn."; }
+  }
   if (F.info.seastone && p.fruit && B.sp > 0) {
     B.sp = Math.max(0, B.sp - 15);
     floatText(hc.x, 58, '-15 SP', '#9ab0c8');
@@ -1591,6 +1750,7 @@ async function showNote() {
 async function playerTurn(act) {
   const B = G.battle;
   if (!B || B.over || G.busy) return;
+  if (act.type === 'skill' && act.skill.needAwake && !(B.awake > 0)) return;
   const F = B.F, p = G.p;
   lock(true);
   B.guard = false;
@@ -1611,6 +1771,11 @@ async function playerTurn(act) {
       await fxPlayer('armament');
       B.armament = 4;
       await talk('Your fists turn black as steel. Armament Haki! Hits connect with Logias for 3 turns.');
+    } else if (s.awaken) {
+      const f = fruit();
+      B.awake = 4;
+      await MOVE_FX.awaken({ fruit: p.fruit, name: f.awaken.name, colors: [f.color, f.color2] });
+      await talk(`${f.awaken.name}! Your ${f.name} awakens. Attack up, damage down, and your ultimate moves are ready for 3 turns!`);
     } else if (s.conq) {
       B.conqUsed = true;
       await fxPlayer('conqueror');
@@ -1682,6 +1847,7 @@ async function playerTurn(act) {
   if (p.hp <= 0) return loseBattle();
   await endRound();
   if (F.hp <= 0) return winBattle();
+  if (p.hp <= 0) return loseBattle();
   lock(false);
   battleMenu();
   say(F.charging ? `${F.name} is about to unleash ${F.info.big}! GUARD!` : 'What will you do?');
@@ -1719,6 +1885,7 @@ async function useBattleItem(k) {
 
 async function crewTurn() {
   const B = G.battle, F = B.F, p = G.p;
+  if (B.solo) return;
   for (let i = 0; i < p.crew.length; i++) {
     if (F.hp <= 0) return;
     if (!F.boss && Math.random() > 0.35) continue;
@@ -1808,6 +1975,10 @@ async function foeTurn() {
   if (F.freeze > 0) { F.freeze--; await talk(`${F.name} is frozen and can't move!`); return; }
   if (F.stun > 0) { F.stun--; await talk(`${F.name} is too stunned to move!`); return; }
   F.turn++;
+  if (info.tekkai) {
+    F.tekkai = F.turn % 2 === 1;
+    if (F.tekkai) floatText(foeC().x, foeTop() - 12, 'TEKKAI', '#c9ccd6');
+  }
   if (F.boss) {
     if (F.charging) { F.charging = false; await foeBig(); return; }
     if (info.heals && !F.healed && F.hp < F.maxHp * 0.35) {
@@ -1819,7 +1990,7 @@ async function foeTurn() {
       await talk(`${F.name} gulps down seawater and recovers ${h} HP!`);
       return;
     }
-    if (F.turn % 3 === 0) {
+    if (F.turn % (info.fastCharge ? 2 : 3) === 0) {
       F.charging = true;
       Sfx.play('charge');
       await talk(`${F.name} ${info.charge} (Guard next turn!)`);
@@ -1912,6 +2083,9 @@ async function foeBig() {
     shake(6, 400);
     hitPlayer(2.2, { big: true });
     await tween(F, { ox: 0, squash: 0 }, 300);
+  } else if (FOE_FX[info.fx]) {
+    await FOE_FX[info.fx](hc, F);
+    hitPlayer(2.2, { big: true });
   } else if (info.fx === 'water') {
     Sfx.play('splash');
     await tween(F, { ox: -96, squash: -0.15 }, 260, easeIn);
@@ -1927,6 +2101,107 @@ async function foeBig() {
   }
   await wait(300);
 }
+
+// Big attacks of the bosses from Water 7 on. Each draws its attack and lands on the hero.
+const FOE_FX = {
+  beam: async (hc, F) => {
+    Sfx.play('charge');
+    const s = foeC();
+    await fxRun(300, (c, k) => { pxCircle(c, s.x - 14, s.y, 2 + k * 5, '#bfe6ff'); });
+    Sfx.play('zap');
+    await fxRun(420, (c, k) => {
+      const w = Math.round(8 * Math.sin(k * Math.PI)) + 1;
+      pxLine(c, s.x - 14, s.y, hc.x, hc.y, '#5ab8e8', w + 3); pxLine(c, s.x - 14, s.y, hc.x, hc.y, '#ffffff', w);
+      for (let i = 0; i < 4; i++) pxRect(c, lerp(s.x, hc.x, (k * 2 + i / 4) % 1), hc.y + (i % 2 ? -6 : 6), 2, 2, '#ffe14a');
+    });
+  },
+  rokuogan: async (hc, F) => {
+    await tween(F, { ox: -80 }, 160, easeIn);
+    Sfx.play('boom');
+    screenFlash('#ffffff', 0.5);
+    for (let i = 0; i < 3; i++) ringOut(hc, i % 2 ? '#c9ccd6' : '#ffffff', 2, 18 + i * 10, 420, 2);
+    await wait(200);
+    tween(F, { ox: 0 }, 300);
+  },
+  shadows: async hc => {
+    Sfx.play('charge');
+    const s = foeC();
+    await fxRun(750, (c, k) => {
+      for (let i = 0; i < 18; i++) {
+        const q = Math.min(1, Math.max(0, k * 1.6 - i * 0.03));
+        const x = lerp(s.x, hc.x, q) + Math.sin(i * 2 + k * 10) * 8, y = lerp(s.y - 20, hc.y, q) + Math.cos(i * 3 + k * 9) * 8;
+        pxRect(c, x - 2, y, 5, 2, '#1b1424'); pxRect(c, x, y - 1, 1, 1, '#9a7ac0');
+      }
+    });
+  },
+  lightrain: async hc => {
+    Sfx.play('zap');
+    screenFlash('#fff6a0', 0.4);
+    await fxRun(700, (c, k) => {
+      for (let i = 0; i < 12; i++) {
+        const q = (k * 3 + i / 12) % 1, sx = 100 + (i * 23) % 90;
+        pxLine(c, lerp(sx, hc.x + rand(-6, 6), q), lerp(-4, hc.y, q), lerp(sx, hc.x, Math.min(1, q + 0.1)), lerp(-4, hc.y, Math.min(1, q + 0.1)), '#fff3a0', 2);
+      }
+    });
+  },
+  venom: async hc => {
+    Sfx.play('fire');
+    const s = foeC();
+    await fxRun(700, (c, k) => {
+      for (let h = 0; h < 3; h++) {
+        const x = lerp(s.x, hc.x, k), y = lerp(s.y, hc.y, k) + (h - 1) * 12 + Math.sin(k * 10 + h) * 4;
+        pxCircle(c, x, y, 6, '#7a2a9a'); pxCircle(c, x - 2, y - 2, 3, '#c48ae8'); pxRect(c, x - 5, y - 2, 2, 2, '#ffe14a');
+      }
+      for (let i = 0; i < 3; i++) pxRect(c, lerp(s.x, hc.x, k) + rand(-12, 12), lerp(s.y, hc.y, k) + 14 + i * 3, 2, 2, '#9a4ad0');
+    });
+    particles(hc.x, hc.y, 20, { colors: ['#9a4ad0', '#c48ae8', '#1b1424'], speed: 70, grav: 60 });
+  },
+  magma: async hc => {
+    Sfx.play('fire');
+    for (let i = 0; i < 4; i++) {
+      const x = hc.x + (i - 1.5) * 10;
+      await fxRun(140, (c, k) => { const y = lerp(-10, hc.y, k); pxCircle(c, x, y, 6, '#5a1a1a'); pxCircle(c, x, y, 4, '#c0301a'); pxRect(c, x - 1, y - 2, 3, 2, '#ffd04a'); });
+      particles(x, hc.y, 8, { colors: FIRE, speed: 60, grav: 80 });
+    }
+  },
+  tide: async hc => {
+    Sfx.play('splash');
+    const s = foeC();
+    for (let i = 0; i < 5; i++) {
+      projectile({ x: s.x - 12, y: s.y + (i - 2) * 4 }, { x: hc.x, y: hc.y + (i - 2) * 5 }, 220, (c, x, y) => { pxCircle(c, x, y, 2, '#4fa3e0'); pxRect(c, x - 1, y - 1, 1, 1, '#ffffff'); });
+      await wait(70);
+    }
+    await wait(220);
+    particles(hc.x, hc.y, 18, { colors: ['#4fa3e0', '#bfe6ff', '#ffffff'], speed: 80, grav: 100 });
+  },
+  gasbomb: async hc => {
+    Sfx.play('fire');
+    const s = foeC();
+    await projectile(s, hc, 500, (c, x, y, k) => { pxCircle(c, x, y, 6 + k * 10, '#7a3a8a'); pxCircle(c, x - 3, y - 3, 3 + k * 5, '#b06ad0'); pxRect(c, x - 3, y, 2, 2, '#1b1424'); pxRect(c, x + 2, y, 2, 2, '#1b1424'); });
+    Sfx.play('boom');
+    ringOut(hc, '#b06ad0', 4, 30, 400, 3);
+    particles(hc.x, hc.y, 26, { colors: ['#7a3a8a', '#b06ad0', '#3a3440'], speed: 80, grav: -10, size: 3 });
+  },
+  strings: async hc => {
+    Sfx.play('slash');
+    await fxRun(600, (c, k) => {
+      for (let i = 0; i < 8; i++) {
+        const a = -Math.PI / 2 + (i - 3.5) * 0.35, len = 90 * Math.min(1, k * 2.2);
+        pxLine(c, hc.x + Math.cos(a) * 100, hc.y + Math.sin(a) * 100, hc.x + Math.cos(a) * (100 - len), hc.y + Math.sin(a) * (100 - len), i % 2 ? '#ffffff' : '#ff8ab0', 1);
+      }
+    });
+  },
+  mochi: async hc => {
+    Sfx.play('charge');
+    const s = foeC();
+    await fxRun(420, (c, k) => {
+      const x = lerp(s.x, hc.x + 16, easeIn(k)), y = lerp(s.y, hc.y, k);
+      pxCircle(c, x, y, 13, '#efe2c8'); pxCircle(c, x + 2, y - 2, 9, '#fffaf0');
+      for (let i = 0; i < 6; i++) { const a = i * 1.05; pxRect(c, x + Math.cos(a) * 14 - 1, y + Math.sin(a) * 14 - 1, 3, 3, '#7a2630'); }
+    });
+    Sfx.play('boom');
+  },
+};
 
 async function checkPhase() {
   const F = G.battle.F;
@@ -1960,7 +2235,33 @@ async function endRound() {
   if (B.armament > 0) { B.armament--; if (!B.armament) await talk('Your Armament Haki fades.'); }
   if (F.weak > 0) F.weak--;
   if (F.solid > 0) { F.solid--; if (!F.solid && F.hp > 0) await talk(`${F.name} has dried off.`); }
+  const p = G.p, hc = heroC();
+  const ouch = async (d, color, text, first) => {
+    p.hp = Math.max(0, p.hp - d);
+    G.hero.flash = 0.1;
+    floatText(hc.x, 74, '-' + d, color);
+    if (first) await talk(text); else { say(text); await wait(500); }
+  };
+  if (B.dot && B.dot.turns > 0 && p.hp > 0 && F.hp > 0) {
+    B.dot.turns--;
+    await ouch(Math.max(1, Math.round(p.maxHp * B.dot.pct)), B.dot.color, `The ${B.dot.name} hurts!`, false);
+  }
+  if (F.info.birdcage && F.hp > 0 && p.hp > 0) {
+    B.cage = (B.cage || 0) + 1;
+    await ouch(Math.max(1, Math.round(p.maxHp * 0.02 * B.cage)), '#ff8ab0', B.cage === 1 ? 'The Birdcage closes in. The strings will cut deeper every turn!' : 'The Birdcage tightens!', B.cage === 1);
+  }
+  if (F.info.steroids && F.phase === 2 && F.hp > 0) {
+    const d = Math.max(1, Math.round(F.maxHp * 0.03));
+    F.hp = Math.max(1, F.hp - d);
+    floatText(foeC().x, foeTop() - 4, d, '#c48ae8');
+  }
+  if (B.awake > 0) { B.awake--; if (!B.awake) await talk('Your awakening fades... for now.'); }
   B.sp = Math.min(100, B.sp + 8 + (G.p.race === 'skypian' ? 4 : 0));
+  if (F.info.suffocate && F.hp > 0) {
+    B.sp = Math.max(0, B.sp - 15);
+    floatText(hc.x, 60, '-15 SP', '#b06ad0');
+    if (!B.airHint) { B.airHint = true; await talk(`${F.name} is stealing the air! Your SP drains every turn.`); }
+  }
 }
 
 async function winBattle() {
@@ -1976,7 +2277,7 @@ async function winBattle() {
   let berries = Math.round((15 + F.lvl * 10) * (F.night ? 1.5 : 1));
   let bounty = F.lvl * 100000;
   if (F.boss) {
-    berries = Math.round(info.berries * (first ? 1 : 0.5) * (1 + (F.lvl - info.lvl) * 0.05));
+    berries = Math.round(info.berries * (first ? 1 : 0.5) * (1 + (F.lvl - (info.lvl || F.lvl)) * 0.05));
     bounty = first ? info.bounty : Math.round(info.bounty * 0.08);
   }
   if (crewWith('navigator')) berries = Math.round(berries * 1.2);
@@ -2068,6 +2369,11 @@ async function bossAftermath(key) {
     } else {
       await talk(`Your Log Pose now points to ${ISLANDS[idx + 1].name}. Board your ship and check the Sea Chart!`);
     }
+  }
+  if (key === 'akainu') {
+    await talk('The war is over. An old pirate with glasses finds you in the rubble...');
+    await talk('"Your Devil Fruit can do more than you think. When you are strong enough, it can AWAKEN." (Check the Gear menu.)');
+    if (!p.owned.coating) await talk(`Next stop is Fish-Man Island, 10,000 meters under the sea. Your ship needs a Bubble Coating from ${ISLANDS[FISHMAN - 3].name}.`);
   }
   if (key === 'drakko') await ending();
   save();
@@ -2717,6 +3023,10 @@ function sceneName() {
 
 function heroSprite() {
   if (G.hero.form) return getSprite(DRAGON_FORM, G.hero.flash > 0 ? 'flash' : '');
+  if (G.battle && G.battle.awake > 0 && fruit() && fruit().awaken) {
+    const spec = heroSpec();
+    return getSprite(Object.assign({}, spec, { pal: Object.assign({}, spec.pal, fruit().awaken.look) }), G.hero.flash > 0 ? 'flash' : '');
+  }
   if (G.hero.flash > 0) return getSprite(heroSpec(), 'flash');
   if (G.battle && G.battle.armament > 0) return getSprite(heroSpec(), 'tint', '#2a1a3a');
   return getSprite(heroSpec());
@@ -2770,10 +3080,13 @@ function drawPlaceLabel() {
 
 function drawBattle() {
   const B = G.battle, F = B.F, p = G.p;
-  const actors = p.crew.map((m, i) => {
+  const actors = (B.solo ? [] : p.crew).map((m, i) => {
     const [x, y] = BATTLE_CREW_SPOTS[i];
     return { spr: getSprite(CREW[m.key].spr), x, y: y + Math.round(Math.sin(G.t * 4 + i) * 0.6), scale: 1, m };
   });
+  if (B.awake > 0 && fruit() && Math.random() < 0.7) {
+    particles(G.hero.x + G.hero.ox + rand(-10, 10), 118, 1, { colors: [fruit().color, fruit().color2, '#ffffff'], speed: 30, grav: -70, dir: -Math.PI / 2, spread: 0.6, life: 0.7 });
+  }
   actors.push({ spr: heroSprite(), x: G.hero.x + G.hero.ox, y: 121 + G.hero.oy, scale: 2, squash: G.hero.squash + Math.sin(G.t * 5) * 0.02, alpha: G.hero.alpha, flip: !!G.hero.form });
   drawActors(actors);
   drawCrewWeapons(actors);
@@ -2781,6 +3094,12 @@ function drawBattle() {
 
   // foe
   const lift = foeLift();
+  if (F.info.birdcage && F.alpha > 0) {
+    ctx.globalAlpha = 0.35;
+    const r = Math.max(20, 120 - (B.cage || 0) * 9);
+    for (let i = 0; i < 14; i++) pxLine(ctx, 100, -10, 100 + (i - 6.5) * r / 6.5, 124, '#ffffff', 1);
+    ctx.globalAlpha = 1;
+  }
   if (F.info.logia === 'smoke' && F.alpha > 0) {
     for (let i = 0; i < 4; i++) {
       const k = (G.t * 0.7 + i / 4) % 1;
@@ -2800,6 +3119,7 @@ function drawBattle() {
   if (F.flash > 0) spr = getSprite(F.spr, 'flash');
   else if (F.freeze > 0) spr = getSprite(F.spr, 'tint', '#7fe8ff');
   else if (F.solid > 0) spr = getSprite(F.spr, 'tint', '#2f6fd0');
+  else if (F.tekkai) spr = getSprite(F.spr, 'tint', '#9aa4b1');
   else if (F.phase === 2 && !F.info.phase2) spr = getSprite(F.spr, 'tint', '#ff2020');
   if (lift) { ctx.globalAlpha = 0.25; pxRect(ctx, F.x + F.ox - 10, F.y - 1, 20, 2, '#000000'); ctx.globalAlpha = 1; }
   drawSpriteAt(ctx, spr, F.x + F.ox, F.y + F.oy - lift, F.scale, { squash: F.squash + Math.sin(G.t * 4) * 0.02, alpha: F.alpha, shadow: !lift });
@@ -2956,6 +3276,15 @@ function drawBoat() {
   if (G.bubble && G.t < G.bubble.until) drawBubble(ctx, DECK_SEATS[0], 38, G.bubble.text);
 }
 
+function drawDiveCut() {
+  const look = Object.assign(shipLook(), { t: G.t });
+  if (!G.shipCv) G.shipCv = makeCanvas(76, 64);
+  const sc = G.shipCv, c = sc.getContext('2d');
+  c.clearRect(0, 0, sc.width, sc.height);
+  drawShip(c, 6, 60, Object.assign(look, { onDeck: (cc, dy) => drawCrewAboard(cc, 6, dy) }));
+  drawDive(ctx, G.cut ? G.cut.k : 1, G.t, sc);
+}
+
 function drawMountainCut() {
   const look = Object.assign(shipLook(), { t: G.t });
   if (!G.shipCv) G.shipCv = makeCanvas(76, 64);
@@ -2974,8 +3303,10 @@ function draw() {
   ctx.drawImage(backdrop(scene, ti), 0, 0);
   drawAnimated(ctx, scene, ti, G.t, G.mode === 'sail' ? 5 : 1);
   const docked = G.mode === 'title' ? { t: G.t } : G.p ? Object.assign(shipLook(), { t: G.t }) : null;
-  if (scene !== 'sea' && scene !== 'deck' && G.mode !== 'boat' && G.mode !== 'mountain') drawShip(ctx, -8, GROUND - 2 + Math.round(Math.sin(G.t * 1.5)), docked);
+  if (docked && G.p && G.mode !== 'title') docked.bubble = island().scene === 'fishman';
+  if (scene !== 'sea' && scene !== 'deck' && G.mode !== 'boat' && G.mode !== 'mountain' && G.mode !== 'dive') drawShip(ctx, -8, GROUND - 2 + Math.round(Math.sin(G.t * 1.5)), docked);
   if (G.mode === 'mountain') drawMountainCut();
+  else if (G.mode === 'dive') drawDiveCut();
   else if (G.mode === 'boat' && G.p) drawBoat();
   else if (G.mode === 'title') drawTitle();
   else if (G.mode === 'home' && G.p) drawHome();

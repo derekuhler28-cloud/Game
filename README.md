@@ -1,6 +1,6 @@
 # Pocket Pirate
 
-A small pixel-art pirate life sim inspired by One Piece. You start as a nobody: no weapon, no powers, no crew, no hat. Explore islands to find weapons and hidden Devil Fruits, master their moves, hire a crew at island bars, raid bosses, fix up your ship, and sail over Reverse Mountain into the Grand Line to become Pirate King.
+A small pixel-art pirate life sim inspired by One Piece. You start as a nobody: no weapon, no powers, no crew, no hat. Explore islands to find weapons and hidden Devil Fruits, master their moves, hire a crew at island bars, raid bosses, fix up your ship, sail over Reverse Mountain into the Grand Line and down to Fish-Man Island, awaken your Devil Fruit, and become Pirate King.
 
 No build step and no dependencies: open `index.html` in a browser (or serve the folder with any static server). Progress saves automatically in your browser.
 
@@ -22,13 +22,14 @@ Pick one when you start a new game. Each changes your starting stats and has its
 - **Mastery**: each weapon, your fists, and your Devil Fruit have their own mastery. Using them in fights, winning with them, and practicing with Drills raises mastery and unlocks their 2nd and 3rd moves.
 - **Train**: a timing mini-game. Stop the marker in the gold zone (dead center is PERFECT) to raise ATK, DEF/HP, SPD or Haki (each stat has a limit that rises with your level), or do Drills and Fruit Power practice for mastery.
 - **Fight**: turn-based battles against the island's monsters for XP, berries and bounty. Fights at night are tougher but pay more.
-- **Raid**: big multi-phase bosses. They charge a huge attack every few turns (Guard!), enrage at half HP, and your whole crew fights alongside you. Each boss drops its signature weapon, and some have a trick: Buggy splits apart so blades barely hurt him, Kuro dodges a lot (sure-hit moves, stuns and freezes pin him down), Don Krieg's armor blunts hits until it cracks at half HP (piercing moves get through), Smoker is made of smoke and his seastone jitte drains a Devil Fruit user's SP, and Wapol swallows bullets and cannonballs.
+- **Raid**: big multi-phase bosses. They charge a huge attack every few turns (Guard!), enrage at half HP, and your whole crew fights alongside you. Each boss drops its signature weapon, and some have a trick: Buggy splits apart so blades barely hurt him, Kuro dodges a lot (sure-hit moves, stuns and freezes pin him down), Don Krieg's armor blunts hits until it cracks at half HP (piercing moves get through), Smoker is made of smoke and his seastone jitte drains a Devil Fruit user's SP, Wapol swallows bullets and cannonballs, and every boss from Water 7 on has a trick of its own (see the table below). The raid screen lists each boss's trick before you fight.
 - **Work**: go fishing (tap REEL when the bobber dips) or take an odd job for berries.
 - **Bar**: every island has a bar with crewmates for hire (up to 5 at once). Hand each one a weapon you found, feed them a spare Devil Fruit from your bag (it's theirs for life), or kick them out (you get the weapon back; they leave with their fruit). Crewmates jump into normal fights sometimes and fight every turn in raids. Throw a feast at the bar to lift everyone's mood.
 - **Eat / Sleep**: food, energy and mood drain as the day passes. Starving hurts; a good mood boosts training.
 - **Shop**: food, medicine, Energy Cola, Water Barrels (soak Logia bosses), and ship upgrades, paint and figureheads. Each island sells different ones.
 - **Boat**: your ship is docked behind you on every island. Tap **Boat** to go aboard, where you and your crew sit on deck around the map. Tap the map (or **Sea Chart**) to sail; an island opens once you beat the raid boss before it. **Customize** picks your hull paint and figurehead, and lists every upgrade and where it's sold. You can also sleep aboard.
 - **Reverse Mountain**: after you beat Smoker in Logue Town, the sea chart lets you cross the Red Line. The current carries your ship UP the mountain and drops it down the waterfall into the Grand Line.
+- **Awakening**: much later in the game, your Devil Fruit can awaken (Gear 5 for the Rubber fruit, Awakened Dough, Awakened Strings, and so on). You need 300 fruit mastery, level 55, Conqueror's Haki, and to have beaten Admiral Akainu at Marineford. Then the Gear menu offers the Awakening Trial: a solo fight against your fruit's own Will. Win it, and in battle you can **Awaken** for 3 turns: you hit 40% harder, take 25% less damage, change color, and can use two ultimate moves.
 - **Moves**: every move has its own animation and calls its name in a banner, and a weapon's plain attack shows that weapon swinging, stabbing, smashing or firing.
 
 ## Crew roles
@@ -56,8 +57,10 @@ Upgrades change how the ship looks from the dock, at sea and on deck (the hull i
 | Crew Bunks | Hammocks below deck. +8 mood every morning |
 | Aquarium Bar | A fish tank lounge with portholes. Some mornings a free Fish |
 | Paper Lanterns | Colored lanterns that glow at night |
-| Paints | Red, Ocean Blue, Black, Snow White or Gold Leaf hull |
-| Figureheads | Ram, Lion, Shark, Swan or Dragon on the bow |
+| Coup de Burst | A cola cannon in the stern. Blast away from any Sea King |
+| Bubble Coating | Lets your ship dive 10,000 m to Fish-Man Island (sold at Sabaody) |
+| Paints | Red, Ocean Blue, Black, Snow White, Lawn Green, Flamingo Pink or Gold Leaf hull |
+| Figureheads | Ram, Lion, Shark, Swan, Skull or Dragon on the bow |
 
 A crewmate's power grows with your level and their weapon. Crewmates with a Devil Fruit use its moves 40% of the time (with burns, freezes and stuns).
 
@@ -76,6 +79,16 @@ A crewmate's power grows with your level and their weapon. Crewmates with a Devi
 | Drum Island | Frost Mallet | King Wapol, eats shots (Royal Scepter) | Dalt (bison brawler), Moss (reindeer doctor) |
 | Sandora Kingdom | Sunset Scimitar | Warlord Sandor, Logia (Golden Hook) | Zara (swordsman), Lina (sniper) |
 | Cloud Isle | Shock Shell | Sky God Voltz, Logia (Thunder Staff) | Wyn (skypian sniper), Gale (skypian navigator) |
+| Water 7 | Paulie's Ropes | Cyborg Franky, charges his big attack every other turn (Cola Cannon Arm) | Rivet (cyborg brawler), Paula (navigator) |
+| Enies Lobby | Funkfreed | Rob Lucci, Tekkai iron body every other turn (Rokushiki Gloves) | Nosu (giraffe swordsman), Lily (sniper) |
+| Thriller Bark | Black Blade Shusui | Gecko Moria, your stolen shadow hits you back (Shadow Scissors) | Bones (skeleton swordsman), Perri (navigator) |
+| Sabaody Archipelago | Bubble Blaster | Admiral Kizaru, light Logia who dodges (Murakumo Light Blade) | Duval (brawler), Kimi (mermaid cook) |
+| Impel Down | Jailer Chains | Magellan, poisons you (Hydra Fang) | Ivo (doctor), Inazo (swordsman) |
+| Marineford | Murakumogiri | Admiral Akainu, magma Logia who sets you on fire (Magma Gauntlet) | Phoenix (zoan doctor), Jozo (brawler) |
+| Fish-Man Island (dive there with a Bubble Coating) | Neptune's Trident | Hody Jones, steroids make him hit harder but hurt him (Shark Fang Knuckles) | Jinn (fishman brawler), Ryu (fishman sniper) |
+| Punk Hazard | Kikoku Nodachi | Caesar Clown, gas Logia who drains your SP (Shinokuni Lamp) | Trafal (doctor), Kine (samurai swordsman) |
+| Dressrosa | Kabuto Slingshot | Doflamingo, the Birdcage cuts harder every turn (Overheat Rope) | Becca (swordsman), Barto (brawler) |
+| Whole Cake Island | Napoleon Sword | Charlotte Katakuri, future sight dodges unless you have Observation Haki (Mogura) | Puri (cook), Pedro (mink swordsman) |
 | Last Isle | Night Edge | Emperor Drakko (Dragon Kanabo) | Rook (brawler), Mei (doctor) |
 
 Twelve Devil Fruits are hidden across the islands, shuffled every new game (every island has at least one): Rubber, Flame, Frost, Quake, Smoke, Light, Dough, Dragon, Split, Magma, String and Paw. The Dragon fruit turns you into an azure dragon when you attack and gives +20% max HP; Dough takes 12% less damage and Paw 10% less; Light, Flame, Magma and Split let attacks miss you sometimes. Magma burns, String's Puppet Strings and Paw's Pressure Repel can stun. A fruit you keep instead of eating can be fed to a crewmate at the bar. Train Haki to unlock Armament (hits Logias), Observation (dodge) and Conqueror's Will. The Coral Trident's Riptide and Water Barrels also make Logias hittable, and the Night Edge and Smoker's Seastone Jitte hit them directly.
@@ -92,4 +105,6 @@ Tap or click the buttons. Tap your pirate to chat. Space bar strikes in training
 - `js/audio.js`: chiptune sound effects with Web Audio
 - `js/gear.js`: weapons, devil fruits, move mastery, exploring and the Gear menu
 - `js/moves.js`: the animation for every move and every weapon's plain attack
+- `js/moves-islands.js`: animations for the weapons from Water 7 to Whole Cake Island
+- `js/moves-awaken.js`: the awakening transformation and every awakened move
 - `js/game.js`: game state, menus, the day loop, battles, raids and mini-games
