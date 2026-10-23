@@ -94,12 +94,13 @@ function drawHeldWeapon(c, x, y, scale) {
 const holderOf = key => G.p.crew.find(m => m.weapon === key);
 // Blade weapons and slashing moves; Buggy splits apart when they hit him.
 const BLADES = ['sword', 'curved', 'saw', 'axe', 'hook', 'claws', 'cleaver'];
-const SLASH_FX = ['swing', 'multislash', 'crescent', 'sandslash'];
+// Blade moves (Buggy splits away from them) and shots (Wapol swallows them); lists live in moves.js.
 function isSlash(fx, key) {
-  if (!SLASH_FX.includes(fx) || key === 'fists' || key === 'race') return false;
+  if (!SLASH_MOVES.includes(fx) || key === 'fists' || key === 'race') return false;
   const w = WEAPONS[key];
   return !w || BLADES.includes(w.shape);
 }
+const isShot = fx => SHOT_MOVES.includes(fx);
 
 function showLoot(spec) {
   G.loot = { spec, t: G.t };

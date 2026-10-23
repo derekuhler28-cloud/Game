@@ -85,6 +85,8 @@ const BRUTE_HEADS = {
   buggy:   ['....xxxxxxxx....', '...xxxxwwxxxx...', '.....bbbbbb.....', '....bbssssbb....', '.....serres.....', '.....smmmms.....'],
   kuro:    ['................', '......hhhh......', '.....hhhhhh.....', '.....hhhhhh.....', '.....wewwew.....', '.....ssmmss.....'],
   krieg:   ['................', '.....h.hh.h.....', '.....hhhhhh.....', '.....hssssh.....', '.....sesses.....', '.....GGGGGG.....'],
+  smoker:  ['................', '.....h.hh.h.....', '.....hhhhhh.....', '.....hssssh.....', '.....sesses.....', '...GGsSmmSsGG...'],
+  wapol:   ['....G.G..G.G....', '....GGGGGGGG....', '.....hhhhhh.....', '....hssssssh....', '....ssessess....', '...gggggggggg...'],
   drakko:  ['..x..........x..', '..xx..hhhh..xx..', '....xhhhhhhx....', '.....hssssh.....', '....hsesses.....', '....hssmmssh....'],
 };
 
@@ -184,6 +186,7 @@ const OVERLAYS = {
   knives: [[0, 6, 1, 4, 'g'], [2, 6, 1, 3, 'g'], [0, 5, 1, 1, 'w'], [2, 5, 1, 1, 'w']],
   claws:  [[0, 10, 1, 5, 'w'], [2, 11, 1, 4, 'w']],
   spear:  [[1, 0, 1, 12, 'n'], [0, 0, 3, 2, 'g']],
+  jitte:  [[1, 2, 1, 10, 'g'], [2, 5, 1, 2, 'g'], [1, 12, 1, 2, 'n']],
   horns:  [[2, 2, 1, 1, 'x'], [3, 3, 1, 1, 'x'], [6, 2, 1, 1, 'x'], [5, 3, 1, 1, 'x']],
   // race marks for the player sprite
   minkEars:    [[3, 0, 2, 2, 'S'], [11, 0, 2, 2, 'S']],
@@ -211,7 +214,19 @@ const WEAPON_SHAPES = {
   cleaver: { grip: [3, 5], rows: ['gggg.', 'gggg.', 'gggg.', 'gggn.', '...n.', '...n.'] },
   cannon:  { grip: [0, 3], rows: ['.hhhhhhh', 'hhhhhhhh', 'nnhhhhhh', 'nn......'] },
   claws:   { grip: [1, 0], rows: ['hhh', 'w.w', 'w.w', 'w.w', '..w'] },
+  jitte:   { grip: [1, 9], rows: ['.w..', '.g..', '.g.g', '.ggg', '.g..', '.g..', '.g..', 'GGG.', '.n..', '.n..'] },
+  hammer:  { grip: [2, 8], rows: ['.ggg.', 'gwggg', 'ggggg', 'ggggg', '.ggg.', '..n..', '..n..', '..n..', '..n..', '..n..'] },
+  scepter: { grip: [2, 9], rows: ['.G.G.', 'GrGrG', '.GwG.', '..G..', '..G..', '..G..', '..G..', '..G..', '..G..', '..G..', '..G..'] },
   spear:   { grip: [1, 11], rows: ['.G.', 'ggg', '.g.'].concat(Array(13).fill('.n.')) },
+};
+
+// Ship figureheads, facing right (10x10). Each has its own palette.
+const FIGURES = {
+  ram:    { pal: { w: '#f2f2f2', y: '#e6b422', k: '#1b1424' }, rows: ['...yyyy...', '..y....y..', '..y.wwwwy.', '...wwwwww.', '..wwwwwkww', '.wwwwwwwww', '.wwwwwwww.', '.wwwwww...', '.www......', '.ww.......'] },
+  lion:   { pal: { o: '#f08a3a', y: '#ffd04a', k: '#1b1424', R: '#c0453a' }, rows: ['..o.o.o...', '.oooooooo.', 'ooyyyyyyoo', '.oyyykyyo.', 'ooyyyyyRoo', '.oyyyyyyo.', 'ooyyyyyyoo', '.oooooooo.', '..o.o.o...', '..........'] },
+  shark:  { pal: { g: '#7a9ab8', w: '#ffffff', k: '#1b1424' }, rows: ['....g.....', '...gg.....', '..ggggg...', '.gggggkgg.', '.ggggggggg', '.gggwwwww.', '.ggggwww..', '.ggggg....', '.ggg......', '.gg.......'] },
+  swan:   { pal: { w: '#ffffff', k: '#1b1424', o: '#f08a3a' }, rows: ['......ww..', '.....wwkoo', '.....www..', '.....ww...', '....ww....', '....ww....', '...www....', '.wwwwww...', 'wwwwwww...', '.wwwww....'] },
+  dragon: { pal: { b: '#4a8ad9', x: '#f2e6c8', w: '#bfe0ff', k: '#1b1424' }, rows: ['..x...x...', '...x.x....', '..bbbbbb..', '.bbbbkbbbb', '.bbbbbbbbw', '.bbbbbww..', '.bbbb.....', '.bbb......', '.bb.......', '.bb.......'] },
 };
 
 // 8x8 item icons
@@ -234,6 +249,13 @@ const ICONS = {
   moon:     ['..yyy...', '.yy.....', 'yy....w.', 'yy...ww.', 'yy......', 'yy......', '.yy.....', '..yyy...'],
   mug:      ['.wwwww..', 'wwwwwww.', 'GGGGGnn.', 'GGyGGn.n', 'GGyGGn.n', 'GGyGGnn.', 'GGGGG...', '.GGG....'],
   wraps:    ['..wwww..', '.wwwwww.', 'wwswswsw', 'wwwwwwww', 'wwwwwww.', '.wwwww..', '..sss...', '..sss...'],
+  nest:     ['.nnnnnn.', 'nwnnnnwn', 'nnnnnnnn', '.nnnnnn.', '...nn...', '...nn...', '...nn...', '...nn...'],
+  bunks:    ['n......n', 'n......n', 'nwwwwwwn', 'n.wwww.n', 'n......n', 'nwwwwwwn', 'n.wwww.n', 'n......n'],
+  aquarium: ['gggggggg', 'gbbbbbbg', 'gbCbbbbg', 'gCCCbbbg', 'gbCbbbyg', 'gbbbbyyg', 'gggggggg', '.n....n.'],
+  lantern:  ['...k....', '..rrr...', '.rrrrr..', '.rGrGr..', '.rrrrr..', '..rrr...', '...k....', '........'],
+  figurehead: ['..y..y..', '.y.ww.y.', '..wwww..', '.wwkwkw.', '.wwwwww.', '..wwww..', '..nnnn..', '.nnnnnn.'],
+  paint:    ['..cccc..', '.c....c.', 'gggggggg', 'gccccccg', 'gccccccg', 'gccccccg', '.gccccg.', '..gggg..'],
+  ship:     ['...n....', '..wwww..', '.wwwwww.', '..wwww..', '...n....', 'nnnnnnnn', '.nnnnnn.', '..bbbb..'],
   cannon:   ['........', '.......g', 'hhhhhhhh', 'hhhhhhh.', 'hhhhhh..', '.nn.nn..', 'nnnnnn..', '.nn.nn..'],
 };
 
@@ -246,6 +268,7 @@ function buildGrid(spec) {
   else if (spec.kind === 'brute') rows = BRUTE_HEADS[spec.head || 'ape'].concat(BRUTE_BODY);
   else if (spec.kind === 'icon') rows = ICONS[spec.icon];
   else if (spec.kind === 'weapon') rows = WEAPON_SHAPES[spec.shape].rows;
+  else if (spec.kind === 'figure') rows = FIGURES[spec.head].rows;
   else rows = SHAPES[spec.kind];
   const width = rows[0].length;
   const g = rows.map(r => r.padEnd(width, '.').slice(0, width).split(''));
@@ -266,7 +289,19 @@ function makeCanvas(w, h) {
   return cv;
 }
 
-function renderGrid(grid, pal) {
+// Characters get simple pixel shading: a darker rim on the lower-right edge,
+// a highlight on the upper-left, and a shadow under hair and hats.
+const SHADE_SKIP = 'ekmw';
+const CAST_SHADOW = 'hxyYr';
+function shadeColor(grid, x, y, ch, col, filled) {
+  if (SHADE_SKIP.includes(ch)) return col;
+  if (!filled(x + 1, y) || !filled(x, y + 1)) return mixColor(col, '#1b1424', 0.24);
+  if (ch === 's' && y > 0 && CAST_SHADOW.includes(grid[y - 1][x])) return mixColor(col, '#1b1424', 0.2);
+  if (!filled(x - 1, y) || !filled(x, y - 1)) return mixColor(col, '#ffffff', 0.18);
+  return col;
+}
+
+function renderGrid(grid, pal, shade) {
   const h = grid.length, w = grid[0].length;
   const cv = makeCanvas(w + 2, h + 2);
   const c = cv.getContext('2d');
@@ -282,7 +317,8 @@ function renderGrid(grid, pal) {
     for (let x = 0; x < w; x++) {
       const ch = grid[y][x];
       if (ch === '.') continue;
-      c.fillStyle = pal[ch] || '#ff00ff';
+      const col = pal[ch] || '#ff00ff';
+      c.fillStyle = shade ? shadeColor(grid, x, y, ch, col, filled) : col;
       c.fillRect(x + 1, y + 1, 1, 1);
     }
   }
@@ -310,7 +346,7 @@ function getSprite(spec, variant, color) {
   let cv = SPRITE_CACHE.get(key);
   if (!cv) {
     cv = variant ? variantOf(getSprite(spec), variant, color)
-      : renderGrid(buildGrid(spec), Object.assign({}, PAL, spec.pal || {}));
+      : renderGrid(buildGrid(spec), Object.assign({}, PAL, spec.kind === 'figure' ? FIGURES[spec.head].pal : {}, spec.pal || {}), !['icon', 'weapon', 'figure'].includes(spec.kind));
     SPRITE_CACHE.set(key, cv);
   }
   return cv;
