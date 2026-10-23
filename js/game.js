@@ -840,6 +840,19 @@ function buy(k) {
 
 const crewAtk = m => Math.round(3 + G.p.lvl * ROLES[CREW[m.key].role].atk + (m.weapon ? WEAPONS[m.weapon].atk : 0));
 const crewHeal = m => Math.round(4 + G.p.lvl * ROLES[CREW[m.key].role].heal + (m.weapon ? WEAPONS[m.weapon].atk * 0.8 : 0));
+// A crewmate's sprite; one who ate the Dragon-Dragon Fruit is half dragon from then on.
+const CREW_DRAGON = new Map();
+function crewSpec(m) {
+  const spr = CREW[m.key].spr;
+  if (m.fruit !== 'dragon') return spr;
+  if (!CREW_DRAGON.has(m.key)) {
+    CREW_DRAGON.set(m.key, Object.assign({}, spr, {
+      marks: (spr.marks || []).concat(spr.kind === 'brute' ? 'dragonBrute' : 'dragonCrew', 'dragonHorns'),
+      pal: Object.assign({}, spr.pal, spr.head === 'tophat' ? {} : { a: '#f2e6c8' }),
+    }));
+  }
+  return CREW_DRAGON.get(m.key);
+}
 const crewRole = k => `${CREW[k].race} ${ROLES[CREW[k].role].name}`;
 
 function crewKit(m) {
@@ -858,7 +871,7 @@ function barMenu(note) {
   for (const m of p.crew) {
     const c = CREW[m.key];
     body.append(el('div', { class: 'row' },
-      el('img', { src: spriteURL(c.spr, 2), alt: '' }),
+      el('img', { src: spriteURL(crewSpec(m), 2), alt: '' }),
       el('div', null, el('h3', null, c.name, el('small', { text: ' ' + crewRole(m.key) })), el('p', { text: crewKit(m) })),
       el('button', { type: 'button', class: 'mini-btn', text: 'Manage', onclick: () => manageCrew(m.key) })));
   }
@@ -895,7 +908,7 @@ function manageCrew(k, confirmKick, note) {
   body.style.display = 'contents';
   if (note) body.append(el('p', { class: 'note', text: note }));
   body.append(el('div', { class: 'row current' },
-    el('img', { src: spriteURL(c.spr, 3), alt: '' }),
+    el('img', { src: spriteURL(crewSpec(m), 3), alt: '' }),
     el('div', null, el('h3', null, c.name, el('small', { text: ' ' + crewRole(k) })), el('p', { text: r.desc }), el('p', { text: crewKit(m) })),
     null));
 
@@ -987,7 +1000,8 @@ function feedFruit(k, fk) {
   Sfx.play('eat');
   screenFlash(FRUITS[fk].color, 0.4);
   save();
-  manageCrew(k, false, `${c.name} eats the ${FRUITS[fk].name}. "Blegh! Tastes AWFUL!" ${c.name} can't swim anymore, but now fights with its powers.`);
+  const extra = fk === 'dragon' ? ` Horns burst out, scales spread and a tail swishes: ${c.name} is half dragon now!` : '';
+  manageCrew(k, false, `${c.name} eats the ${FRUITS[fk].name}. "Blegh! Tastes AWFUL!" ${c.name} can't swim anymore, but now fights with its powers.${extra}`);
 }
 
 function kickOut(k) {
@@ -3055,7 +3069,7 @@ function drawHome() {
   const step = moving ? (Math.floor(G.t * 8) % 2) : 0;
   const actors = p.crew.map((m, i) => {
     const [x, y] = HOME_CREW_SPOTS[i];
-    return { spr: getSprite(CREW[m.key].spr), x, y: y + Math.round(Math.sin(G.t * 2 + i) * 0.6), scale: 2, squash: Math.sin(G.t * 2.5 + i) * 0.02, m };
+    return { spr: getSprite(crewSpec(m)), x, y: y + Math.round(Math.sin(G.t * 2 + i) * 0.6), scale: 2, squash: Math.sin(G.t * 2.5 + i) * 0.02, m };
   });
   actors.push({ spr: heroSprite(), x: Hr.x + Hr.ox, y: 121 + Hr.oy - step, scale: 2, squash: Hr.squash + (moving ? 0 : Math.sin(G.t * 3) * 0.025), alpha: Hr.alpha });
   drawActors(actors);
@@ -3082,7 +3096,7 @@ function drawBattle() {
   const B = G.battle, F = B.F, p = G.p;
   const actors = (B.solo ? [] : p.crew).map((m, i) => {
     const [x, y] = BATTLE_CREW_SPOTS[i];
-    return { spr: getSprite(CREW[m.key].spr), x, y: y + Math.round(Math.sin(G.t * 4 + i) * 0.6), scale: 1, m };
+    return { spr: getSprite(crewSpec(m)), x, y: y + Math.round(Math.sin(G.t * 4 + i) * 0.6), scale: 1, m };
   });
   if (B.awake > 0 && fruit() && Math.random() < 0.7) {
     particles(G.hero.x + G.hero.ox + rand(-10, 10), 118, 1, { colors: [fruit().color, fruit().color2, '#ffffff'], speed: 30, grav: -70, dir: -Math.PI / 2, spread: 0.6, life: 0.7 });
@@ -3239,7 +3253,7 @@ function drawFish() {
 
 // Hero and crew peeking over the rail of the small ship.
 function drawCrewAboard(c, x, deckY) {
-  const people = [heroSprite()].concat(G.p.crew.map(m => getSprite(CREW[m.key].spr)));
+  const people = [heroSprite()].concat(G.p.crew.map(m => getSprite(crewSpec(m))));
   const spots = [30, 18, 38, 10, 44, 4];
   people.forEach((spr, i) => drawSpriteAt(c, spr, x + spots[i], deckY + 2 + Math.round(Math.sin(G.t * 5 + i) * 0.5), 1, { shadow: false }));
 }
@@ -3257,7 +3271,7 @@ const DECK_SEATS = [70, 124, 48, 146, 30, 164];
 function drawBoat() {
   const p = G.p, look = Object.assign(shipLook(), { t: G.t, ready: travelReady(), sea: seaColors(island().scene, timeIdx()).sea });
   drawDeckBack(ctx, look);
-  const people = [{ spr: heroSprite() }].concat(p.crew.map(m => ({ spr: getSprite(CREW[m.key].spr), m })));
+  const people = [{ spr: heroSprite() }].concat(p.crew.map(m => ({ spr: getSprite(crewSpec(m)), m })));
   people.forEach((o, i) => {
     const spr = o.spr, sh = Math.round(spr.height * 0.74);
     const x = DECK_SEATS[i], bob = Math.round(Math.sin(G.t * 2 + i) * 0.6);
