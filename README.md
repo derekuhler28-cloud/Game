@@ -1,6 +1,6 @@
 # Pocket Pirate
 
-A small pixel-art pirate life sim inspired by One Piece. You start as a nobody: no weapon, no powers, no crew, no hat. Explore islands to find weapons and hidden Devil Fruits, master their moves, hire a crew at island bars, raid bosses, fix up your ship, sail over Reverse Mountain into the Grand Line and down to Fish-Man Island, awaken your Devil Fruit, and become Pirate King.
+A small pixel-art pirate life sim inspired by One Piece. You start as a nobody: no weapon, no powers, no crew, just drab clothes. Explore islands to find weapons and hidden Devil Fruits, master their moves, hire a crew at island bars, raid bosses, fix up your ship, sail over Reverse Mountain into the Grand Line and down to Fish-Man Island, awaken your Devil Fruit, and become Pirate King.
 
 No build step and no dependencies: open `index.html` in a browser (or serve the folder with any static server). Progress saves automatically in your browser.
 
@@ -68,7 +68,7 @@ A crewmate's power grows with your level and their weapon. Crewmates with a Devi
 
 | Island | Hidden weapons | Raid boss (drops) | At the bar |
 | --- | --- | --- | --- |
-| Dawn Village | Rusty Cutlass, Oak Bo Staff | Bandit King Grizzle (Grizzle's Club, a straw hat) | Rin (brawler), Tobi (sniper) |
+| Dawn Village | Rusty Cutlass, Oak Bo Staff | Bandit King Grizzle (Grizzle's Club, and a pirate's red vest) | Rin (brawler), Tobi (sniper) |
 | Shell Port | Flintlock Pistol, Marine Saber | Captain Ironjaw (Ironjaw's Axe) | Kenji (swordsman), Gus (cook) |
 | Orange Town | Circus Knives | Buggy the Clown, blades barely hurt him (Buggy Cannon) | Coral (navigator), Hana (doctor) |
 | Syrup Village | Hypno Chakram | Captain Kuro, dodges a lot (Cat Claws) | Pip (sniper), Nyx (mink swordsman) |

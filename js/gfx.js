@@ -30,12 +30,8 @@ const PAL = {
 
 // ---------- sprite shapes (16x16, '.' = empty; outline is added automatically) ----------
 
-const PLAYER_ROWS = [
-  '.....yyyyyy.....',
-  '....yyyyyyyy....',
-  '....yyyyyyyy....',
-  '....rrrrrrrr....',
-  '..YYYYYYYYYYYY..',
+// Your pirate's body; the head is HUMAN_HEADS.hair.
+const PLAYER_BODY = [
   '....hssssssh....',
   '....hsessesh....',
   '....sSssssss....',
@@ -204,12 +200,10 @@ const OVERLAYS = {
   horns:  [[2, 2, 1, 1, 'x'], [3, 3, 1, 1, 'x'], [6, 2, 1, 1, 'x'], [5, 3, 1, 1, 'x']],
   // race marks for the player sprite
   minkEars:    [[3, 0, 2, 2, 'S'], [11, 0, 2, 2, 'S']],
-  minkEarsHat: [[2, 1, 2, 2, 'S'], [12, 1, 2, 2, 'S']],
   wings:       [[1, 8, 2, 3, 'w'], [13, 8, 2, 3, 'w'], [0, 9, 1, 1, 'w'], [15, 9, 1, 1, 'w']],
   fin:         [[7, 0, 2, 1, 'x'], [6, 1, 1, 1, 'x'], [9, 1, 1, 1, 'x']],
   // Dragon-Dragon Fruit eaters stay half dragon: horns, scaly arms, cheeks and shins, and a tail.
   dragonHorns:    [[5, 0, 1, 2, 'a'], [10, 0, 1, 2, 'a'], [4, 0, 1, 1, 'a'], [11, 0, 1, 1, 'a']],
-  dragonHornsHat: [[3, 0, 1, 3, 'a'], [12, 0, 1, 3, 'a'], [2, 0, 1, 1, 'a'], [13, 0, 1, 1, 'a']],
   dragonBody:     [[3, 9, 1, 3, 'd'], [12, 9, 1, 3, 'd'], [10, 6, 1, 3, 'd'], [11, 7, 1, 1, 'd'], [9, 6, 1, 1, 'y'], [4, 14, 2, 1, 'd'], [10, 14, 2, 1, 'd'],
     [3, 12, 1, 1, 'd'], [2, 13, 1, 1, 'd'], [1, 14, 1, 1, 'd'], [0, 15, 2, 1, 'D'], [2, 12, 1, 1, 'D']],
   // The same for crewmates who eat it: regular builds and big brute builds.
@@ -284,7 +278,6 @@ const ICONS = {
   sails:    ['...n....', '..wwww..', '.rrrrrr.', '.wwwwww.', '.rrrrrr.', '..wwww..', '...n....', 'nnnnnnnn'],
   galley:   ['.w..w...', '..w..w..', '.w..w...', 'gggggggg', '.hhhhhh.', '.hhhhhh.', '.hhhhhh.', '..hhhh..'],
   sword:    ['......ww', '.....www', '....www.', '.n.www..', '..nww...', '..nn....', '.n..n...', 'n.......'],
-  hat:      ['........', '..yyyy..', '.yyyyyy.', '.rrrrrr.', 'yyyyyyyy', '.YYYYYY.', '........', '........'],
   map:      ['.CCCCCC.', 'CCCCCCCC', 'CbCCCrCr', 'CCbCCCrC', 'CCCbCrCr', 'CCCCbCCC', 'CCCCCCCC', '.CCCCCC.'],
   poster:   ['CCCCCCCC', 'ChhhhhhC', 'CCCCCCCC', 'CCssssCC', 'CCseesCC', 'CCssssCC', 'ChhhhhhC', 'CCCCCCCC'],
   moon:     ['..yyy...', '.yy.....', 'yy....w.', 'yy...ww.', 'yy......', 'yy......', '.yy.....', '..yyy...'],
@@ -306,7 +299,7 @@ const ICONS = {
 
 function buildGrid(spec) {
   let rows;
-  if (spec.kind === 'player') rows = spec.hat === false ? HUMAN_HEADS.hair.concat(PLAYER_ROWS.slice(5)) : PLAYER_ROWS;
+  if (spec.kind === 'player') rows = HUMAN_HEADS.hair.concat(PLAYER_BODY);
   else if (spec.kind === 'human') rows = HUMAN_HEADS[spec.head || 'hair'].concat(HUMAN_BODY);
   else if (spec.kind === 'brute') rows = BRUTE_HEADS[spec.head || 'ape'].concat(BRUTE_BODY);
   else if (spec.kind === 'icon') rows = ICONS[spec.icon];

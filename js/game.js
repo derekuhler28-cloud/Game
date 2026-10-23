@@ -43,7 +43,7 @@ function newPlayer(name, raceKey) {
     energy: 100, food: 70, mood: 60, berries: 50, bounty: 0,
     day: 1, tick: 0, island: 0, unlocked: 1, bosses: {}, crew: [], fruit: null,
     bag: { meat: 1 }, owned: {}, wins: 0, trained: 0, king: false,
-    hat: false, weapon: null, weapons: [], mastery: {}, explored: {}, fruitMap: dealFruits({}, []), fruitsFound: [], fruitBag: [],
+    pirate: false, weapon: null, weapons: [], mastery: {}, explored: {}, fruitMap: dealFruits({}, []), fruitsFound: [], fruitBag: [],
     ship: { paint: 'wood', head: null }, awakened: {},
   };
 }
@@ -176,8 +176,9 @@ function restore(raw) {
     raw = Object.assign({}, raw, { fruitMap: remap(raw.fruitMap) });
   }
   p.ship = Object.assign({ paint: 'wood', head: null }, p.ship);
-  // The straw hat is Grizzle's loot and nothing else. Old saves were handed it for free; take that back.
-  p.hat = !!(p.bosses && p.bosses.grizzle);
+  // Beating Grizzle turns you from a nobody into a pirate. (There is no straw hat any more.)
+  p.pirate = !!(p.bosses && p.bosses.grizzle);
+  delete p.hat;
   p.awakened = Object.assign({}, p.awakened);
   p.crew = (p.crew || []).filter(m => m && CREW[m.key]).slice(0, CREW_MAX);
   for (const m of p.crew) {
@@ -1196,7 +1197,7 @@ async function sailTo(idx) {
     const swimmer = p.crew.find(m => !m.fruit);
     await talk(`A wave knocks you overboard! Devil Fruit users sink like rocks... ${swimmer ? CREW[swimmer.key].name + ' dives in and drags you out.' : 'You grab a floating barrel just in time.'}`);
   } else {
-    await talk(pick(['Smooth sailing. A seagull steals your hat for a second.', 'Calm seas. You nap on the figurehead.', 'A school of flying fish races the ship!']));
+    await talk(pick(['Smooth sailing. A seagull steals your lunch for a second.', 'Calm seas. You nap on the figurehead.', 'A school of flying fish races the ship!']));
   }
   await tween(G.sail, { x: 230 }, 1300, linear);
   await arrive(idx);
@@ -1289,7 +1290,7 @@ function startAwakeningTrial() {
   const lvl = Math.max(66, p.lvl + 6);
   const def = {
     name: `Will of the ${short} Fruit`, lvl, hpMult: 13, atkMult: 1.6, bounty: 0, berries: 5000, scale: 3, heals: true, dodge: 0.1,
-    spr: { kind: 'player', hat: false, marks: p.fruit === 'dragon' ? ['dragonHorns', 'dragonBody'] : undefined, pal: { a: '#f2e6c8', d: f.color2, D: f.color, s: dark, S: mixColor(f.color, '#1b1424', 0.7), h: f.color2, v: f.color, b: dark, y: f.color2, Y: f.color, r: f.color, w: '#ffffff', e: '#ffffff', f: '#1b1424' } },
+    spr: { kind: 'player', marks: p.fruit === 'dragon' ? ['dragonHorns', 'dragonBody'] : undefined, pal: { a: '#f2e6c8', d: f.color2, D: f.color, s: dark, S: mixColor(f.color, '#1b1424', 0.7), h: f.color2, v: f.color, b: dark, y: f.color2, Y: f.color, r: f.color, w: '#ffffff', e: '#ffffff', f: '#1b1424' } },
     intro: '"So you want ALL of my power? Then beat me. Alone."',
     basic: f.moves[0].name, charge: 'gathers the full power of the fruit...', big: aw.moves[1].name, fx: TRIAL_FX[p.fruit] || 'bolt',
     enrage: 'The Will roars. "Is that all? Show me more!"',
@@ -1310,7 +1311,7 @@ function startAwakeningTrial() {
 
 // ---------- your ship ----------
 
-const shipLook = () => ({ owned: G.p.owned, paint: G.p.ship.paint, head: G.p.ship.head, hat: !!G.p.hat, night: timeIdx() === 3 || isLate() });
+const shipLook = () => ({ owned: G.p.owned, paint: G.p.ship.paint, head: G.p.ship.head, night: timeIdx() === 3 || isLate() });
 const backToMenu = () => { if (G.mode === 'boat') boatMenu(); else if (G.mode === 'home') homeMenu(); };
 const travelReady = () => G.p.unlocked - 1 > G.p.island;
 
@@ -2366,13 +2367,13 @@ async function bossAftermath(key) {
   const p = G.p;
   const idx = ISLANDS.findIndex(i => i.boss === key);
   if (idx < 0) return;
-  if (key === 'grizzle' && !p.hat) {
-    p.hat = true;
+  if (key === 'grizzle' && !p.pirate) {
+    p.pirate = true;
     Sfx.play('find');
     screenFlash('#ffe14a', 0.5);
     showLoot({ kind: 'icon', icon: 'chest' });
-    await talk("In Grizzle's loot you find a battered straw hat. You put it on. It fits like it was waiting for you.");
-    await talk("You paint the same straw hat onto your ship's Jolly Roger. You're not a nobody anymore. You're a PIRATE!");
+    await talk("Grizzle's bandits scatter. From his loot you pull a bright red pirate vest and put it on.");
+    await talk("You're not a nobody anymore. You're a PIRATE!");
   }
   const drop = BOSSES[key].drop;
   if (drop && !p.weapons.includes(drop)) await findWeapon(drop, BOSSES[key].name);
@@ -3317,7 +3318,7 @@ function draw() {
   if (FX.shakeMag > 0) ctx.translate(Math.round(rand(-1, 1) * FX.shakeMag), Math.round(rand(-1, 1) * FX.shakeMag));
   ctx.drawImage(backdrop(scene, ti), 0, 0);
   drawAnimated(ctx, scene, ti, G.t, G.mode === 'sail' ? 5 : 1);
-  const docked = G.mode === 'title' ? { t: G.t, hat: true } : G.p ? Object.assign(shipLook(), { t: G.t }) : null;
+  const docked = G.mode === 'title' ? { t: G.t } : G.p ? Object.assign(shipLook(), { t: G.t }) : null;
   if (docked && G.p && G.mode !== 'title') docked.bubble = island().scene === 'fishman';
   if (scene !== 'sea' && scene !== 'deck' && G.mode !== 'boat' && G.mode !== 'mountain' && G.mode !== 'dive') drawShip(ctx, -8, GROUND - 2 + Math.round(Math.sin(G.t * 1.5)), docked);
   if (G.mode === 'mountain') drawMountainCut();
