@@ -136,9 +136,8 @@ function restore(raw) {
   p.bag = Object.assign({}, p.bag);
   p.owned = Object.assign(raw.weights ? { weights: true } : {}, p.owned);
   if (raw.v === 1) {
-    // Saves from before weapons existed: keep the hat and the moves they had by level.
+    // Saves from before weapons existed: keep the moves they had by level.
     p.v = 2;
-    p.hat = true;
     p.fruitsFound = p.fruit ? [p.fruit] : [];
     p.mastery = { fists: p.lvl >= 9 ? 90 : p.lvl >= 4 ? 40 : 10 };
     if (p.fruit) p.mastery[p.fruit] = p.lvl >= 9 ? 120 : p.lvl >= 4 ? 40 : 0;
@@ -177,6 +176,8 @@ function restore(raw) {
     raw = Object.assign({}, raw, { fruitMap: remap(raw.fruitMap) });
   }
   p.ship = Object.assign({ paint: 'wood', head: null }, p.ship);
+  // The straw hat is Grizzle's loot and nothing else. Old saves were handed it for free; take that back.
+  p.hat = !!(p.bosses && p.bosses.grizzle);
   p.awakened = Object.assign({}, p.awakened);
   p.crew = (p.crew || []).filter(m => m && CREW[m.key]).slice(0, CREW_MAX);
   for (const m of p.crew) {
@@ -1309,7 +1310,7 @@ function startAwakeningTrial() {
 
 // ---------- your ship ----------
 
-const shipLook = () => ({ owned: G.p.owned, paint: G.p.ship.paint, head: G.p.ship.head, night: timeIdx() === 3 || isLate() });
+const shipLook = () => ({ owned: G.p.owned, paint: G.p.ship.paint, head: G.p.ship.head, hat: !!G.p.hat, night: timeIdx() === 3 || isLate() });
 const backToMenu = () => { if (G.mode === 'boat') boatMenu(); else if (G.mode === 'home') homeMenu(); };
 const travelReady = () => G.p.unlocked - 1 > G.p.island;
 
@@ -2371,7 +2372,7 @@ async function bossAftermath(key) {
     screenFlash('#ffe14a', 0.5);
     showLoot({ kind: 'icon', icon: 'chest' });
     await talk("In Grizzle's loot you find a battered straw hat. You put it on. It fits like it was waiting for you.");
-    await talk("You're not a nobody anymore. You're a PIRATE!");
+    await talk("You paint the same straw hat onto your ship's Jolly Roger. You're not a nobody anymore. You're a PIRATE!");
   }
   const drop = BOSSES[key].drop;
   if (drop && !p.weapons.includes(drop)) await findWeapon(drop, BOSSES[key].name);
@@ -3316,7 +3317,7 @@ function draw() {
   if (FX.shakeMag > 0) ctx.translate(Math.round(rand(-1, 1) * FX.shakeMag), Math.round(rand(-1, 1) * FX.shakeMag));
   ctx.drawImage(backdrop(scene, ti), 0, 0);
   drawAnimated(ctx, scene, ti, G.t, G.mode === 'sail' ? 5 : 1);
-  const docked = G.mode === 'title' ? { t: G.t } : G.p ? Object.assign(shipLook(), { t: G.t }) : null;
+  const docked = G.mode === 'title' ? { t: G.t, hat: true } : G.p ? Object.assign(shipLook(), { t: G.t }) : null;
   if (docked && G.p && G.mode !== 'title') docked.bubble = island().scene === 'fishman';
   if (scene !== 'sea' && scene !== 'deck' && G.mode !== 'boat' && G.mode !== 'mountain' && G.mode !== 'dive') drawShip(ctx, -8, GROUND - 2 + Math.round(Math.sin(G.t * 1.5)), docked);
   if (G.mode === 'mountain') drawMountainCut();

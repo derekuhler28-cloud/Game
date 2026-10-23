@@ -710,11 +710,11 @@ const PAINTS = {
 };
 const LANTERN_COLS = ['#ff5a5a', '#ffd04a', '#7cff7a', '#7cd0ff', '#ff8ab0'];
 
-function drawJollyRoger(c, sx, sy, s) {
+// The skull and crossbones. It wears the straw hat only once you've earned it.
+function drawJollyRoger(c, sx, sy, s, hat) {
   s = s || 1;
   const r = (x, y, w, h, col) => pxRect(c, sx + x * s, sy + y * s, w * s, h * s, col);
-  r(1, 0, 6, 1, '#f4c542');
-  r(0, 1, 8, 1, '#d63c2f');
+  if (hat) { r(1, 0, 6, 1, '#f4c542'); r(0, 1, 8, 1, '#d63c2f'); } else r(3, 1, 2, 1, '#1b1424');
   r(2, 2, 4, 4, '#1b1424');
   r(3, 3, 1, 1, '#f4efe1');
   r(5, 3, 1, 1, '#f4efe1');
@@ -753,7 +753,7 @@ function drawShip(c, x, y, o) {
     pxRect(c, sl + belly, yy, sr - sl, 1, yy > sb - 3 ? '#d8d0bc' : '#f4efe1');
   }
   if (up.sails) { pxRect(c, sl + 1, st + 2, sr - sl, 2, '#d63c2f'); pxRect(c, sl + 1, sb - 6, sr - sl, 2, '#d63c2f'); }
-  drawJollyRoger(c, mx - 4, st + 6);
+  drawJollyRoger(c, mx - 4, st + 6, 1, o.hat);
   pxRect(c, mx + 2, y - 52, 7, 4, '#1b1424');
   pxRect(c, mx + 4, y - 51, 2, 2, '#f4efe1');
   if (up.nest) {
@@ -825,7 +825,7 @@ function drawDeckBack(c, o) {
     pxRect(c, sr + off - 3, y, 3, 1, band ? '#b02a22' : '#e2dccb');
   }
   pxRect(c, sl - 6, sb, sr - sl + 12, 2, '#5a3818');
-  drawJollyRoger(c, 86, 20, 2);
+  drawJollyRoger(c, 86, 20, 2, o.hat);
   if (up.lanterns) {
     drawLanternString(c, 97, 22, 4, 30, o.night, 2, 8);
     drawLanternString(c, 97, 22, 190, 30, o.night, 2, 8);
