@@ -24,6 +24,8 @@ const PAL = {
   R: '#ee8a62', // light red
   v: '#d63c2f', // vest
   b: '#3b6fd6', // blue
+  d: '#4a8ad9', // dragon scales
+  D: '#2a5a9a', // dark dragon scales
 };
 
 // ---------- sprite shapes (16x16, '.' = empty; outline is added automatically) ----------
@@ -205,6 +207,11 @@ const OVERLAYS = {
   minkEarsHat: [[2, 1, 2, 2, 'S'], [12, 1, 2, 2, 'S']],
   wings:       [[1, 8, 2, 3, 'w'], [13, 8, 2, 3, 'w'], [0, 9, 1, 1, 'w'], [15, 9, 1, 1, 'w']],
   fin:         [[7, 0, 2, 1, 'x'], [6, 1, 1, 1, 'x'], [9, 1, 1, 1, 'x']],
+  // Dragon-Dragon Fruit eaters stay half dragon: horns, scaly arms, cheeks and shins, and a tail.
+  dragonHorns:    [[5, 0, 1, 2, 'a'], [10, 0, 1, 2, 'a'], [4, 0, 1, 1, 'a'], [11, 0, 1, 1, 'a']],
+  dragonHornsHat: [[3, 0, 1, 3, 'a'], [12, 0, 1, 3, 'a'], [2, 0, 1, 1, 'a'], [13, 0, 1, 1, 'a']],
+  dragonBody:     [[3, 9, 1, 3, 'd'], [12, 9, 1, 3, 'd'], [10, 6, 1, 3, 'd'], [11, 7, 1, 1, 'd'], [9, 6, 1, 1, 'y'], [4, 14, 2, 1, 'd'], [10, 14, 2, 1, 'd'],
+    [3, 12, 1, 1, 'd'], [2, 13, 1, 1, 'd'], [1, 14, 1, 1, 'd'], [0, 15, 2, 1, 'D'], [2, 12, 1, 1, 'D']],
 };
 
 // Hand-held weapons. `grip` is the [x, y] cell that sits in the pirate's hand.

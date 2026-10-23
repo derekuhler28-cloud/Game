@@ -30,7 +30,22 @@ function raceSpec(r, hat) {
   }
   return RACE_SPECS.get(key);
 }
-const heroSpec = () => (G.p ? raceSpec(G.p.race || 'human', !!G.p.hat) : PLAYER_SPR);
+const DRAGON_SPECS = new Map();
+// Your look: your race, the straw hat once you earn it, and dragon features for good once you eat the Dragon-Dragon Fruit.
+function heroSpec() {
+  if (!G.p) return PLAYER_SPR;
+  const hat = !!G.p.hat, spec = raceSpec(G.p.race || 'human', hat);
+  return G.p.fruit === 'dragon' ? dragonSpec(spec, hat) : spec;
+}
+function dragonSpec(spec, hat) {
+  if (!DRAGON_SPECS.has(spec)) {
+    DRAGON_SPECS.set(spec, Object.assign({}, spec, {
+      marks: (spec.marks || []).concat(hat ? 'dragonHornsHat' : 'dragonHorns', 'dragonBody'),
+      pal: Object.assign({}, spec.pal, { a: '#f2e6c8' }),
+    }));
+  }
+  return DRAGON_SPECS.get(spec);
+}
 const weaponSpec = k => (WEAPONS[k].shape ? { kind: 'weapon', shape: WEAPONS[k].shape, pal: WEAPONS[k].pal || {} } : { kind: 'icon', icon: 'wraps' });
 const weaponURL = k => (k === 'fists' ? iconURL('wraps', { w: '#f3c08c', s: '#c98a5a' }) : spriteURL(weaponSpec(k), 3));
 const fruitSpec = k => ({ kind: 'icon', icon: 'fruit', pal: { c: FRUITS[k].color, C: FRUITS[k].color2 } });
@@ -275,6 +290,7 @@ async function eatFruit(k) {
   bubble('BLEH!');
   await talk(`You ate the ${f.name}! It tastes like old socks... but power surges through you!`);
   if (f.hpBonus) await talk(`Your body grows tougher. Max HP +${Math.round(f.hpBonus * 100)}%!`);
+  if (k === 'dragon') await talk('Horns burst out of your head, azure scales spread down your arms and legs, and a tail swishes behind you. You are half dragon now, for good!');
   if (p.race === 'fishman') await talk("A fishman who can't swim anymore... Well, that's ironic.");
   await talk(`First move ready: ${f.moves[0].name}. Use your power in fights or practice it to unlock ${f.moves[1].name} and ${f.moves[2].name}.`);
 }

@@ -502,8 +502,8 @@ const FRUITS = {
   },
   dragon: {
     name: 'Dragon-Dragon Fruit', color: '#4a8ad9', color2: '#bfe0ff', hpBonus: 0.2, form: true,
-    desc: 'A mythical Zoan. Turn into an azure dragon to attack. +20% max HP.',
-    awaken: { name: 'Hybrid Dragon', look: { h: '#4a8ad9', v: '#bfe0ff', b: '#2a4a8a' }, moves: [{ name: 'Thunder Bagua', sp: 45, mult: 3.4, stun: 0.3, fx: 'thunderbagua' }, { name: 'Bolo Breath', sp: 70, mult: 5.2, fx: 'bolobreath' }] },
+    desc: 'A mythical Zoan. You become half human, half azure dragon for good, and turn fully into the dragon to attack. +20% max HP.',
+    awaken: { name: 'Azure Emperor', look: { h: '#4a8ad9', v: '#bfe0ff', b: '#2a4a8a' }, moves: [{ name: 'Thunder Bagua', sp: 45, mult: 3.4, stun: 0.3, fx: 'thunderbagua' }, { name: 'Bolo Breath', sp: 70, mult: 5.2, fx: 'bolobreath' }] },
     moves: [
       { name: 'Dragon Claw', at: 0, sp: 25, mult: 1.8, fx: 'dragonclaw', color: '#bfe0ff' },
       { name: 'Blaze Breath', at: 40, sp: 50, mult: 1.5, burn: 3, fx: 'breath' },

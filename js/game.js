@@ -1274,7 +1274,7 @@ function startAwakeningTrial() {
   const lvl = Math.max(66, p.lvl + 6);
   const def = {
     name: `Will of the ${short} Fruit`, lvl, hpMult: 13, atkMult: 1.6, bounty: 0, berries: 5000, scale: 3, heals: true, dodge: 0.1,
-    spr: { kind: 'player', hat: false, pal: { s: dark, S: mixColor(f.color, '#1b1424', 0.7), h: f.color2, v: f.color, b: dark, y: f.color2, Y: f.color, r: f.color, w: '#ffffff', e: '#ffffff', f: '#1b1424' } },
+    spr: { kind: 'player', hat: false, marks: p.fruit === 'dragon' ? ['dragonHorns', 'dragonBody'] : undefined, pal: { a: '#f2e6c8', d: f.color2, D: f.color, s: dark, S: mixColor(f.color, '#1b1424', 0.7), h: f.color2, v: f.color, b: dark, y: f.color2, Y: f.color, r: f.color, w: '#ffffff', e: '#ffffff', f: '#1b1424' } },
     intro: '"So you want ALL of my power? Then beat me. Alone."',
     basic: f.moves[0].name, charge: 'gathers the full power of the fruit...', big: aw.moves[1].name, fx: TRIAL_FX[p.fruit] || 'bolt',
     enrage: 'The Will roars. "Is that all? Show me more!"',
@@ -2389,7 +2389,7 @@ function ending() {
     body.style.display = 'contents';
     body.append(el('div', { class: 'poster' },
       el('div', { class: 'wanted', text: 'KING' }),
-      el('img', { src: spriteURL(PLAYER_SPR, 6), alt: '' }),
+      el('img', { src: spriteURL(heroSpec(), 6), alt: '' }),
       el('div', { class: 'pname', text: p.name }),
       el('div', { class: 'pbounty', text: '฿ ' + fmt(p.bounty) + ' -' }),
       el('div', { class: 'ptitle', text: 'King of the Pirates' })));
