@@ -133,29 +133,37 @@ function el(tag, attrs, ...kids) {
   return n;
 }
 
-function setActions(list, layout) {
+function actionButton(a, cls) {
+  const b = el('button', { type: 'button', class: cls + (a.cls ? ' ' + a.cls : '') + (a.blocked ? ' dim' : '') });
+  if (a.icon) b.append(el('img', { src: a.icon, alt: '' }));
+  b.append(el('span', { text: a.label }));
+  if (a.sub) b.append(el('small', { text: a.sub }));
+  if (a.badge) b.append(el('span', { class: 'badge', text: a.badge, 'aria-label': `${a.badge} left` }));
+  b.addEventListener('click', () => {
+    if (G.busy) return;
+    Sfx.unlock();
+    if (a.blocked) { Sfx.play('bad'); say(a.blocked); return; }
+    Sfx.play('select');
+    a.onClick();
+  });
+  return b;
+}
+
+// Primary actions go in the main grid; `dock` (home screen only) fills the icon bar below it.
+function setActions(list, layout, dock) {
   const box = $('actions');
-  box.replaceChildren();
   box.className = 'actions' + (layout ? ' ' + layout : '') + (G.busy ? ' locked' : '');
-  for (const a of list) {
-    const b = el('button', { type: 'button', class: 'btn' + (a.cls ? ' ' + a.cls : '') + (a.blocked ? ' dim' : '') });
-    if (a.icon) b.append(el('img', { src: a.icon, alt: '' }));
-    b.append(el('span', { text: a.label }));
-    if (a.sub) b.append(el('small', { text: a.sub }));
-    b.addEventListener('click', () => {
-      if (G.busy) return;
-      Sfx.unlock();
-      if (a.blocked) { Sfx.play('bad'); say(a.blocked); return; }
-      Sfx.play('select');
-      a.onClick();
-    });
-    box.append(b);
-  }
+  box.replaceChildren(...list.map(a => actionButton(a, 'btn')));
+  const bar = $('dock');
+  bar.hidden = !dock;
+  bar.classList.toggle('locked', G.busy);
+  bar.replaceChildren(...(dock || []).map(a => actionButton(a, 'dock-btn')));
 }
 
 function lock(on) {
   G.busy = on;
   $('actions').classList.toggle('locked', on);
+  $('dock').classList.toggle('locked', on);
 }
 
 // ---------- message box ----------
@@ -238,40 +246,45 @@ function updateHud() {
   const p = G.p;
   const inGame = !!p && G.mode !== 'title';
   $('hud').hidden = !inGame;
+  $('hudBerries').hidden = !inGame;
   $('meters').hidden = !inGame;
   if (!inGame) return;
   setText('hudName', p.name);
   setText('hudLv', 'Lv ' + p.lvl);
-  setText('hudDay', `Day ${p.day} - ${timeName()}`);
-  setText('hudIsland', island().name);
   setText('hudBerries', '฿' + fmt(p.berries));
-  setText('hudBounty', 'Bounty ฿' + fmt(p.bounty));
   const status = p.food <= 0 ? 'STARVING' : p.energy < 15 ? 'EXHAUSTED' : p.mood >= 75 ? 'PUMPED' : p.mood <= 25 ? 'GLOOMY' : '';
   const chip = $('hudStatus');
   chip.hidden = !status;
   if (status) { setText('hudStatus', status); chip.classList.toggle('good', status === 'PUMPED'); }
 
+  // [label, value, max, color token, accessible name, show number]
   const B = G.battle;
   const meters = B
-    ? [['HP', p.hp, p.maxHp, '--hp'], ['SP', B.sp, 100, '--sp'], ['EN', p.energy, 100, '--en'], ['FOOD', p.food, 100, '--food']]
-    : [['HP', p.hp, p.maxHp, '--hp'], ['EN', p.energy, 100, '--en'], ['FOOD', p.food, 100, '--food'], ['MOOD', p.mood, 100, '--mood']];
+    ? [['HP', p.hp, p.maxHp, '--hp', 'Health', true], ['SP', B.sp, 100, '--sp', 'Spirit', true]]
+    : [['HP', p.hp, p.maxHp, '--hp', 'Health', true], ['EN', p.energy, 100, '--en', 'Energy'], ['FOOD', p.food, 100, '--food', 'Food'], ['MOOD', p.mood, 100, '--mood', 'Mood']];
   const box = $('meters');
   const key = meters.map(m => m[0]).join();
   if (box.dataset.key !== key) {
     box.dataset.key = key;
-    box.replaceChildren(...meters.map(m => el('div', { class: 'meter' },
-      el('span', { text: m[0] }),
-      el('div', { class: 'mb', style: `--c: var(${m[3]})` }, el('i')),
-      el('span', { class: 'mv' }))));
+    box.style.setProperty('--n', meters.length);
+    box.replaceChildren(...meters.map(m => el('div', { class: 'meter', role: 'progressbar', 'aria-label': m[4], 'aria-valuemin': '0' },
+      el('div', { class: 'mtop' }, el('span', { text: m[0] }), m[5] ? el('span', { class: 'mv' }) : null),
+      el('div', { class: 'mb', style: `--c: var(${m[3]})` }, el('i')))));
   }
   meters.forEach((m, i) => {
-    const row = box.children[i];
+    const cell = box.children[i];
     const w = Math.round(clamp(m[1] / m[2], 0, 1) * 100) + '%';
-    const bar = row.querySelector('i');
+    const bar = cell.querySelector('i');
     if (bar.style.width !== w) bar.style.width = w;
-    const txt = m[0] === 'HP' ? `${Math.ceil(m[1])}/${m[2]}` : String(Math.round(m[1]));
-    const mv = row.querySelector('.mv');
-    if (mv.textContent !== txt) mv.textContent = txt;
+    const now = String(Math.ceil(m[1]));
+    if (cell.getAttribute('aria-valuenow') !== now) {
+      cell.setAttribute('aria-valuenow', now);
+      cell.setAttribute('aria-valuemax', String(m[2]));
+      cell.title = `${m[4]} ${now}/${m[2]}`;
+    }
+    const mv = cell.querySelector('.mv');
+    const txt = `${now}/${m[2]}`;
+    if (mv && mv.textContent !== txt) mv.textContent = txt;
   });
 }
 
@@ -298,6 +311,7 @@ function showTitle() {
 function newGameForm(overwrite) {
   const box = $('actions');
   box.className = 'actions single';
+  $('dock').hidden = true;
   const input = el('input', { id: 'nameInput', maxlength: '12', autocomplete: 'off', value: overwrite ? '' : 'Nobody', placeholder: 'Nobody' });
   const form = el('form', { class: 'nameform' },
     el('label', { for: 'nameInput', text: 'Name your pirate' }),
@@ -333,7 +347,7 @@ async function enterGame(cont) {
   homeMenu();
   await talk(`${p.name} is a nobody from Dawn Village. No weapon, no powers, no crew. Just a big dream.`);
   await talk('EXPLORE to find weapons and hidden Devil Fruits. Use them in fights to master new moves.');
-  await talk('Train, eat, and fight to grow. When you feel ready, RAID the island boss!');
+  await talk('Train, eat, and fight to grow. When you feel ready, RAID the island boss! (Psst: tap your pirate to chat.)');
   lock(false);
   if (G.mode !== 'home') return;
   homeMenu();
@@ -355,20 +369,22 @@ function homeMenu() {
   const isl = island();
   const beaten = p.bosses[isl.boss];
   const loot = lootCount(p.island).left;
+  const paper = { C: '#f2e4c0' };
   setActions([
-    { label: 'Explore', sub: loot ? `${loot} secret${loot > 1 ? 's' : ''}` : '12 EN', onClick: explore, blocked: tooLate },
-    { label: 'Fight', sub: '10 EN', onClick: fightRandom, blocked: tooLate },
-    { label: 'Train', sub: '18 EN', onClick: trainMenu, blocked: tooLate },
-    { label: beaten ? 'Rematch' : 'Raid', sub: 'boss', cls: 'raid', onClick: raidMenu, blocked: tooLate },
-    { label: 'Gear', sub: shortWeapon(), onClick: () => gearMenu() },
-    { label: 'Eat', sub: 'bag', onClick: bagMenu },
-    { label: 'Work', sub: 'earn ฿', onClick: workMenu, blocked: tooLate },
-    { label: 'Shop', sub: 'buy', onClick: shopMenu },
-    { label: 'Crew', sub: `${p.crew.length}/5`, onClick: crewMenu },
-    { label: 'Sail', sub: 'map', onClick: mapMenu, blocked: tooLate },
-    { label: 'Wanted', sub: 'stats', onClick: wantedMenu },
-    { label: 'Sleep', sub: 'next day', onClick: sleep, cls: late ? 'pulse' : '' },
-  ], 'cols4');
+    { label: 'Explore', badge: loot || null, onClick: explore, blocked: tooLate },
+    { label: 'Fight', onClick: fightRandom, blocked: tooLate },
+    { label: 'Train', onClick: trainMenu, blocked: tooLate },
+    { label: beaten ? 'Rematch' : 'Raid', cls: 'raid', onClick: raidMenu, blocked: tooLate },
+  ], 'cols4', [
+    { label: 'Gear', icon: iconURL('sword'), onClick: () => gearMenu() },
+    { label: 'Eat', icon: iconURL('meat'), onClick: bagMenu },
+    { label: 'Work', icon: iconURL('fish'), onClick: workMenu, blocked: tooLate },
+    { label: 'Shop', icon: iconURL('chest'), onClick: shopMenu },
+    { label: 'Crew', icon: iconURL('hat'), onClick: crewMenu },
+    { label: 'Sail', icon: iconURL('map', paper), onClick: mapMenu, blocked: tooLate },
+    { label: 'Stats', icon: iconURL('poster', paper), onClick: wantedMenu },
+    { label: 'Sleep', icon: iconURL('moon'), onClick: sleep, cls: late ? 'pulse' : '' },
+  ]);
 }
 
 function needEnergy(n) {
@@ -419,8 +435,7 @@ function trainMenu() {
     { label: 'Back', cls: 'ghost', onClick: homeMenu },
   ], 'cols3');
   const bonus = [p.owned.weights ? 'weights +1' : '', p.mood >= 75 ? 'pumped +1' : '', p.mood <= 25 ? 'gloomy -1' : ''].filter(Boolean).join(', ');
-  const hakiTip = p.haki < HAKI.armament ? ` Haki ${HAKI.armament} unlocks Armament (needed vs Logias).` : '';
-  say(`Training costs 18 energy and 12 food. Stats have limits that rise as you level. Drills raise mastery to unlock moves.${bonus ? ' Bonus: ' + bonus + '.' : ''}${hakiTip}`);
+  say(`Each session costs 18 energy. Drills raise mastery to unlock moves.${bonus ? ' Bonus: ' + bonus + '.' : ''}`);
 }
 
 function startTraining(k) {
@@ -444,7 +459,7 @@ function startTraining(k) {
   G.hero.x = 96;
   setActions([{ label: 'Strike!', cls: 'big raid', onClick: trainStrike }], 'single');
   const what = k === 'drill' ? `${styleName(styleKey())} drills` : k === 'fruit' ? `${fruit().name} practice` : `${TRAININGS[k].name} training (${TRAININGS[k].desc})`;
-  say(`${what}! Hit STRIKE when the marker is inside the gold zone. Dead center is PERFECT.`);
+  say(`${what}! Tap STRIKE (or press Space) when the marker is in the gold zone. Dead center is PERFECT.`);
 }
 
 function trainStrike() {
@@ -575,7 +590,7 @@ function startFishing() {
   G.fish = { cast: 0, casts: 3, state: 'wait', timer: rand(1.2, 3.2), win: 0, total: 0, caught: 0, flying: null };
   G.mode = 'fish';
   setActions([{ label: 'Reel!', cls: 'big raid', onClick: reel }], 'single');
-  say('Cast 1 of 3. Wait for the bobber to dip...');
+  say('Cast 1 of 3. When the bobber dips, tap REEL (or press Space)!');
 }
 
 function rollCatch() {
@@ -923,20 +938,17 @@ function wantedMenu(confirmReset) {
     el('div', { class: 'pname', text: p.name }),
     el('div', { class: 'pbounty', text: '฿ ' + fmt(p.bounty) + ' -' }),
     el('div', { class: 'ptitle', text: pirateTitle(p.bounty) })));
-  const hakiNext = p.haki < HAKI.armament ? `next: Armament at ${HAKI.armament}` : p.haki < HAKI.observation ? `next: Observation at ${HAKI.observation}` : p.haki < HAKI.conqueror ? `next: Conqueror at ${HAKI.conqueror}` : 'mastered';
-  const stats = [
-    ['LEVEL', `${p.lvl}  (${p.xp}/${xpNeed(p.lvl)} XP)`],
-    ['HP', `${p.hp}/${p.maxHp}`],
-    ['ATK', effAtk()], ['DEF', effDef()], ['SPD', p.spd],
-    ['HAKI', `${p.haki} (${hakiNext})`],
-    ['WEAPON', weapon() ? weapon().name : 'Bare fists'],
-    ['FRUIT', fruit() ? fruit().name : 'None yet'],
-    ['RAIDS', `${ISLANDS.filter(i => p.bosses[i.boss]).length}/6 bosses`],
-    ['DAYS', p.day], ['WINS', p.wins],
-  ];
+  const hakiNext = p.haki < HAKI.armament ? `Armament at ${HAKI.armament}` : p.haki < HAKI.observation ? `Observation at ${HAKI.observation}` : p.haki < HAKI.conqueror ? `Conqueror's at ${HAKI.conqueror}` : 'All awakened';
+  const stats = [['LV', p.lvl], ['HP', p.maxHp], ['HAKI', p.haki], ['ATK', effAtk()], ['DEF', effDef()], ['SPD', p.spd]];
   body.append(el('div', { class: 'statgrid' }, stats.map(([k, v]) => el('div', null, el('b', { text: k }), el('span', { text: String(v) })))));
-  const moves = availableSkills().filter(s => !s.locked).map(s => s.name);
-  body.append(el('p', { class: 'note', text: moves.length ? 'Moves: ' + moves.join(', ') : 'Moves: none yet. Explore for weapons and fight to master them.' }));
+  const facts = [
+    ['XP', `${p.xp}/${xpNeed(p.lvl)} to Lv ${p.lvl + 1}`],
+    ['Weapon', weapon() ? weapon().name : 'Bare fists'],
+    ['Fruit', fruit() ? fruit().name : 'None yet'],
+    ['Haki', hakiNext],
+    ['Record', `${ISLANDS.filter(i => p.bosses[i.boss]).length}/6 bosses, ${p.wins} wins, day ${p.day}`],
+  ];
+  body.append(el('dl', { class: 'facts' }, facts.map(([k, v]) => el('div', null, el('dt', { text: k }), el('dd', { text: v })))));
   if (confirmReset) {
     body.append(el('p', { text: 'Erase this save and return to the title screen? This cannot be undone.' }));
     body.append(el('div', { class: 'btn-row' },
@@ -975,15 +987,12 @@ function raidMenu() {
     el('img', { src: spriteURL(def.spr, 2), alt: '' }),
     el('div', null, el('h3', { text: `${def.name} - Lv ${lvl}` }), el('p', { text: def.intro })),
     null));
-  const tips = [];
-  tips.push(beaten ? `Rematch #${beaten}: the boss is stronger, but still drops berries and bounty.` : `Suggested level: ${lvl - (key === 'grizzle' ? 1 : 2)}+. You are Lv ${p.lvl}.`);
-  if (!beaten && def.drop) tips.push(`Loot: ${WEAPONS[def.drop].name}${key === 'grizzle' ? ' and something special' : ''}.`);
-  if (p.owned.cannon) tips.push('Your Ship Cannon will fire every turn.');
-  tips.push('Bosses charge a huge attack every few turns. GUARD when they do!');
-  if (def.logia) tips.push(p.haki >= HAKI.armament ? 'Logia! Use Armament Haki so your hits connect.' : `Logia! Your hits pass through. Train Haki to ${HAKI.armament} or bring Water Barrels.`);
-  if (def.element === 'lightning' && p.fruit === 'rubber') tips.push('You are rubber. Lightning cannot hurt you!');
-  tips.push(p.crew.length ? `Raiding with: ${p.crew.map(id => CREW[id].name).join(', ')}.` : 'You raid alone. Beat this boss to gain a crewmate.');
-  for (const t of tips) body.append(el('p', { class: 'note', text: t }));
+  const facts = [['Level', beaten ? `Rematch #${beaten}, stronger` : `${lvl - (key === 'grizzle' ? 1 : 2)}+ suggested (you: ${p.lvl})`]];
+  if (!beaten && def.drop) facts.push(['Loot', WEAPONS[def.drop].name + (key === 'grizzle' ? ' + ???' : '')]);
+  if (def.logia) facts.push(['Logia', p.haki >= HAKI.armament ? 'Use Armament Haki to land hits' : `Hits pass through. Get Haki ${HAKI.armament} or Water Barrels`]);
+  if (def.element === 'lightning' && p.fruit === 'rubber') facts.push(['Rubber', "Lightning can't hurt you"]);
+  facts.push(['Tip', 'Guard when the boss charges up']);
+  body.append(el('dl', { class: 'facts' }, facts.map(([k, v]) => el('div', null, el('dt', { text: k }), el('dd', { text: v })))));
   body.append(el('div', { class: 'btn-row' },
     el('button', { type: 'button', class: 'mini-btn red', text: 'Start raid (25 EN)', onclick: () => startRaid(key, lvl) }),
     el('button', { type: 'button', class: 'mini-btn', text: 'Not yet', onclick: closeModal })));
@@ -1050,11 +1059,11 @@ function resetHeroPose() {
 function battleMenu() {
   const B = G.battle;
   setActions([
-    { label: 'Attack', sub: '+12 SP', onClick: () => playerTurn({ type: 'attack' }) },
-    { label: 'Skills', sub: `${B.sp} SP`, cls: 'raid', onClick: skillMenu },
-    { label: 'Guard', sub: '+20 SP', onClick: () => playerTurn({ type: 'guard' }) },
-    { label: 'Bag', sub: 'items', onClick: battleBag },
-    { label: 'Run', sub: 'flee', onClick: () => playerTurn({ type: 'run' }), blocked: B.F.boss ? "You can't run from a raid boss!" : null },
+    { label: 'Attack', onClick: () => playerTurn({ type: 'attack' }) },
+    { label: 'Skills', cls: 'raid', onClick: skillMenu },
+    { label: 'Guard', onClick: () => playerTurn({ type: 'guard' }) },
+    { label: 'Bag', onClick: battleBag },
+    { label: 'Run', onClick: () => playerTurn({ type: 'run' }), blocked: B.F.boss ? "You can't run from a raid boss!" : null },
   ]);
 }
 
@@ -1080,7 +1089,7 @@ function skillMenu() {
   }));
   list.push({ label: 'Back', cls: 'ghost', onClick: battleMenu });
   setActions(list, 'cols3');
-  say(`Spirit: ${B.sp}/100 SP.${fruit() ? '' : ' No Devil Fruit powers yet. Explore to find one!'}`);
+  say('Choose a move. Grayed-out moves need more SP or mastery.');
 }
 
 function battleBag() {
@@ -2055,6 +2064,17 @@ function drawHome() {
   drawLoot(ctx);
   if (hasCrew('kenji') && timeIdx() === 1) drawText(ctx, 'Z', HOME_CREW_SPOTS[0][0] + 10, 80 - (G.t * 6) % 8, { color: '#ffffff' });
   if (G.bubble && G.t < G.bubble.until) drawBubble(ctx, Hr.x + Hr.ox, 82 + Hr.oy, G.bubble.text);
+  drawPlaceLabel();
+}
+
+function drawPlaceLabel() {
+  const a = island().name, b = `Day ${G.p.day}  ${timeName()}`;
+  const w = Math.max(textWidth(a, 1), textWidth(b, 1)) + 6;
+  ctx.globalAlpha = 0.5;
+  pxRect(ctx, 2, 2, w, 15, '#05081a');
+  ctx.globalAlpha = 1;
+  drawText(ctx, a, 5, 4, { color: '#ffffff', shadow: null });
+  drawText(ctx, b, 5, 10, { color: '#ffe14a', shadow: null });
 }
 
 function drawBattle() {
@@ -2320,10 +2340,15 @@ function onKey(e) {
   }
 }
 
+const SPEAKER = '<rect x="1" y="4" width="3" height="4"/><rect x="4" y="3" width="1" height="6"/><rect x="5" y="2" width="1" height="8"/><rect x="6" y="1" width="1" height="10"/>';
+const WAVES = '<rect x="8" y="4" width="1" height="4"/><rect x="10" y="2" width="1" height="8"/>';
+const MUTED = '<rect x="8" y="4" width="1" height="1"/><rect x="9" y="5" width="1" height="2"/><rect x="10" y="4" width="1" height="1"/><rect x="8" y="7" width="1" height="1"/><rect x="10" y="7" width="1" height="1"/>';
+
 function updateMuteLabel() {
   const b = $('muteBtn');
-  b.textContent = Sfx.muted ? 'Sound off' : 'Sound on';
+  b.innerHTML = `<svg viewBox="0 0 12 12" width="18" height="18" fill="currentColor" shape-rendering="crispEdges" aria-hidden="true">${SPEAKER}${Sfx.muted ? MUTED : WAVES}</svg>`;
   b.setAttribute('aria-pressed', Sfx.muted ? 'false' : 'true');
+  b.title = Sfx.muted ? 'Sound off' : 'Sound on';
 }
 
 function boot(data) {

@@ -210,6 +210,11 @@ const ICONS = {
   chest:    ['........', '.nnnnnn.', 'nGGGGGGn', 'nnnGGnnn', 'nnnGGnnn', 'nnnnnnnn', 'nnnnnnnn', '........'],
   sails:    ['...n....', '..wwww..', '.rrrrrr.', '.wwwwww.', '.rrrrrr.', '..wwww..', '...n....', 'nnnnnnnn'],
   galley:   ['.w..w...', '..w..w..', '.w..w...', 'gggggggg', '.hhhhhh.', '.hhhhhh.', '.hhhhhh.', '..hhhh..'],
+  sword:    ['......ww', '.....www', '....www.', '.n.www..', '..nww...', '..nn....', '.n..n...', 'n.......'],
+  hat:      ['........', '..yyyy..', '.yyyyyy.', '.rrrrrr.', 'yyyyyyyy', '.YYYYYY.', '........', '........'],
+  map:      ['.CCCCCC.', 'CCCCCCCC', 'CbCCCrCr', 'CCbCCCrC', 'CCCbCrCr', 'CCCCbCCC', 'CCCCCCCC', '.CCCCCC.'],
+  poster:   ['CCCCCCCC', 'ChhhhhhC', 'CCCCCCCC', 'CCssssCC', 'CCseesCC', 'CCssssCC', 'ChhhhhhC', 'CCCCCCCC'],
+  moon:     ['..yyy...', '.yy.....', 'yy....w.', 'yy...ww.', 'yy......', 'yy......', '.yy.....', '..yyy...'],
   wraps:    ['..wwww..', '.wwwwww.', 'wwswswsw', 'wwwwwwww', 'wwwwwww.', '.wwwww..', '..sss...', '..sss...'],
   cannon:   ['........', '.......g', 'hhhhhhhh', 'hhhhhhh.', 'hhhhhh..', '.nn.nn..', 'nnnnnn..', '.nn.nn..'],
 };

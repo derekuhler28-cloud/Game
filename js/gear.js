@@ -238,9 +238,15 @@ async function sellFruit(k) {
 
 // ---------- gear menu ----------
 
-function masteryLine(key) {
-  const n = mastery(key), next = styleMoves(key).find(m => m.at > n);
-  return el('p', { text: `Mastery ${n} (${rankOf(key)})${next ? `. Next move at ${next.at}.` : '. Every move unlocked!'}` });
+// A small progress bar from the last unlocked move toward the next one.
+function masteryBar(key) {
+  const n = mastery(key), moves = styleMoves(key);
+  const next = moves.find(m => m.at > n);
+  const lo = moves.filter(m => m.at <= n).reduce((a, m) => Math.max(a, m.at), 0);
+  const frac = next ? (n - lo) / (next.at - lo) : 1;
+  return el('div', { class: 'mastery', title: `${rankOf(key)} mastery` },
+    el('div', { class: 'mbar' }, el('i', { style: `width: ${Math.round(frac * 100)}%` })),
+    el('span', { text: next ? `${n}/${next.at}` : 'MAX' }));
 }
 
 function movesList(key, n) {
@@ -256,42 +262,40 @@ function gearMenu(note) {
   const body = el('div');
   body.style.display = 'contents';
   if (note) body.append(el('p', { class: 'note', text: note }));
-  body.append(el('p', { class: 'note', text: 'Moves unlock with mastery: use a weapon or power in fights, win with it, or practice it with Drills.' }));
-  body.append(el('h3', { class: 'sect', text: 'Weapons' }));
+  const total = ISLANDS.reduce((a, i) => a + i.weapons.length, 0) + Object.values(BOSSES).filter(b => b.drop).length;
+  body.append(el('h3', { class: 'sect' }, 'Weapons ', el('span', { text: `${p.weapons.length}/${total} found` })));
   for (const key of ['fists'].concat(p.weapons)) {
     const w = WEAPONS[key];
     const on = styleKey() === key;
-    body.append(el('div', { class: 'row' + (on ? ' current' : '') },
+    body.append(el('div', { class: 'row gear' + (on ? ' current' : '') },
       el('img', { src: weaponURL(key), alt: '' }),
       el('div', null,
-        el('h3', { text: w ? `${w.name} +${w.atk} ATK${w.def ? ` +${w.def} DEF` : ''}` : 'Bare Fists' }),
-        w ? el('p', { text: w.desc }) : null,
-        masteryLine(key), movesList(key)),
-      el('button', { type: 'button', class: 'mini-btn' + (on ? '' : ' red'), text: on ? 'Equipped' : 'Equip', disabled: on || null, onclick: () => equip(key) })));
+        el('h3', null, w ? w.name : 'Bare Fists', w ? el('small', { text: ` +${w.atk} ATK${w.def ? ` +${w.def} DEF` : ''}` }) : null),
+        masteryBar(key), movesList(key)),
+      on ? el('span', { class: 'count', text: 'Equipped' })
+        : el('button', { type: 'button', class: 'mini-btn', text: 'Equip', onclick: () => equip(key) })));
   }
-  const total = ISLANDS.reduce((a, i) => a + i.weapons.length, 0) + Object.values(BOSSES).filter(b => b.drop).length;
-  body.append(el('p', { class: 'note', text: `Weapons found: ${p.weapons.length}/${total}. Explore islands and beat raid bosses to find more.` }));
 
-  body.append(el('h3', { class: 'sect', text: 'Devil Fruit' }));
+  body.append(el('h3', { class: 'sect' }, 'Devil Fruit ', el('span', { text: `${p.fruitsFound.length}/5 found` })));
   if (p.fruit) {
     const f = FRUITS[p.fruit];
-    body.append(el('div', { class: 'row current' },
+    body.append(el('div', { class: 'row gear current' },
       el('img', { src: iconURL('fruit', { c: f.color, C: f.color2 }), alt: '' }),
-      el('div', null, el('h3', { text: `${f.name} (eaten)` }), el('p', { text: f.desc }), masteryLine(p.fruit), movesList(p.fruit)),
+      el('div', null, el('h3', { text: f.name }), masteryBar(p.fruit), movesList(p.fruit)),
       null));
   } else {
-    body.append(el('p', { text: 'You have no powers yet. A Devil Fruit hides somewhere on each of the first five islands. Keep exploring!' }));
+    body.append(el('p', { class: 'note', text: 'No powers yet. One Devil Fruit hides on each of the first five islands.' }));
   }
   for (const k of p.fruitBag) {
     const f = FRUITS[k];
-    body.append(el('div', { class: 'row' },
+    body.append(el('div', { class: 'row gear' },
       el('img', { src: iconURL('fruit', { c: f.color, C: f.color2 }), alt: '' }),
-      el('div', null, el('h3', { text: `${f.name} (in bag)` }), el('p', { text: f.desc }), movesList(k, 0)),
+      el('div', null, el('h3', null, f.name, el('small', { text: ' in bag' })), movesList(k, 0)),
       el('div', { class: 'btn-row' },
-        el('button', { type: 'button', class: 'mini-btn red', text: 'Eat', disabled: !!p.fruit || null, onclick: () => eatFromBag(k) }),
+        p.fruit ? null : el('button', { type: 'button', class: 'mini-btn red', text: 'Eat', onclick: () => eatFromBag(k) }),
         el('button', { type: 'button', class: 'mini-btn', text: `฿${fmt(FRUIT_PRICE)}`, 'aria-label': `Sell ${f.name}`, onclick: () => sellFromBag(k) }))));
   }
-  body.append(el('p', { class: 'note', text: `Devil Fruits found: ${p.fruitsFound.length}/5.${p.fruit && p.fruitBag.length ? ' You can only eat one, so sell the rest.' : ''}` }));
+  body.append(el('p', { class: 'note', text: 'Fight with a weapon or power, or do Drills, to raise mastery and unlock its moves.' }));
   openModal('Gear', body, { onClose: () => G.mode === 'home' && homeMenu() });
 }
 

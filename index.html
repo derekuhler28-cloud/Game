@@ -12,28 +12,20 @@
 </head>
 <body>
 <main class="device" aria-label="Pocket Pirate">
-  <header class="device-top">
-    <h1 class="logo">Pocket Pirate</h1>
-    <button type="button" id="muteBtn" class="mute" aria-pressed="false">Sound on</button>
-  </header>
-
-  <section class="hud" id="hud" hidden>
-    <div class="hud-row">
+  <header class="status">
+    <div class="status-who" id="hud" hidden>
       <span id="hudName" class="hud-name"></span>
-      <span id="hudLv"></span>
+      <span id="hudLv" class="lv"></span>
       <span id="hudStatus" class="chip" hidden></span>
-      <span id="hudDay" class="hud-day"></span>
     </div>
-    <div class="hud-row">
-      <span id="hudIsland"></span>
-      <span id="hudBerries" class="gold"></span>
-      <span id="hudBounty" class="bounty"></span>
-    </div>
-  </section>
+    <span id="hudBerries" class="gold" hidden></span>
+    <button type="button" id="muteBtn" class="icon-btn" aria-label="Sound" aria-pressed="true"></button>
+  </header>
 
   <div class="screen-frame">
     <canvas id="screen" width="192" height="128" aria-label="Game screen"></canvas>
   </div>
+  <h1 class="brand">Pocket Pirate</h1>
 
   <div class="meters" id="meters" hidden></div>
 
@@ -44,7 +36,7 @@
   <p id="srMsg" class="sr-only" aria-live="polite"></p>
 
   <nav class="actions" id="actions" aria-label="Actions"></nav>
-  <p class="hint">Tap your pirate to chat &middot; Space bar strikes and reels</p>
+  <nav class="dock" id="dock" aria-label="Menu" hidden></nav>
 </main>
 
 <div class="modal" id="modal" hidden role="dialog" aria-modal="true" aria-labelledby="modalTitle">
