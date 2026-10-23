@@ -2,8 +2,8 @@
 /* Gear and growth: weapons, devil fruits, move mastery, and exploring islands for loot. */
 
 const STAT_KEYS = ['atk', 'def', 'spd', 'haki'];
-// Drab clothes until you beat Grizzle and become a real pirate.
-const NOBODY_PAL = { v: '#cfc6b0', y: '#7a5a3a', b: '#7a6a52' };
+// The clothes your pirate wears the whole game: plain shirt, rope belt, worn trousers.
+const PLAYER_PAL = { v: '#cfc6b0', y: '#7a5a3a', b: '#7a6a52' };
 
 const weapon = () => (G.p && G.p.weapon ? WEAPONS[G.p.weapon] : null);
 const styleKey = () => G.p.weapon || 'fists';
@@ -19,21 +19,21 @@ const RACE_LOOKS = {
   fishman: { pal: { s: '#7ab4d0', S: '#5a94b0', x: '#3f6f9a' }, marks: ['fin'] },
 };
 const RACE_SPECS = new Map();
-function raceSpec(r, pirate) {
-  const key = r + '|' + pirate;
+function raceSpec(r) {
+  const key = r;
   if (!RACE_SPECS.has(key)) {
     const look = RACE_LOOKS[r] || {};
-    const spec = { kind: 'player', pal: Object.assign({}, pirate ? {} : NOBODY_PAL, look.pal) };
+    const spec = { kind: 'player', pal: Object.assign({}, PLAYER_PAL, look.pal) };
     if (look.marks) spec.marks = look.marks.slice();
     RACE_SPECS.set(key, spec);
   }
   return RACE_SPECS.get(key);
 }
 const DRAGON_SPECS = new Map();
-// Your look: your race, pirate clothes once you beat Grizzle, and dragon features for good once you eat the Dragon-Dragon Fruit.
+// Your look: your race, plus dragon features for good once you eat the Dragon-Dragon Fruit.
 function heroSpec() {
   if (!G.p) return PLAYER_SPR;
-  const spec = raceSpec(G.p.race || 'human', !!G.p.pirate);
+  const spec = raceSpec(G.p.race || 'human');
   return G.p.fruit === 'dragon' ? dragonSpec(spec) : spec;
 }
 function dragonSpec(spec) {

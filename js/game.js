@@ -7,7 +7,7 @@ const ctx = canvas.getContext('2d');
 ctx.imageSmoothingEnabled = false;
 
 const SAVE_KEY = 'pocket-pirate-save-v1';
-const PLAYER_SPR = { kind: 'player' };
+const PLAYER_SPR = { kind: 'player', pal: PLAYER_PAL };
 const FIRE = ['#ff5a2a', '#ff9a3a', '#ffd04a', '#fff3a0'];
 const ICE = ['#5fd3f0', '#bff2ff', '#ffffff'];
 const SMOKE = ['#ffffff', '#dfe2ea', '#b9bdc9'];
@@ -43,7 +43,7 @@ function newPlayer(name, raceKey) {
     energy: 100, food: 70, mood: 60, berries: 50, bounty: 0,
     day: 1, tick: 0, island: 0, unlocked: 1, bosses: {}, crew: [], fruit: null,
     bag: { meat: 1 }, owned: {}, wins: 0, trained: 0, king: false,
-    pirate: false, weapon: null, weapons: [], mastery: {}, explored: {}, fruitMap: dealFruits({}, []), fruitsFound: [], fruitBag: [],
+    weapon: null, weapons: [], mastery: {}, explored: {}, fruitMap: dealFruits({}, []), fruitsFound: [], fruitBag: [],
     ship: { paint: 'wood', head: null }, awakened: {},
   };
 }
@@ -176,9 +176,9 @@ function restore(raw) {
     raw = Object.assign({}, raw, { fruitMap: remap(raw.fruitMap) });
   }
   p.ship = Object.assign({ paint: 'wood', head: null }, p.ship);
-  // Beating Grizzle turns you from a nobody into a pirate. (There is no straw hat any more.)
-  p.pirate = !!(p.bosses && p.bosses.grizzle);
+  // Older saves stored a straw hat or a pirate outfit; your pirate wears neither now.
   delete p.hat;
+  delete p.pirate;
   p.awakened = Object.assign({}, p.awakened);
   p.crew = (p.crew || []).filter(m => m && CREW[m.key]).slice(0, CREW_MAX);
   for (const m of p.crew) {
@@ -418,7 +418,7 @@ function raceMenu(name) {
   for (const k of Object.keys(RACES)) {
     const R = RACES[k];
     body.append(el('div', { class: 'row race' },
-      el('img', { src: spriteURL(raceSpec(k, false), 3), alt: '' }),
+      el('img', { src: spriteURL(raceSpec(k), 3), alt: '' }),
       el('div', null,
         el('h3', { text: R.name }),
         el('p', { text: R.desc }),
@@ -2367,12 +2367,10 @@ async function bossAftermath(key) {
   const p = G.p;
   const idx = ISLANDS.findIndex(i => i.boss === key);
   if (idx < 0) return;
-  if (key === 'grizzle' && !p.pirate) {
-    p.pirate = true;
+  if (key === 'grizzle') {
     Sfx.play('find');
     screenFlash('#ffe14a', 0.5);
-    showLoot({ kind: 'icon', icon: 'chest' });
-    await talk("Grizzle's bandits scatter. From his loot you pull a bright red pirate vest and put it on.");
+    await talk("Grizzle's bandits scatter. Word spreads fast: the nobody from Dawn Village took down the Bandit King!");
     await talk("You're not a nobody anymore. You're a PIRATE!");
   }
   const drop = BOSSES[key].drop;
