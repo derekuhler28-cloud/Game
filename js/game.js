@@ -38,7 +38,7 @@ function newPlayer(name, raceKey) {
   const st = R.stats;
   const hp = Math.round((60 + (st.hp || 0)) * (st.hpMult || 1));
   return {
-    v: 2, name, race: RACES[raceKey] ? raceKey : 'human',
+    v: 3, name, race: RACES[raceKey] ? raceKey : 'human',
     lvl: 1, xp: 0, hp, maxHp: hp, atk: 10 + (st.atk || 0), def: 4, spd: 5 + (st.spd || 0), haki: 0,
     energy: 100, food: 70, mood: 60, berries: 50, bounty: 0,
     day: 1, tick: 0, island: 0, unlocked: 1, bosses: {}, crew: [], fruit: null,
@@ -69,8 +69,9 @@ const xpNeed = l => Math.round(12 * Math.pow(l, 1.35));
 const moodMult = () => (G.p.mood >= 75 ? 1.1 : G.p.mood <= 25 ? 0.9 : 1);
 const fruit = () => (G.p.fruit ? FRUITS[G.p.fruit] : null);
 const effDef = () => Math.round((G.p.def + ((weapon() && weapon().def) || 0)) * ((fruit() && fruit().defMult) || 1));
-const hasCrew = id => G.p.crew.includes(id);
-const foodBoost = () => (hasCrew('basil') ? 1.5 : 1) * (G.p.owned.galley ? 1.25 : 1);
+const crewOf = key => G.p.crew.find(m => m.key === key);
+const crewWith = role => G.p.crew.find(m => CREW[m.key].role === role);
+const foodBoost = () => (crewWith('cook') ? 1.5 : 1) * (G.p.owned.galley ? 1.25 : 1);
 const trainCap = k => { const L = G.p.lvl; return Math.round({ atk: 12 + L * 4, def: 6 + L * 2.5, spd: 7 + L * 2.5, haki: 4 + L * 2 }[k]); };
 
 function pirateTitle(b) {
@@ -114,7 +115,7 @@ function save() {
 }
 
 function restore(raw) {
-  if (!raw || (raw.v !== 1 && raw.v !== 2)) return null;
+  if (!raw || ![1, 2, 3].includes(raw.v)) return null;
   const p = Object.assign(newPlayer(raw.name || 'Nobody'), raw);
   p.bag = Object.assign({}, p.bag);
   p.owned = Object.assign(raw.weights ? { weights: true } : {}, p.owned);
@@ -125,6 +126,24 @@ function restore(raw) {
     p.fruitsFound = p.fruit ? [p.fruit] : [];
     p.mastery = { fists: p.lvl >= 9 ? 90 : p.lvl >= 4 ? 40 : 10 };
     if (p.fruit) p.mastery[p.fruit] = p.lvl >= 9 ? 120 : p.lvl >= 4 ? 40 : 0;
+  }
+  if (p.v === 2) {
+    // Three islands now sit between Shell Port and Arlong Park, and crewmates are hired at bars.
+    const moved = i => (+i <= 1 ? +i : +i + 3);
+    const remap = obj => Object.fromEntries(Object.entries(obj || {}).map(([i, v]) => [moved(i), v]));
+    p.v = 3;
+    p.island = moved(p.island);
+    p.unlocked = p.unlocked <= 2 ? p.unlocked : p.unlocked + 3;
+    p.explored = remap(p.explored);
+    raw = Object.assign({}, raw, { fruitMap: remap(raw.fruitMap) });
+    p.bosses = Object.assign({}, p.bosses);
+    if (p.bosses.sharko) { p.bosses.arlong = p.bosses.sharko; delete p.bosses.sharko; }
+    p.crew = (p.crew || []).map(key => ({ key, weapon: null, fruit: null }));
+  }
+  p.crew = (p.crew || []).filter(m => m && CREW[m.key]).slice(0, CREW_MAX);
+  for (const m of p.crew) {
+    if (!p.weapons.includes(m.weapon) || m.weapon === p.weapon) m.weapon = null;
+    if (!FRUITS[m.fruit]) m.fruit = null;
   }
   // Older saves map one fruit per island and lack the newer fruits: spread the missing ones out.
   p.fruitMap = dealFruits(raw.fruitMap || {}, p.fruitsFound);
@@ -427,7 +446,7 @@ function homeMenu() {
     { label: 'Eat', icon: iconURL('meat'), onClick: bagMenu },
     { label: 'Work', icon: iconURL('fish'), onClick: workMenu, blocked: tooLate },
     { label: 'Shop', icon: iconURL('chest'), onClick: shopMenu },
-    { label: 'Crew', icon: iconURL('hat'), onClick: crewMenu },
+    { label: 'Bar', icon: iconURL('mug'), onClick: () => barMenu() },
     { label: 'Sail', icon: iconURL('map', paper), onClick: mapMenu, blocked: tooLate },
     { label: 'Stats', icon: iconURL('poster', paper), onClick: wantedMenu },
     { label: 'Sleep', icon: iconURL('moon'), onClick: sleep, cls: late ? 'pulse' : '' },
@@ -776,25 +795,47 @@ function buy(k) {
   shopMenu(`Bought ${it.name}! You have ฿${fmt(p.berries)} left.`);
 }
 
-function crewMenu() {
+// ---------- bar & crew ----------
+
+const crewAtk = m => Math.round(3 + G.p.lvl * ROLES[CREW[m.key].role].atk + (m.weapon ? WEAPONS[m.weapon].atk : 0));
+const crewHeal = m => Math.round(4 + G.p.lvl * ROLES[CREW[m.key].role].heal + (m.weapon ? WEAPONS[m.weapon].atk * 0.8 : 0));
+const crewRole = k => `${CREW[k].race} ${ROLES[CREW[k].role].name}`;
+
+function crewKit(m) {
+  const r = ROLES[CREW[m.key].role];
+  const gear = [m.weapon ? WEAPONS[m.weapon].name : 'Bare hands'].concat(m.fruit ? FRUITS[m.fruit].name : []).join(' + ');
+  return `${gear}. Power ${crewAtk(m)}${r.heal ? `, heals ${crewHeal(m)}` : ''}.`;
+}
+
+function barMenu(note) {
   const p = G.p;
   const body = el('div');
   body.style.display = 'contents';
-  if (!p.crew.length) {
-    body.append(el('p', { text: 'No crew yet. Defeat raid bosses and the people they bullied will want to join you.' }));
-  }
-  for (const id of p.crew) {
-    const c = CREW[id];
+  if (note) body.append(el('p', { class: 'note', text: note }));
+  body.append(el('h3', { class: 'sect' }, 'Your crew ', el('span', { text: `${p.crew.length}/${CREW_MAX}` })));
+  if (!p.crew.length) body.append(el('p', { class: 'note', text: 'Sailing solo. Hire someone below: crewmates fight beside you, and you choose their weapon and Devil Fruit.' }));
+  for (const m of p.crew) {
+    const c = CREW[m.key];
     body.append(el('div', { class: 'row' },
       el('img', { src: spriteURL(c.spr, 2), alt: '' }),
-      el('div', null, el('h3', { text: `${c.name} - ${c.role}` }), el('p', { text: c.perk })),
-      null));
+      el('div', null, el('h3', null, c.name, el('small', { text: ' ' + crewRole(m.key) })), el('p', { text: crewKit(m) })),
+      el('button', { type: 'button', class: 'mini-btn', text: 'Manage', onclick: () => manageCrew(m.key) })));
   }
-  const missing = 5 - p.crew.length;
-  if (missing > 0) body.append(el('p', { class: 'note', text: `${missing} more crewmate${missing > 1 ? 's' : ''} wait somewhere on the Grand Line.` }));
+  const full = p.crew.length >= CREW_MAX;
+  const here = Object.keys(CREW).filter(k => CREW[k].island === p.island && !crewOf(k));
+  body.append(el('h3', { class: 'sect' }, 'Looking for a crew'));
+  if (!here.length) body.append(el('p', { class: 'note', text: 'Nobody else here wants to set sail. Try the bar on another island.' }));
+  for (const k of here) {
+    const c = CREW[k];
+    body.append(el('div', { class: 'row' },
+      el('img', { src: spriteURL(c.spr, 2), alt: '' }),
+      el('div', null, el('h3', null, c.name, el('small', { text: ' ' + crewRole(k) })), el('p', { text: ROLES[c.role].desc })),
+      el('button', { type: 'button', class: 'mini-btn red', text: `Hire ฿${fmt(c.cost)}`, 'aria-label': `Hire ${c.name} for ฿${fmt(c.cost)}`, disabled: full || p.berries < c.cost || null, onclick: () => hire(k) })));
+  }
+  if (full && here.length) body.append(el('p', { class: 'note', text: `Your ship is full. Kick someone out to make room.` }));
   if (p.crew.length) {
     const cost = 30 * (p.crew.length + 1);
-    body.append(el('p', { class: 'note', text: `Crew helpers jump into normal fights sometimes. In raids, everyone fights every turn.` }));
+    body.append(el('p', { class: 'note', text: 'Crewmates jump into normal fights sometimes. In raids, everyone fights every turn.' }));
     body.append(el('button', {
       type: 'button', class: 'mini-btn red',
       text: `Throw a feast (฿${cost})`,
@@ -802,8 +843,128 @@ function crewMenu() {
       onclick: () => feast(cost),
     }));
   }
-  openModal('Crew', body, { onClose: () => G.mode === 'home' && homeMenu() });
+  openModal(island().bar, body, { onClose: () => G.mode === 'home' && homeMenu() });
 }
+
+function manageCrew(k, confirmKick, note) {
+  const p = G.p, m = crewOf(k);
+  if (!m) return barMenu();
+  const c = CREW[k], r = ROLES[c.role];
+  const body = el('div');
+  body.style.display = 'contents';
+  if (note) body.append(el('p', { class: 'note', text: note }));
+  body.append(el('div', { class: 'row current' },
+    el('img', { src: spriteURL(c.spr, 3), alt: '' }),
+    el('div', null, el('h3', null, c.name, el('small', { text: ' ' + crewRole(k) })), el('p', { text: r.desc }), el('p', { text: crewKit(m) })),
+    null));
+
+  body.append(el('h3', { class: 'sect' }, 'Weapon'));
+  for (const key of [null].concat(p.weapons)) {
+    const w = key && WEAPONS[key];
+    const holder = key && (p.weapon === key ? 'you' : holderOf(key) && holderOf(key) !== m ? CREW[holderOf(key).key].name : null);
+    const on = m.weapon === key;
+    body.append(el('div', { class: 'row gear' + (on ? ' current' : '') },
+      el('img', { src: weaponURL(key || 'fists'), alt: '' }),
+      el('div', null, el('h3', null, w ? w.name : 'Bare Hands', el('small', { text: w ? ` +${w.atk} power${holder ? ` - held by ${holder}` : ''}` : '' }))),
+      on ? el('span', { class: 'count', text: 'Holding' })
+        : el('button', { type: 'button', class: 'mini-btn', text: key ? 'Give' : 'Take back', onclick: () => giveWeapon(k, key) })));
+  }
+
+  body.append(el('h3', { class: 'sect' }, 'Devil Fruit'));
+  if (m.fruit) {
+    const f = FRUITS[m.fruit];
+    body.append(el('div', { class: 'row gear current' },
+      el('img', { src: iconURL('fruit', { c: f.color, C: f.color2 }), alt: '' }),
+      el('div', null, el('h3', { text: f.name }), el('p', { text: `Uses ${f.moves.map(v => v.name).join(', ')} in fights.` })),
+      null));
+  } else if (!p.fruitBag.length) {
+    body.append(el('p', { class: 'note', text: 'No spare Devil Fruits. When you find one, keep it in your bag and you can feed it to a crewmate here.' }));
+  } else {
+    for (const fk of p.fruitBag) {
+      const f = FRUITS[fk];
+      body.append(el('div', { class: 'row gear' },
+        el('img', { src: iconURL('fruit', { c: f.color, C: f.color2 }), alt: '' }),
+        el('div', null, el('h3', null, f.name, el('small', { text: ' in bag' })), el('p', { text: f.desc })),
+        el('button', { type: 'button', class: 'mini-btn red', text: 'Feed', 'aria-label': `Feed ${f.name} to ${c.name}`, onclick: () => feedFruit(k, fk) })));
+    }
+    body.append(el('p', { class: 'note', text: 'A fruit can never be taken back: it is theirs for life.' }));
+  }
+
+  if (confirmKick) {
+    body.append(el('p', { text: `Kick ${c.name} out of the crew?${m.weapon ? ` You get the ${WEAPONS[m.weapon].name} back.` : ''}${m.fruit ? ` ${c.name} leaves with the ${FRUITS[m.fruit].name} powers.` : ''}` }));
+    body.append(el('div', { class: 'btn-row' },
+      el('button', { type: 'button', class: 'mini-btn red', text: 'Kick out', onclick: () => kickOut(k) }),
+      el('button', { type: 'button', class: 'mini-btn', text: 'Keep them', onclick: () => manageCrew(k) })));
+  } else {
+    body.append(el('div', { class: 'btn-row' },
+      el('button', { type: 'button', class: 'mini-btn', text: 'Back to bar', onclick: () => barMenu() }),
+      el('button', { type: 'button', class: 'mini-btn red', text: 'Kick out...', onclick: () => manageCrew(k, true) })));
+  }
+  openModal(c.name, body, { onClose: () => G.mode === 'home' && homeMenu() });
+}
+
+async function hire(k) {
+  const p = G.p, c = CREW[k];
+  if (p.berries < c.cost || p.crew.length >= CREW_MAX || crewOf(k)) return;
+  p.berries -= c.cost;
+  p.crew.push({ key: k, weapon: null, fruit: null });
+  save();
+  closeModal();
+  lock(true);
+  Sfx.play('level');
+  const [x, y] = HOME_CREW_SPOTS[p.crew.length - 1];
+  particles(x, y - 14, 18, { colors: ['#ffe14a', '#ffffff', '#ff8ab0'], speed: 60, grav: 60, life: 0.8 });
+  await talk(c.join);
+  await talk(`${c.name} the ${ROLES[c.role].name} joined your crew! Open the Bar to give ${c.name} a weapon or a Devil Fruit.`);
+  lock(false);
+  homeMenu();
+}
+
+function giveWeapon(k, key) {
+  const p = G.p, m = crewOf(k), name = CREW[k].name;
+  let note;
+  if (!key) {
+    note = `You took the ${WEAPONS[m.weapon].name} back. ${name} fights bare-handed now.`;
+  } else {
+    const w = WEAPONS[key];
+    const from = p.weapon === key ? 'you' : holderOf(key);
+    if (from === 'you') p.weapon = null;
+    else if (from) from.weapon = null;
+    note = `${name} now wields the ${w.name}.` + (from === 'you' ? ' You switch to bare fists.' : from ? ` ${CREW[from.key].name} hands it over.` : '');
+  }
+  m.weapon = key;
+  Sfx.play('find');
+  save();
+  manageCrew(k, false, note);
+}
+
+function feedFruit(k, fk) {
+  const p = G.p, m = crewOf(k), c = CREW[k];
+  if (m.fruit || !p.fruitBag.includes(fk)) return;
+  p.fruitBag = p.fruitBag.filter(x => x !== fk);
+  m.fruit = fk;
+  Sfx.play('eat');
+  screenFlash(FRUITS[fk].color, 0.4);
+  save();
+  manageCrew(k, false, `${c.name} eats the ${FRUITS[fk].name}. "Blegh! Tastes AWFUL!" ${c.name} can't swim anymore, but now fights with its powers.`);
+}
+
+function kickOut(k) {
+  const p = G.p, m = crewOf(k), c = CREW[k];
+  p.crew = p.crew.filter(x => x !== m);
+  Sfx.play('bad');
+  save();
+  barMenu(`${c.name} packs a bag and leaves the crew.${m.weapon ? ` You got the ${WEAPONS[m.weapon].name} back.` : ''}`);
+}
+
+const FEAST_LINES = {
+  swordsman: n => `${n} drinks a whole barrel and falls asleep standing up.`,
+  sniper: n => `${n} tells a story about defeating a giant goldfish. Nobody believes it.`,
+  brawler: n => `${n} arm-wrestles the whole crew and wins. Twice.`,
+  cook: n => `${n} cooks a twelve-course meal. You eat eleven courses.`,
+  navigator: n => `${n} charges everyone a cover fee.`,
+  doctor: n => `${n} does a chopstick dance. Everyone cries laughing.`,
+};
 
 async function feast(cost) {
   const p = G.p;
@@ -815,15 +976,9 @@ async function feast(cost) {
   Sfx.play('win');
   for (let i = 0; i < 4; i++) particles(rand(30, 170), rand(70, 100), 14, { colors: ['#ff8ab0', '#ffe14a', '#7cd0ff', '#7cff7a'], speed: 60, grav: 60, life: 1 });
   bubble('PARTY!', 3);
-  const lines = {
-    kenji: 'Kenji drinks a whole barrel and falls asleep standing up.',
-    coral: 'Coral charges everyone a cover fee.',
-    basil: 'Basil cooks a twelve-course meal. You eat eleven courses.',
-    moss: 'Moss does a chopstick dance. Everyone cries laughing.',
-    pip: 'Pip tells a story about defeating a giant goldfish. Nobody believes it.',
-  };
+  const c = CREW[pick(p.crew).key];
   await talk('FEAST! Meat, music and dancing on the deck!');
-  await talk(lines[pick(p.crew)]);
+  await talk(FEAST_LINES[c.role](c.name));
   await talk('Mood +35, food +40. Best crew on the seas.');
   save();
   lock(false);
@@ -838,12 +993,12 @@ function drawRouteMap() {
   const c = cv.getContext('2d');
   pxRect(c, 0, 0, 192, 56, '#1f76c4');
   for (let i = 0; i < 30; i++) pxRect(c, (i * 37) % 192, (i * 17) % 56, 4, 1, '#4aa3e8');
-  const pts = ISLANDS.map((_, i) => [18 + i * 31, i % 2 ? 20 : 36]);
+  const pts = ISLANDS.map((_, i) => [12 + i * 21, i % 2 ? 20 : 36]);
   for (let i = 0; i < pts.length - 1; i++) {
     const [x0, y0] = pts[i], [x1, y1] = pts[i + 1];
     for (let k = 0; k < 1; k += 0.12) pxRect(c, x0 + (x1 - x0) * k, y0 + (y1 - y0) * k, 2, 1, '#f2e4c0');
   }
-  const cols = ['#5aa846', '#a9afb9', '#ff7a9a', '#e9c27b', '#ffffff', '#5a4a50'];
+  const cols = ['#5aa846', '#a9afb9', '#f08a3a', '#b98a4a', '#e8e0c8', '#ff7a9a', '#e9c27b', '#ffffff', '#5a4a50'];
   pts.forEach(([x, y], i) => {
     const open = i < G.p.unlocked;
     pxCircle(c, x, y, 6, PAL.k);
@@ -912,11 +1067,12 @@ async function sailTo(idx) {
     await talk(`You fished a floating barrel out of the sea: ฿${b} and a Meat on the Bone!`);
   } else if (r < 0.57) {
     if (p.owned.sails) await talk('A storm rolls in, but your Storm Sails slice right through it!');
-    else if (hasCrew('coral')) await talk('Coral: "Storm ahead! Hard to port!" She steers you safely around it.');
+    else if (crewWith('navigator')) await talk(`${CREW[crewWith('navigator').key].name}: "Storm ahead! Hard to port!" Your navigator steers you safely around it.`);
     else { p.energy = clamp(p.energy - 15, 0, 100); shake(3, 600); await talk('A storm batters the ship! You bail water all night. -15 energy.'); }
   } else if (r < 0.67 && p.fruit) {
     p.mood = clamp(p.mood - 5, 0, 100);
-    await talk(`A wave knocks you overboard! Devil Fruit users sink like rocks... ${p.crew.length ? CREW[p.crew[0]].name + ' dives in and drags you out.' : 'You grab a floating barrel just in time.'}`);
+    const swimmer = p.crew.find(m => !m.fruit);
+    await talk(`A wave knocks you overboard! Devil Fruit users sink like rocks... ${swimmer ? CREW[swimmer.key].name + ' dives in and drags you out.' : 'You grab a floating barrel just in time.'}`);
   } else {
     await talk(pick(['Smooth sailing. A seagull steals your hat for a second.', 'Calm seas. You nap on the figurehead.', 'A school of flying fish races the ship!']));
   }
@@ -968,7 +1124,8 @@ async function sleep() {
 
 function dailyEvent() {
   const p = G.p, r = Math.random();
-  if (hasCrew('basil') && r < 0.3) { p.food = clamp(p.food + 30, 0, 100); return 'Basil made breakfast for everyone! +30 food.'; }
+  const cook = crewWith('cook');
+  if (cook && r < 0.3) { p.food = clamp(p.food + 30, 0, 100); return `${CREW[cook.key].name} made breakfast for everyone! +30 food.`; }
   if (r < 0.4) { const b = randInt(20, 60); p.berries += b; return `A News Coo drops the morning paper. You find ฿${b} folded inside!`; }
   if (r < 0.5) { p.bag.meat = (p.bag.meat || 0) + 1; return 'A grateful villager left a Meat on the Bone at your door!'; }
   if (r < 0.62 && p.bounty > 0) return `Headline: "${p.name}, bounty ฿${fmt(p.bounty)}, terrorizes the seas!" You look great in the photo.`;
@@ -997,7 +1154,8 @@ function wantedMenu(confirmReset) {
     ['Weapon', weapon() ? weapon().name : 'Bare fists'],
     ['Fruit', fruit() ? fruit().name : 'None yet'],
     ['Haki', hakiNext],
-    ['Record', `${ISLANDS.filter(i => p.bosses[i.boss]).length}/6 bosses, ${p.wins} wins, day ${p.day}`],
+    ['Crew', p.crew.length ? p.crew.map(m => CREW[m.key].name).join(', ') : 'Nobody yet'],
+    ['Record', `${ISLANDS.filter(i => p.bosses[i.boss]).length}/${ISLANDS.length} bosses, ${p.wins} wins, day ${p.day}`],
   ];
   body.append(el('dl', { class: 'facts' }, facts.map(([k, v]) => el('div', null, el('dt', { text: k }), el('dd', { text: v })))));
   if (confirmReset) {
@@ -1174,8 +1332,9 @@ function hitFoe(mult, o) {
   o = o || {};
   const B = G.battle, F = B.F, p = G.p;
   if (F.hp <= 0) return 0;
-  const dodge = clamp(0.04 + (F.spd - p.spd) * 0.012, 0.02, 0.2);
+  const dodge = clamp(0.04 + (F.spd - p.spd) * 0.012, 0.02, 0.2) + (F.info.dodge || 0);
   if (!F.freeze && !F.stun && !o.sure && Math.random() < dodge) {
+    if (F.info.dodge && !B.dodgeHint) { B.dodgeHint = true; B.note = `${F.name} vanishes and reappears behind you! Sure-hit moves, stuns and freezes pin him down.`; }
     floatText(foeC().x, foeTop() - 4, 'MISS', '#cfd6e6');
     Sfx.play('miss');
     tween(F, { ox: 10 }, 90).then(() => tween(F, { ox: 0 }, 140));
@@ -1187,19 +1346,27 @@ function hitFoe(mult, o) {
   let dmg = atk * mult * rand(0.9, 1.1) - (o.pierce ? 0 : F.defense * 0.5);
   const crit = Math.random() < clamp(0.05 + p.spd * 0.003, 0.05, 0.3) + (o.critBonus || 0);
   if (crit) dmg *= o.critMult || 1.6;
+  if (F.info.armor && F.phase === 1 && !o.pierce) {
+    dmg *= 1 - F.info.armor;
+    if (!B.armorHint) { B.armorHint = true; B.note = `${F.name}'s steel armor blunts the blow! Piercing moves get through, and it cracks at half HP.`; }
+  }
   dmg = Math.max(1, Math.round(dmg));
   let phased = false;
   if (F.info.logia && B.armament <= 0 && F.solid <= 0 && !o.logiaHit) {
     dmg = Math.max(1, Math.round(dmg * 0.12));
     phased = true;
     if (!B.phaseHint) { B.phaseHint = true; B.note = `Your attack passes right through the ${F.info.logia}! Use Armament Haki or a Water Barrel.`; }
+  } else if (F.info.unsliceable && o.slash) {
+    dmg = Math.max(1, Math.round(dmg * 0.15));
+    phased = true;
+    if (!B.sliceHint) { B.sliceHint = true; B.note = `${F.name} splits apart and the blade cuts nothing! Punch, shoot or blast him instead.`; }
   }
   F.hp = Math.max(0, F.hp - dmg);
   F.flash = 0.12;
   const c = foeC();
   if (phased) {
     floatText(c.x, foeTop() - 4, dmg, '#9aa4b1');
-    particles(c.x, c.y, 8, { colors: F.info.logia === 'sand' ? SAND : ['#fff6a0', '#7cd0ff'], speed: 50, grav: 0, life: 0.5 });
+    particles(c.x, c.y, 8, { colors: F.info.logia === 'sand' ? SAND : F.info.unsliceable ? ['#e0483a', '#f7f4ea'] : ['#fff6a0', '#7cd0ff'], speed: 50, grav: 0, life: 0.5 });
     Sfx.play('miss');
   } else if (crit) {
     floatText(c.x, foeTop() - 6, dmg + '!', '#ffe14a', 2);
@@ -1263,7 +1430,8 @@ async function playerTurn(act) {
   if (act.type === 'attack') {
     const w = weapon();
     say(`${p.name} ${!w ? 'attacks' : w.hit === 'shot' ? 'fires' : 'swings the ' + w.name}!`);
-    await fxPlayer(w ? w.hit : 'punch', () => hitFoe(1, { logiaHit: !!(w && w.logiaHit) }), 1, w && w.color);
+    const fx = w ? w.hit : 'punch';
+    await fxPlayer(fx, () => hitFoe(1, { logiaHit: !!(w && w.logiaHit), slash: isSlash(fx, styleKey()) }), 1, w && w.color);
     B.sp = Math.min(100, B.sp + 12);
     unlocked = gainMastery(styleKey(), 1);
   } else if (act.type === 'skill') {
@@ -1290,7 +1458,7 @@ async function playerTurn(act) {
       }
       let dealt = 0;
       await fxPlayer(s.fx, () => {
-        dealt += hitFoe(s.mult, { sure: s.sure, critBonus: s.crit, pierce: s.pierce, logiaHit: !!(wp && wp.logiaHit) });
+        dealt += hitFoe(s.mult, { sure: s.sure, critBonus: s.crit, pierce: s.pierce, logiaHit: !!(wp && wp.logiaHit), slash: isSlash(s.fx, s.style) });
       }, s.hits || 1, s.color || (wp && wp.color));
       if (dragon) G.hero.form = null;
       if (s.style === p.fruit) B.usedFruit = true;
@@ -1398,47 +1566,70 @@ async function crewTurn() {
   }
 }
 
-async function crewAct(id, i) {
-  const p = G.p, B = G.battle, F = B.F, L = p.lvl;
+// A crewmate's turn: doctors heal when you are hurt; everyone else attacks with their weapon,
+// their role's signature move, or (40% of the time) their Devil Fruit.
+async function crewAct(m, i) {
+  const p = G.p, B = G.battle, F = B.F;
+  const c = CREW[m.key], r = ROLES[c.role];
   const [cx, cy] = BATTLE_CREW_SPOTS[i];
   const from = { x: cx + 6, y: cy - 10 };
-  switch (id) {
-    case 'kenji':
-      say('Kenji: "Triple Fang!"');
-      await fxSlash();
-      hitFoe(1, { atk: 5 + L * 2.2, critBonus: 0.15, sure: true });
-      break;
-    case 'coral':
-      say('Coral: "Storm Rod, Squall!"');
-      await fxBolt(foeC().x, foeC().y, 0.6);
-      hitFoe(1, { atk: 3 + L * 1.5, sure: true });
-      if (F.hp > 0 && Math.random() < 0.3) { F.weak = Math.max(F.weak, 2); floatText(foeC().x, foeTop() - 12, 'WEAK', '#c48ae8'); }
-      break;
-    case 'basil':
-      say('Basil: "Flambe Kick!"');
-      await projectile(from, foeC(), 220, (c, x, y) => { pxCircle(c, x, y, 3, '#ff9a3a'); particles(x, y, 2, { colors: FIRE, speed: 20, grav: -40, life: 0.25 }); });
-      particles(foeC().x, foeC().y, 14, { colors: FIRE, speed: 70 });
-      hitFoe(1, { atk: 5 + L * 2, sure: true });
-      break;
-    case 'moss': {
-      const heal = Math.round(4 + L * 1.3);
-      p.hp = Math.min(p.maxHp, p.hp + heal);
-      say('Moss: "H-hold still! Rumble Bandage!"');
-      Sfx.play('heal');
-      const hc = heroC();
-      floatText(hc.x, 74, '+' + heal, '#7cff7a');
-      particles(hc.x, hc.y, 12, { colors: ['#7cff7a', '#ffffff', '#ff8ab0'], speed: 30, grav: -40, life: 0.7 });
-      await wait(450);
-      break;
-    }
-    case 'pip':
-      say('Pip: "Pepper Star Shot!"');
-      Sfx.play('slash');
-      await projectile(from, foeC(), 220, (c, x, y) => pxRect(c, x - 1, y - 1, 3, 3, '#ff5a2a'));
-      particles(foeC().x, foeC().y, 10, { colors: ['#ff5a2a', '#ffd04a'], speed: 60 });
-      hitFoe(1, { atk: 3 + L * 1.8, critBonus: 0.25, critMult: 2, sure: true });
-      break;
+  if (r.heal && p.hp < p.maxHp * 0.8) {
+    const heal = crewHeal(m);
+    p.hp = Math.min(p.maxHp, p.hp + heal);
+    say(`${c.name}: "Hold still! ${c.call || r.call}!"`);
+    Sfx.play('heal');
+    const hc = heroC();
+    floatText(hc.x, 74, '+' + heal, '#7cff7a');
+    particles(hc.x, hc.y, 12, { colors: ['#7cff7a', '#ffffff', '#ff8ab0'], speed: 30, grav: -40, life: 0.7 });
+    await wait(450);
+    return;
   }
+  const atk = crewAtk(m);
+  const sure = !F.info.dodge;
+  const fr = m.fruit && FRUITS[m.fruit];
+  if (fr && Math.random() < 0.4) {
+    const mv = pick(fr.moves);
+    say(`${c.name}: "${mv.name}!"`);
+    Sfx.play(mv.burn || /fire|meteor|pillar/.test(mv.fx) ? 'fire' : 'boom');
+    const cols = [fr.color, fr.color2, '#ffffff'];
+    await projectile(from, foeC(), 280, (cv, x, y) => {
+      pxCircle(cv, x, y, 5, PAL.k); pxCircle(cv, x, y, 4, fr.color); pxCircle(cv, x - 1, y - 1, 2, fr.color2);
+      particles(x, y, 1, { colors: cols, speed: 15, grav: 0, life: 0.3 });
+    });
+    particles(foeC().x, foeC().y, 20, { colors: cols, speed: 80 });
+    shake(3, 200);
+    hitFoe(1, { atk: atk * 1.4, sure });
+    if (F.hp > 0 && mv.burn) { F.burn = Math.max(F.burn, 2); F.burnDmg = Math.max(3, F.burnDmg || 0, Math.round(atk * 0.3)); floatText(foeC().x, foeTop() - 12, 'BURN', '#ff9a3a'); }
+    if (F.hp > 0 && mv.freeze && Math.random() < (F.boss ? 0.15 : 0.35)) { F.freeze = 1; F.charging = false; floatText(foeC().x, foeTop() - 12, 'FROZEN', '#7fe8ff'); }
+    if (F.hp > 0 && mv.stun && Math.random() < mv.stun / 3) { F.stun = 1; floatText(foeC().x, foeTop() - 12, 'STUN', '#ffe14a'); }
+    if (F.hp > 0 && mv.atkDown) { F.weak = Math.max(F.weak, 2); floatText(foeC().x, foeTop() - 12, 'WEAK', '#c48ae8'); }
+    if (F.hp > 0 && mv.wet && F.info.logia) F.solid = Math.max(F.solid, 2);
+    await wait(320);
+    return;
+  }
+  const w = m.weapon && WEAPONS[m.weapon];
+  const fx = w ? (w.hit === 'shot' ? 'shot' : BLADES.includes(w.shape) ? 'slash' : 'punch') : r.fx === 'heal' ? 'punch' : r.fx;
+  say(`${c.name}: "${w ? w.moves[0].name : r.strike || c.call || r.call}!"`);
+  const fc = foeC();
+  if (fx === 'slash') {
+    await fxSlash();
+  } else if (fx === 'shot') {
+    Sfx.play('shot');
+    await projectile(from, fc, 200, (cv, x, y) => pxRect(cv, x - 1, y - 1, 3, 3, (w && w.color) || '#ff5a2a'));
+    particles(fc.x, fc.y, 10, { colors: ['#ff5a2a', '#ffd04a'], speed: 60 });
+  } else if (fx === 'kick') {
+    Sfx.play('fire');
+    await projectile(from, fc, 220, (cv, x, y) => { pxCircle(cv, x, y, 3, '#ff9a3a'); particles(x, y, 2, { colors: FIRE, speed: 20, grav: -40, life: 0.25 }); });
+    particles(fc.x, fc.y, 14, { colors: FIRE, speed: 70 });
+  } else if (fx === 'bolt') {
+    await fxBolt(fc.x, fc.y, 0.6);
+  } else {
+    await projectile(from, fc, 170, (cv, x, y) => { pxCircle(cv, x, y, 3, PAL.k); pxCircle(cv, x, y, 2, (w && w.color) || '#f3c08c'); });
+    Sfx.play('hit');
+    impact(fc, null, 10);
+  }
+  hitFoe(1, { atk, sure, critBonus: r.crit, critMult: r.critMult, slash: fx === 'slash' });
+  if (r.weak && F.hp > 0 && Math.random() < r.weak) { F.weak = Math.max(F.weak, 2); floatText(foeC().x, foeTop() - 12, 'WEAK', '#c48ae8'); }
   await wait(320);
 }
 
@@ -1488,6 +1679,39 @@ async function foeBig() {
     await fxRun(700, () => {
       for (let i = 0; i < 4; i++) {
         FX.parts.push({ x: start.x - 10, y: start.y - 4 + rand(-4, 4), vx: -170 + rand(-20, 20), vy: rand(-20, 20), grav: 0, life: 0.55, max: 0.55, color: pick(cols), size: 3 });
+      }
+    });
+    hitPlayer(2.2, { big: true });
+  } else if (info.fx === 'bomb') {
+    Sfx.play('charge');
+    const start = foeC();
+    await fxRun(650, (c, k) => {
+      const x = start.x + (hc.x - start.x) * k, y = start.y + (hc.y - start.y) * k - Math.sin(k * Math.PI) * 40;
+      pxCircle(c, x, y, 7, PAL.k); pxCircle(c, x, y, 6, '#3a3440'); pxRect(c, x - 3, y - 3, 2, 2, '#9aa4b1');
+      pxRect(c, x, y - 9, 1, 3, '#c9b88a'); pxRect(c, x - 1, y - 11, 3, 2, pick(FIRE));
+    });
+    Sfx.play('boom');
+    screenFlash('#ffd04a', 0.6);
+    fxRun(500, (c, k) => { pxRing(c, hc.x, hc.y, 4 + k * 30, '#ffe14a', 2); pxRing(c, hc.x, hc.y, 2 + k * 20, '#ff5a2a', 2); });
+    particles(hc.x, hc.y, 36, { colors: FIRE.concat(['#3a3440']), speed: 120 });
+    hitPlayer(2.2, { big: true });
+  } else if (info.fx === 'flurry') {
+    Sfx.play('slash');
+    for (let i = 0; i < 4; i++) {
+      F.alpha = 0.2;
+      await wait(90);
+      F.alpha = 1;
+      slashAt({ x: hc.x + rand(-6, 6), y: hc.y + rand(-10, 6) }, '#d9d9e0', rand(-1.2, 1.2), 30);
+      hitPlayer(0.6, { big: true });
+      await wait(150);
+    }
+  } else if (info.fx === 'gas') {
+    Sfx.play('fire');
+    const start = foeC();
+    const GAS = ['#8a4ac0', '#b98ae0', '#6a8a3a', '#c9e08a'];
+    await fxRun(900, () => {
+      for (let i = 0; i < 3; i++) {
+        FX.parts.push({ x: start.x - 8, y: start.y + rand(-10, 10), vx: -120 + rand(-20, 20), vy: rand(-15, 15), grav: -10, life: 0.9, max: 0.9, color: pick(GAS), size: 4 });
       }
     });
     hitPlayer(2.2, { big: true });
@@ -1558,7 +1782,7 @@ async function winBattle() {
     berries = Math.round(info.berries * (first ? 1 : 0.5) * (1 + (F.lvl - info.lvl) * 0.05));
     bounty = first ? info.bounty : Math.round(info.bounty * 0.08);
   }
-  if (hasCrew('coral')) berries = Math.round(berries * 1.2);
+  if (crewWith('navigator')) berries = Math.round(berries * 1.2);
   p.berries += berries;
   p.bounty += bounty;
   p.mood = clamp(p.mood + 4, 0, 100);
@@ -1629,14 +1853,6 @@ async function bossAftermath(key) {
   const p = G.p;
   const idx = ISLANDS.findIndex(i => i.boss === key);
   if (idx < 0) return;
-  const isl = ISLANDS[idx];
-  if (isl.recruit && !hasCrew(isl.recruit)) {
-    const c = CREW[isl.recruit];
-    p.crew.push(isl.recruit);
-    Sfx.play('level');
-    await talk(c.join);
-    await talk(`${c.name} the ${c.role} joined your crew! (${c.perk})`);
-  }
   if (key === 'grizzle' && !p.hat) {
     p.hat = true;
     Sfx.play('find');
@@ -1895,10 +2111,11 @@ async function fxPlayer(kind, hit, hits, color) {
     case 'doughsnare': {
       Sfx.play('stretch');
       const fc = foeC();
+      const col = color || '#efe2c8', dark = color ? mixColor(color, '#000000', 0.3) : '#c9a26a';
       fxRun(800, (c, k) => {
         for (let i = 0; i < 4; i++) {
           const r = 22 - Math.min(1, k * 2) * (10 - i * 2);
-          pxRing(c, fc.x, fc.y + i * 4 - 6, r * 0.8, i % 2 ? '#efe2c8' : '#c9a26a', 2);
+          pxRing(c, fc.x, fc.y + i * 4 - 6, r * 0.8, i % 2 ? col : dark, 2);
         }
       });
       await wait(500);
@@ -1930,6 +2147,97 @@ async function fxPlayer(kind, hit, hits, color) {
       await wait(250);
       hit(0);
       await wait(650);
+      break;
+    }
+    case 'bomb': {
+      Sfx.play('charge');
+      const h = heroHand(), fc = foeC();
+      await fxRun(520, (c, k) => {
+        const x = h.x + (fc.x - h.x) * k, y = h.y + (fc.y - h.y) * k - Math.sin(k * Math.PI) * 30;
+        pxCircle(c, x, y, 5, PAL.k); pxCircle(c, x, y, 4, color || '#3a3440'); pxRect(c, x - 2, y - 2, 1, 1, '#9aa4b1');
+        pxRect(c, x, y - 7, 1, 2, '#c9b88a'); pxRect(c, x - 1, y - 8, 2, 1, pick(FIRE));
+      });
+      Sfx.play('boom');
+      hit(0);
+      screenFlash('#ffd04a', 0.4);
+      fxRun(450, (c, k) => { pxRing(c, fc.x, fc.y, 4 + k * 24, '#ffe14a', 2); pxRing(c, fc.x, fc.y, 2 + k * 16, '#ff5a2a', 2); });
+      particles(fc.x, fc.y, 30, { colors: FIRE.concat(['#3a3440']), speed: 110 });
+      shake(5, 320);
+      break;
+    }
+    case 'splitfist': {
+      Sfx.play('slash');
+      await projectile(heroHand(), foeC(), 280, (c, x, y) => {
+        pxCircle(c, x, y, 4, PAL.k); pxCircle(c, x, y, 3, '#f7e0d0');
+        pxRect(c, x - 7, y - 1, 3, 3, PAL.k); pxRect(c, x - 6, y, 2, 1, '#3b6fd6');
+        pxRect(c, x - 10, y + rand(-1, 1), 2, 1, '#e0483a');
+      });
+      hit(0);
+      impact(foeC(), ['#ffffff', '#e0483a'], 12);
+      break;
+    }
+    case 'meteor':
+      Sfx.play('fire');
+      screenFlash('#ff8a3a', 0.25);
+      for (let i = 0; i < hits && F.hp > 0; i++) {
+        const fc = foeC(), sx = fc.x + rand(-40, 10), tx = fc.x + rand(-8, 8), ty = fc.y + rand(-10, 10);
+        await fxRun(200, (c, k) => {
+          const x = sx + (tx - sx) * k, y = -10 + (ty + 10) * k;
+          pxCircle(c, x, y, 4, '#5a2a1a'); pxCircle(c, x, y, 3, '#ff5a2a'); pxRect(c, x - 1, y - 1, 2, 2, '#ffd04a');
+          particles(x, y, 1, { colors: FIRE, speed: 10, grav: -40, life: 0.3 });
+        });
+        hit(i);
+        Sfx.play('boom');
+        particles(tx, ty, 12, { colors: FIRE, speed: 70 });
+        shake(3, 150);
+      }
+      await wait(150);
+      break;
+    case 'strings': {
+      Sfx.play('slash');
+      const STR = ['#ff5a5a', '#ffd04a', '#7cff7a', '#7cd0ff', '#e88aff'];
+      for (let i = 0; i < hits && F.hp > 0; i++) {
+        const h = heroHand(), fc = foeC(), col = STR[i % STR.length], ty = fc.y + rand(-14, 14);
+        fxRun(240, (c, k) => {
+          const e = Math.min(1, k * 2.5);
+          pxLine(c, h.x, h.y - 8, h.x + (fc.x + 14 - h.x) * e, h.y - 8 + (ty - h.y + 8) * e, col, 1);
+        });
+        await wait(90);
+        hit(i);
+        slashAt({ x: fc.x, y: ty }, col, rand(-0.4, 0.4), 26);
+      }
+      await wait(200);
+      break;
+    }
+    case 'cage': {
+      Sfx.play('charge');
+      const fc = foeC();
+      await fxRun(900, (c, k) => {
+        const r = 46 - Math.min(1, k * 1.3) * 30;
+        for (let i = 0; i < 12; i++) {
+          const x = fc.x - r + (i / 11) * r * 2;
+          pxLine(c, fc.x, -4, x, GROUND + 22, '#f2f2f2', 1);
+        }
+      });
+      Sfx.play('slash');
+      hit(0);
+      screenFlash('#ffffff', 0.4);
+      particles(fc.x, fc.y, 24, { colors: ['#ffffff', '#f2c7d8'], speed: 90 });
+      shake(5, 300);
+      break;
+    }
+    case 'pawcannon': {
+      Sfx.play('boom');
+      tween(Hr, { ox: 6 }, 80).then(() => tween(Hr, { ox: 0 }, 160));
+      await projectile(heroHand(), foeC(), 300, (c, x, y, k) => {
+        const r = 4 + k * 3;
+        pxCircle(c, x, y + 2, r, '#ffffff');
+        pxCircle(c, x, y + 2, Math.max(1, r - 2), '#f2c7d8');
+        for (let t = -1; t <= 1; t++) { pxCircle(c, x + r + 1, y + 2 + t * (r - 1), 2, '#ffffff'); pxCircle(c, x + r + 1, y + 2 + t * (r - 1), 1, '#f2c7d8'); }
+      });
+      hit(0);
+      fxRun(300, (c, k) => pxRing(c, foeC().x, foeC().y, 4 + k * 18, '#ffffff', 2));
+      shake(4, 260);
       break;
     }
     case 'punch':
@@ -2214,6 +2522,10 @@ function drawActors(list) {
   for (const a of list) drawSpriteAt(ctx, a.spr, a.x, a.y, a.scale, a);
 }
 
+function drawCrewWeapons(actors) {
+  for (const a of actors) if (a.m && a.m.weapon) drawWeaponAt(ctx, a.x, a.y, a.scale, a.m.weapon, CREW[a.m.key].spr.kind === 'brute');
+}
+
 function drawTitle() {
   const bob = Math.round(Math.sin(G.t * 3) * 1.5);
   drawText(ctx, 'POCKET', W / 2, 12 + bob, { color: '#ffe14a', scale: 3, align: 'center' });
@@ -2226,15 +2538,17 @@ function drawHome() {
   const p = G.p, Hr = G.hero;
   const moving = Math.abs(Hr.tx - Hr.x) >= 1 && Hr.pause <= 0;
   const step = moving ? (Math.floor(G.t * 8) % 2) : 0;
-  const actors = p.crew.map((id, i) => {
+  const actors = p.crew.map((m, i) => {
     const [x, y] = HOME_CREW_SPOTS[i];
-    return { spr: getSprite(CREW[id].spr), x, y: y + Math.round(Math.sin(G.t * 2 + i) * 0.6), scale: 2, squash: Math.sin(G.t * 2.5 + i) * 0.02 };
+    return { spr: getSprite(CREW[m.key].spr), x, y: y + Math.round(Math.sin(G.t * 2 + i) * 0.6), scale: 2, squash: Math.sin(G.t * 2.5 + i) * 0.02, m };
   });
   actors.push({ spr: heroSprite(), x: Hr.x + Hr.ox, y: 121 + Hr.oy - step, scale: 2, squash: Hr.squash + (moving ? 0 : Math.sin(G.t * 3) * 0.025), alpha: Hr.alpha });
   drawActors(actors);
+  drawCrewWeapons(actors);
   if (Hr.alpha > 0.5) drawHeldWeapon(ctx, Hr.x + Hr.ox, 121 + Hr.oy - step, 2);
   drawLoot(ctx);
-  if (hasCrew('kenji') && timeIdx() === 1) drawText(ctx, 'Z', HOME_CREW_SPOTS[0][0] + 10, 80 - (G.t * 6) % 8, { color: '#ffffff' });
+  const napper = p.crew.findIndex(m => CREW[m.key].role === 'swordsman');
+  if (napper >= 0 && timeIdx() === 1) drawText(ctx, 'Z', HOME_CREW_SPOTS[napper][0] + 10, 80 - (G.t * 6) % 8, { color: '#ffffff' });
   if (G.bubble && G.t < G.bubble.until) drawBubble(ctx, Hr.x + Hr.ox, 82 + Hr.oy, G.bubble.text);
   drawPlaceLabel();
 }
@@ -2251,12 +2565,13 @@ function drawPlaceLabel() {
 
 function drawBattle() {
   const B = G.battle, F = B.F, p = G.p;
-  const actors = p.crew.map((id, i) => {
+  const actors = p.crew.map((m, i) => {
     const [x, y] = BATTLE_CREW_SPOTS[i];
-    return { spr: getSprite(CREW[id].spr), x, y: y + Math.round(Math.sin(G.t * 4 + i) * 0.6), scale: 1 };
+    return { spr: getSprite(CREW[m.key].spr), x, y: y + Math.round(Math.sin(G.t * 4 + i) * 0.6), scale: 1, m };
   });
   actors.push({ spr: heroSprite(), x: G.hero.x + G.hero.ox, y: 121 + G.hero.oy, scale: 2, squash: G.hero.squash + Math.sin(G.t * 5) * 0.02, alpha: G.hero.alpha, flip: !!G.hero.form });
   drawActors(actors);
+  drawCrewWeapons(actors);
   if (G.hero.alpha > 0.5 && !G.hero.form) drawHeldWeapon(ctx, G.hero.x + G.hero.ox, 121 + G.hero.oy, 2);
 
   // foe

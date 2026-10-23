@@ -172,6 +172,59 @@ const PROPS = {
     pxRect(c, 154, 14, 9, 6, '#2f5fb3');
     pxRect(c, 157, 16, 3, 2, '#ffffff');
   },
+  town(c) {
+    groundBase(c, '#e0bc84', '#c9a26a');
+    for (let y = GROUND + 6, row = 0; y < H; y += 5, row++) {
+      for (let x = (row % 2) * 6; x < W; x += 12) pxRect(c, x, y, 9, 1, '#b8935e');
+    }
+    drawHouse(c, 48, GROUND, '#f2c27a', '#e07a3a');
+    drawHouse(c, 78, GROUND - 2, '#e8b070', '#c0453a');
+    // Buggy's circus tent
+    const tx = 158, base = GROUND;
+    for (let x = tx - 28; x < tx + 28; x++) pxRect(c, x, base - 20, 1, 20, Math.floor((x - tx + 28) / 6) % 2 ? '#f2f2f2' : '#d63c2f');
+    for (let i = 0; i < 18; i++) {
+      const half = 30 - i * 1.6;
+      for (let x = Math.round(tx - half); x < tx + half; x++) pxRect(c, x, base - 21 - i, 1, 1, Math.floor((x - tx + 40) / 6) % 2 ? '#f2f2f2' : '#d63c2f');
+    }
+    pxRect(c, tx - 5, base - 12, 10, 12, '#2a2433');
+    pxRect(c, tx, base - 46, 1, 8, '#5a3a22');
+    pxRect(c, tx + 1, base - 46, 7, 4, '#d63c2f');
+    pxRect(c, tx + 3, base - 45, 2, 2, '#ffe14a');
+  },
+  syrup(c) {
+    // the mansion on the hill
+    pxCircle(c, 158, GROUND + 30, 56, '#4f9a3a');
+    pxRect(c, 136, 56, 40, 20, '#f2efe6');
+    pxRect(c, 170, 56, 6, 20, '#d9d4c4');
+    for (let i = 0; i < 8; i++) pxRect(c, 134 + i, 55 - i, 44 - 2 * i, 1, '#3f6fb0');
+    for (const wx of [140, 150, 160]) pxRect(c, wx, 61, 5, 5, '#7ac0e8');
+    pxRect(c, 153, 68, 6, 8, '#7a4a24');
+    groundBase(c, '#86cf5e', '#5aa846');
+    // slope path and a fence
+    for (let i = 0; i < 26; i++) pxRect(c, 112 + i, GROUND + 12 - Math.round(i * 0.45), 8, 2, '#c9a26a');
+    for (let x = 40; x < 108; x += 9) pxRect(c, x, GROUND - 8, 2, 9, '#9a6a3a');
+    pxRect(c, 40, GROUND - 6, 68, 1, '#9a6a3a');
+    pxRect(c, 40, GROUND - 3, 68, 1, '#9a6a3a');
+    drawPalm(c, 120, GROUND + 1);
+  },
+  baratie(c) {
+    // the fish-shaped floating restaurant
+    pxRect(c, 104, 64, 74, 36, '#e07a3a');
+    pxRect(c, 104, 64, 74, 3, '#f2a05a');
+    pxCircle(c, 176, 82, 18, '#e07a3a');
+    pxCircle(c, 182, 76, 4, '#ffffff');
+    pxCircle(c, 183, 76, 2, '#1b1424');
+    for (let i = 0; i < 10; i++) pxRect(c, 92 + i, 70 + i, 12 - i, 20 - 2 * i, '#c95a2a');
+    for (let i = 0; i < 6; i++) pxRect(c, 110 + i * 11, 74, 6, 6, '#ffd36a');
+    pxRect(c, 112, 52, 50, 10, '#7a4a24');
+    drawText(c, 'BARATIE', 137, 54, { color: '#ffe14a', shadow: null, align: 'center' });
+    // the deck you stand on
+    pxRect(c, 0, GROUND, W, H - GROUND, '#9a6a3f');
+    for (let y = GROUND + 5; y < H; y += 6) pxRect(c, 0, y, W, 1, '#7a5030');
+    for (let x = 14; x < W; x += 32) pxRect(c, x, GROUND, 1, H - GROUND, '#86592f');
+    pxRect(c, 0, GROUND - 4, W, 2, '#7a5030');
+    for (let x = 30; x < W; x += 16) pxRect(c, x, GROUND - 4, 3, 5, '#6a4422');
+  },
   reef(c) {
     groundBase(c, '#fbe8c4', '#f2d9a8');
     const r = seeded(11);
@@ -264,6 +317,9 @@ const PROPS = {
 };
 
 const LIGHTS = {
+  town(c) { pxRect(c, 61, GROUND - 11, 5, 4, '#ffd36a'); pxRect(c, 91, GROUND - 13, 5, 4, '#ffd36a'); pxRect(c, 153, GROUND - 12, 10, 12, '#ffb84a'); },
+  syrup(c) { for (const wx of [140, 150, 160]) pxRect(c, wx, 61, 5, 5, '#ffd36a'); },
+  baratie(c) { for (let i = 0; i < 6; i++) pxRect(c, 110 + i * 11, 74, 6, 6, '#ffd36a'); },
   village(c) { pxRect(c, 63, GROUND - 11, 5, 4, '#ffd36a'); pxRect(c, 93, GROUND - 13, 5, 4, '#ffd36a'); pxRect(c, 161, GROUND - 22, 3, 3, '#ffd36a'); },
   marine(c) { pxRect(c, 149, 66, 10, 12, '#ffd36a'); },
   desert(c) { pxRect(c, 150, 88, 10, 14, '#ffb84a'); pxCircle(c, 155, 88, 5, '#ffb84a'); },

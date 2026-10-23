@@ -1,6 +1,6 @@
 # Pocket Pirate
 
-A small pixel-art pirate life sim inspired by One Piece. You start as a nobody: no weapon, no powers, no crew, no hat. Explore islands to find weapons and hidden Devil Fruits, master their moves, raid bosses with your crew, and sail the Grand Line to become Pirate King.
+A small pixel-art pirate life sim inspired by One Piece. You start as a nobody: no weapon, no powers, no crew, no hat. Explore islands to find weapons and hidden Devil Fruits, master their moves, hire a crew at island bars, raid bosses, and sail the Grand Line to become Pirate King.
 
 No build step and no dependencies: open `index.html` in a browser (or serve the folder with any static server). Progress saves automatically in your browser.
 
@@ -22,24 +22,41 @@ Pick one when you start a new game. Each changes your starting stats and has its
 - **Mastery**: each weapon, your fists, and your Devil Fruit have their own mastery. Using them in fights, winning with them, and practicing with Drills raises mastery and unlocks their 2nd and 3rd moves.
 - **Train**: a timing mini-game. Stop the marker in the gold zone (dead center is PERFECT) to raise ATK, DEF/HP, SPD or Haki (each stat has a limit that rises with your level), or do Drills and Fruit Power practice for mastery.
 - **Fight**: turn-based battles against the island's monsters for XP, berries and bounty. Fights at night are tougher but pay more.
-- **Raid**: big multi-phase bosses. They charge a huge attack every few turns (Guard!), enrage at half HP, and your whole crew fights alongside you. Each boss drops its signature weapon.
+- **Raid**: big multi-phase bosses. They charge a huge attack every few turns (Guard!), enrage at half HP, and your whole crew fights alongside you. Each boss drops its signature weapon, and some have a trick: Buggy splits apart so blades barely hurt him, Kuro dodges a lot (sure-hit moves, stuns and freezes pin him down), and Don Krieg's armor blunts hits until it cracks at half HP (piercing moves get through).
 - **Work**: go fishing (tap REEL when the bobber dips) or take an odd job for berries.
+- **Bar**: every island has a bar with crewmates for hire (up to 5 at once). Hand each one a weapon you found, feed them a spare Devil Fruit from your bag (it's theirs for life), or kick them out (you get the weapon back; they leave with their fruit). Crewmates jump into normal fights sometimes and fight every turn in raids. Throw a feast at the bar to lift everyone's mood.
 - **Eat / Sleep**: food, energy and mood drain as the day passes. Starving hurts; a good mood boosts training.
 - **Shop**: food, medicine, Energy Cola, Water Barrels (soak Logia bosses), training weights, and ship upgrades.
 - **Sail**: beat an island's raid boss to unlock the next island. Watch out for Sea Kings.
 
+## Crew roles
+
+| Role | In battle | Perk |
+| --- | --- | --- |
+| Swordsman | Slashes with extra crits | Naps at noon |
+| Sniper | Trick shots, crits often for double damage | |
+| Brawler | Hardest plain hits | |
+| Cook | Flaming kicks | Food heals 50% more; sometimes makes breakfast |
+| Navigator | Weaker hits that can weaken the foe | +20% berries from wins, steers around storms |
+| Doctor | Heals you when you're below 80% HP, otherwise attacks | |
+
+A crewmate's power grows with your level and their weapon. Crewmates with a Devil Fruit use its moves 40% of the time (with burns, freezes and stuns).
+
 ## Progression
 
-| Island | Hidden weapons | Raid boss (drops) | Recruit |
+| Island | Hidden weapons | Raid boss (drops) | At the bar |
 | --- | --- | --- | --- |
-| Dawn Village | Rusty Cutlass, Oak Bo Staff | Bandit King Grizzle (Grizzle's Club, a straw hat) | Kenji, swordsman |
-| Shell Port | Flintlock Pistol, Marine Saber | Captain Ironjaw (Ironjaw's Axe) | Coral, navigator |
-| Coral Reef Park | Coral Trident, Karate Wraps | Sawtooth Sharko (Shark Saw) | Basil, cook |
-| Sandora Kingdom | Sunset Scimitar | Warlord Sandor, Logia (Golden Hook) | Moss, doctor |
-| Cloud Isle | Shock Shell | Sky God Voltz, Logia (Thunder Staff) | Pip, sniper |
-| Last Isle | Night Edge | Emperor Drakko (Dragon Kanabo) | Pirate King |
+| Dawn Village | Rusty Cutlass, Oak Bo Staff | Bandit King Grizzle (Grizzle's Club, a straw hat) | Rin (brawler), Tobi (sniper) |
+| Shell Port | Flintlock Pistol, Marine Saber | Captain Ironjaw (Ironjaw's Axe) | Kenji (swordsman), Gus (cook) |
+| Orange Town | Circus Knives | Buggy the Clown, blades barely hurt him (Buggy Cannon) | Coral (navigator), Hana (doctor) |
+| Syrup Village | Hypno Chakram | Captain Kuro, dodges a lot (Cat Claws) | Pip (sniper), Nyx (mink swordsman) |
+| Baratie | Chef's Cleaver | Don Krieg, armored until half HP (Battle Spear) | Basil (cook), Big Patty (brawler) |
+| Arlong Park | Coral Trident, Karate Wraps | Arlong (Shark Saw) | Octo (fishman swordsman), Shoal (fishman brawler) |
+| Sandora Kingdom | Sunset Scimitar | Warlord Sandor, Logia (Golden Hook) | Moss (reindeer doctor), Zara (swordsman) |
+| Cloud Isle | Shock Shell | Sky God Voltz, Logia (Thunder Staff) | Wyn (skypian sniper), Gale (skypian navigator) |
+| Last Isle | Night Edge | Emperor Drakko (Dragon Kanabo) | Rook (brawler), Mei (doctor) |
 
-Eight Devil Fruits are hidden across the islands, shuffled every new game (every island has one, two islands have a second): Rubber, Flame, Frost, Quake, Smoke, Light, Dough and Dragon. The Dragon fruit turns you into an azure dragon when you attack and gives +20% max HP; Dough takes 12% less damage; Light and Flame let attacks pass through you sometimes. Train Haki to unlock Armament (hits Logias), Observation (dodge) and Conqueror's Will. The Coral Trident's Riptide and Water Barrels also make Logias hittable, and the Night Edge cuts right through them.
+Twelve Devil Fruits are hidden across the islands, shuffled every new game (every island has at least one): Rubber, Flame, Frost, Quake, Smoke, Light, Dough, Dragon, Split, Magma, String and Paw. The Dragon fruit turns you into an azure dragon when you attack and gives +20% max HP; Dough takes 12% less damage and Paw 10% less; Light, Flame, Magma and Split let attacks miss you sometimes. Magma burns, String's Puppet Strings and Paw's Pressure Repel can stun. A fruit you keep instead of eating can be fed to a crewmate at the bar. Train Haki to unlock Armament (hits Logias), Observation (dodge) and Conqueror's Will. The Coral Trident's Riptide and Water Barrels also make Logias hittable, and the Night Edge cuts right through them.
 
 ## Controls
 
@@ -49,7 +66,7 @@ Tap or click the buttons. Tap your pirate to chat. Space bar strikes in training
 
 - `js/gfx.js`: ASCII pixel sprites with auto-outlines, a 3x5 bitmap font, pixel drawing helpers
 - `js/scene.js`: island backdrops, day/night skies, animated sea, ship, particles and tweens
-- `js/data.js`: islands, enemies, bosses, crew, devil fruits, items
+- `js/data.js`: islands, enemies, bosses, crew roles and recruits, devil fruits, items
 - `js/audio.js`: chiptune sound effects with Web Audio
 - `js/gear.js`: weapons, devil fruits, move mastery, exploring and the Gear menu
 - `js/game.js`: game state, menus, the day loop, battles, raids and mini-games

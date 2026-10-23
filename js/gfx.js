@@ -82,6 +82,9 @@ const BRUTE_HEADS = {
   sharko:  ['......xx........', '.....xxxx.......', '.....hhhhhh.....', '.....hssssh.....', '.ggggsesses.....', '..g.gssmmss.....'],
   sandor:  ['................', '......hhhh......', '.....hhhhhh.....', '.....hhhhhh.....', '.....sesses.....', '.....sSSSSsww...'],
   voltz:   ['................', '......ssss......', '.....ssssss.....', '....ssssssss....', '....ssessess....', '....sssmmsss....'],
+  buggy:   ['....xxxxxxxx....', '...xxxxwwxxxx...', '.....bbbbbb.....', '....bbssssbb....', '.....serres.....', '.....smmmms.....'],
+  kuro:    ['................', '......hhhh......', '.....hhhhhh.....', '.....hhhhhh.....', '.....wewwew.....', '.....ssmmss.....'],
+  krieg:   ['................', '.....h.hh.h.....', '.....hhhhhh.....', '.....hssssh.....', '.....sesses.....', '.....GGGGGG.....'],
   drakko:  ['..x..........x..', '..xx..hhhh..xx..', '....xhhhhhhx....', '.....hssssh.....', '....hsesses.....', '....hssmmssh....'],
 };
 
@@ -178,6 +181,9 @@ const OVERLAYS = {
   hook:   [[0, 12, 1, 2, 'G'], [1, 14, 1, 1, 'G'], [2, 13, 1, 1, 'G']],
   kanabo: [[0, 0, 3, 9, 'g'], [1, 9, 1, 2, 'n'], [1, 1, 1, 1, 'w'], [0, 4, 1, 1, 'w'], [2, 6, 1, 1, 'w']],
   swords: [[12, 12, 1, 3, 'g'], [13, 11, 1, 3, 'w'], [14, 12, 1, 3, 'r']],
+  knives: [[0, 6, 1, 4, 'g'], [2, 6, 1, 3, 'g'], [0, 5, 1, 1, 'w'], [2, 5, 1, 1, 'w']],
+  claws:  [[0, 10, 1, 5, 'w'], [2, 11, 1, 4, 'w']],
+  spear:  [[1, 0, 1, 12, 'n'], [0, 0, 3, 2, 'g']],
   horns:  [[2, 2, 1, 1, 'x'], [3, 3, 1, 1, 'x'], [6, 2, 1, 1, 'x'], [5, 3, 1, 1, 'x']],
   // race marks for the player sprite
   minkEars:    [[3, 0, 2, 2, 'S'], [11, 0, 2, 2, 'S']],
@@ -200,6 +206,12 @@ const WEAPON_SHAPES = {
   gun:     { grip: [0, 2], rows: ['gggggg', 'nng...', 'nn....'] },
   hook:    { grip: [1, 4], rows: ['.G.', 'G.G', '..G', '.GG', 'nnn'] },
   shell:   { grip: [1, 3], rows: ['.CC.', 'CwCC', 'CCwC', '.CC.'] },
+  knives:  { grip: [2, 4], rows: ['w...w', '.w.w.', '..w..', '.nnn.', '..n..'] },
+  ring:    { grip: [2, 4], rows: ['.ggg.', 'g.w.g', 'g...g', 'g...g', '.ggg.'] },
+  cleaver: { grip: [3, 5], rows: ['gggg.', 'gggg.', 'gggg.', 'gggn.', '...n.', '...n.'] },
+  cannon:  { grip: [0, 3], rows: ['.hhhhhhh', 'hhhhhhhh', 'nnhhhhhh', 'nn......'] },
+  claws:   { grip: [1, 0], rows: ['hhh', 'w.w', 'w.w', 'w.w', '..w'] },
+  spear:   { grip: [1, 11], rows: ['.G.', 'ggg', '.g.'].concat(Array(13).fill('.n.')) },
 };
 
 // 8x8 item icons
@@ -220,6 +232,7 @@ const ICONS = {
   map:      ['.CCCCCC.', 'CCCCCCCC', 'CbCCCrCr', 'CCbCCCrC', 'CCCbCrCr', 'CCCCbCCC', 'CCCCCCCC', '.CCCCCC.'],
   poster:   ['CCCCCCCC', 'ChhhhhhC', 'CCCCCCCC', 'CCssssCC', 'CCseesCC', 'CCssssCC', 'ChhhhhhC', 'CCCCCCCC'],
   moon:     ['..yyy...', '.yy.....', 'yy....w.', 'yy...ww.', 'yy......', 'yy......', '.yy.....', '..yyy...'],
+  mug:      ['.wwwww..', 'wwwwwww.', 'GGGGGnn.', 'GGyGGn.n', 'GGyGGn.n', 'GGyGGnn.', 'GGGGG...', '.GGG....'],
   wraps:    ['..wwww..', '.wwwwww.', 'wwswswsw', 'wwwwwwww', 'wwwwwww.', '.wwwww..', '..sss...', '..sss...'],
   cannon:   ['........', '.......g', 'hhhhhhhh', 'hhhhhhh.', 'hhhhhh..', '.nn.nn..', 'nnnnnn..', '.nn.nn..'],
 };

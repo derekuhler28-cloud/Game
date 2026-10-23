@@ -76,13 +76,29 @@ async function announceUnlocks(list) {
 
 // ---------- drawing ----------
 
-function drawHeldWeapon(c, x, y, scale) {
-  const w = weapon();
+// Draws weapon `key` in the right hand of a sprite standing at (x, y). Brutes have wider arms.
+function drawWeaponAt(c, x, y, scale, key, brute) {
+  const w = key && WEAPONS[key];
   if (!w || !w.shape) return;
   const sh = WEAPON_SHAPES[w.shape];
-  const spr = getSprite(weaponSpec(G.p.weapon));
-  const hx = x + 4.5 * scale, hy = y - 5.5 * scale;
+  const spr = getSprite(weaponSpec(key));
+  const hx = x + (brute ? 6.5 : 4.5) * scale, hy = y - 5.5 * scale;
   c.drawImage(spr, Math.round(hx - (sh.grip[0] + 1) * scale), Math.round(hy - (sh.grip[1] + 1) * scale), spr.width * scale, spr.height * scale);
+}
+
+function drawHeldWeapon(c, x, y, scale) {
+  drawWeaponAt(c, x, y, scale, G.p.weapon);
+}
+
+// Which crewmate (if any) is holding weapon `key`.
+const holderOf = key => G.p.crew.find(m => m.weapon === key);
+// Blade weapons and slashing moves; Buggy splits apart when they hit him.
+const BLADES = ['sword', 'curved', 'saw', 'axe', 'hook', 'claws', 'cleaver'];
+const SLASH_FX = ['swing', 'multislash', 'crescent', 'sandslash'];
+function isSlash(fx, key) {
+  if (!SLASH_FX.includes(fx) || key === 'fists' || key === 'race') return false;
+  const w = WEAPONS[key];
+  return !w || BLADES.includes(w.shape);
 }
 
 function showLoot(spec) {
@@ -306,10 +322,11 @@ function gearMenu(note) {
   for (const key of ['fists'].concat(p.weapons)) {
     const w = WEAPONS[key];
     const on = styleKey() === key;
+    const holder = holderOf(key);
     body.append(el('div', { class: 'row gear' + (on ? ' current' : '') },
       el('img', { src: weaponURL(key), alt: '' }),
       el('div', null,
-        el('h3', null, w ? w.name : 'Bare Fists', w ? el('small', { text: ` +${w.atk} ATK${w.def ? ` +${w.def} DEF` : ''}` }) : null),
+        el('h3', null, w ? w.name : 'Bare Fists', w ? el('small', { text: ` +${w.atk} ATK${w.def ? ` +${w.def} DEF` : ''}${holder ? ` - held by ${CREW[holder.key].name}` : ''}` }) : null),
         masteryBar(key), movesList(key)),
       on ? el('span', { class: 'count', text: 'Equipped' })
         : el('button', { type: 'button', class: 'mini-btn', text: 'Equip', onclick: () => equip(key) })));
@@ -339,9 +356,12 @@ function gearMenu(note) {
 }
 
 function equip(key) {
+  const holder = key === 'fists' ? null : holderOf(key);
+  if (holder) holder.weapon = null;
   G.p.weapon = key === 'fists' ? null : key;
   save();
-  gearMenu(`Equipped ${key === 'fists' ? 'your bare fists' : 'the ' + WEAPONS[key].name}.`);
+  gearMenu(holder ? `You took the ${WEAPONS[key].name} back from ${CREW[holder.key].name} and equipped it.`
+    : `Equipped ${key === 'fists' ? 'your bare fists' : 'the ' + WEAPONS[key].name}.`);
 }
 
 async function eatFromBag(k) {
