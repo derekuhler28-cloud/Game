@@ -4,6 +4,17 @@ A small pixel-art pirate life sim inspired by One Piece. You start as a nobody: 
 
 No build step and no dependencies: open `index.html` in a browser (or serve the folder with any static server). Progress saves automatically in your browser.
 
+## Races
+
+Pick one when you start a new game. Each changes your starting stats and has its own perks and flaws:
+
+| Race | Perks | Flaws |
+| --- | --- | --- |
+| Human | +25% mastery from everything | No racial move |
+| Mink | +3 SPD, +2 ATK, Electro Claw move, +15% damage at night | Gets hungry 25% faster |
+| Skypian | +10% dodge, +4 SP every turn, Impact Dial move | 15% less max HP |
+| Fishman | +4 ATK, +15 max HP, Fishman Karate move (ignores defense), fishing pays 30% more | -2 SPD, -10% damage on Sandora and Cloud Isle |
+
 ## How to play
 
 - **Explore**: search the island for hidden weapons and its Devil Fruit, plus berries, food, supplies, ambushes and mentors. The home button shows how many secrets are left.
@@ -28,7 +39,7 @@ No build step and no dependencies: open `index.html` in a browser (or serve the 
 | Cloud Isle | Shock Shell | Sky God Voltz, Logia (Thunder Staff) | Pip, sniper |
 | Last Isle | Night Edge | Emperor Drakko (Dragon Kanabo) | Pirate King |
 
-One of five Devil Fruits (Rubber, Blaze, Frost, Quake, Smoke) hides on each of the first five islands, shuffled every new game. Train Haki to unlock Armament (hits Logias), Observation (dodge) and Conqueror's Will. The Coral Trident's Riptide and Water Barrels also make Logias hittable, and the Night Edge cuts right through them.
+Eight Devil Fruits are hidden across the islands, shuffled every new game (every island has one, two islands have a second): Rubber, Flame, Frost, Quake, Smoke, Light, Dough and Dragon. The Dragon fruit turns you into an azure dragon when you attack and gives +20% max HP; Dough takes 12% less damage; Light and Flame let attacks pass through you sometimes. Train Haki to unlock Armament (hits Logias), Observation (dodge) and Conqueror's Will. The Coral Trident's Riptide and Water Barrels also make Logias hittable, and the Night Edge cuts right through them.
 
 ## Controls
 

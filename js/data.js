@@ -155,7 +155,7 @@ const FIST_MOVES = [
   { name: 'Haymaker', at: 90, sp: 75, mult: 2.5, fx: 'haymaker' },
 ];
 
-// One fruit hides on each of the first five islands (shuffled every new game). Only one can ever be eaten.
+// Every island hides at least one fruit (shuffled every new game; two islands hide a second). Only one can ever be eaten.
 const FRUIT_PRICE = 4000;
 const FRUITS = {
   rubber: {
@@ -168,7 +168,7 @@ const FRUITS = {
     ],
   },
   flame: {
-    name: 'Blaze-Blaze Fruit', color: '#f07a2a', color2: '#ffd04a', dodge: 0.12,
+    name: 'Flame-Flame Fruit', color: '#f07a2a', color2: '#ffd04a', dodge: 0.12,
     desc: 'Become living fire. Attacks sometimes pass right through you.',
     moves: [
       { name: 'Fire Fist', at: 0, sp: 30, mult: 2.0, fx: 'fireball' },
@@ -202,6 +202,64 @@ const FRUITS = {
       { name: 'Smoke Bind', at: 40, sp: 45, mult: 1.1, atkDown: true, fx: 'smokebind' },
       { name: 'White Launcher', at: 120, sp: 75, mult: 2.9, fx: 'launcher' },
     ],
+  },
+  light: {
+    name: 'Light-Light Fruit', color: '#fff3a0', color2: '#ffd04a', dodge: 0.12,
+    desc: 'Become living light. Blinding speed, and attacks sometimes pass right through you.',
+    moves: [
+      { name: 'Flash Kick', at: 0, sp: 25, mult: 1.8, sure: true, fx: 'lightkick' },
+      { name: 'Light Rain', at: 40, sp: 50, mult: 0.5, hits: 6, fx: 'lightrain' },
+      { name: 'Solar Lance', at: 120, sp: 85, mult: 3.3, fx: 'beam' },
+    ],
+  },
+  dough: {
+    name: 'Dough-Dough Fruit', color: '#efe2c8', color2: '#c9a26a', guard: 0.12,
+    desc: 'A squishy, sticky body that soaks up hits (12% less damage). Sticky Snare traps foes.',
+    moves: [
+      { name: 'Dough Fist', at: 0, sp: 25, mult: 1.7, fx: 'doughfist' },
+      { name: 'Sticky Snare', at: 40, sp: 45, mult: 1.1, stun: 0.6, fx: 'doughsnare' },
+      { name: 'Dough Avalanche', at: 120, sp: 80, mult: 3.0, fx: 'wave', color: '#e8dcc8' },
+    ],
+  },
+  dragon: {
+    name: 'Dragon-Dragon Fruit', color: '#4a8ad9', color2: '#bfe0ff', hpBonus: 0.2, form: true,
+    desc: 'A mythical Zoan. Turn into an azure dragon to attack. +20% max HP.',
+    moves: [
+      { name: 'Dragon Claw', at: 0, sp: 25, mult: 1.8, fx: 'swing', color: '#bfe0ff' },
+      { name: 'Blaze Breath', at: 40, sp: 50, mult: 1.5, burn: 3, fx: 'breath' },
+      { name: 'Dragon Twister', at: 120, sp: 90, mult: 3.5, fx: 'twister' },
+    ],
+  },
+};
+
+// Picked when starting a new game. `stats` adjust the starting stats; perks and flaws are listed on the picker.
+const RACES = {
+  human: {
+    name: 'Human', desc: 'Stubborn and adaptable. The most common folk on the seas.',
+    perks: ['Quick learner: +25% mastery from everything'],
+    flaws: ['No racial move'],
+    stats: {},
+  },
+  mink: {
+    name: 'Mink', desc: 'A furry warrior tribe. Fast, fierce, and crackling with Electro.',
+    perks: ['+3 SPD, +2 ATK', 'Electro Claw move from day one', 'Moonlight: +15% damage at night'],
+    flaws: ['Big appetite: gets hungry 25% faster'],
+    stats: { spd: 3, atk: 2 },
+    move: { name: 'Electro Claw', at: 0, sp: 25, mult: 1.6, stun: 0.3, fx: 'thunder' },
+  },
+  skypian: {
+    name: 'Skypian', desc: 'Winged folk from the islands above the clouds. Nimble and handy with dials.',
+    perks: ['Wings: +10% dodge', 'Dial tech: +4 SP every turn', 'Impact Dial move from day one'],
+    flaws: ['Light frame: 15% less max HP'],
+    stats: { hpMult: 0.85 },
+    move: { name: 'Impact Dial', at: 0, sp: 30, mult: 2.1, recoil: 0.05, fx: 'blast' },
+  },
+  fishman: {
+    name: 'Fishman', desc: 'Born under the sea with ten times the strength of a human.',
+    perks: ['+4 ATK, +15 max HP', 'Fishman Karate from day one (ignores defense)', 'Born swimmer: fishing pays 30% more'],
+    flaws: ['Slow on land: -2 SPD', 'Dries out: -10% damage on Sandora and Cloud Isle'],
+    stats: { atk: 4, hp: 15, spd: -2 },
+    move: { name: 'Fishman Karate', at: 0, sp: 25, mult: 1.5, pierce: true, fx: 'haymaker' },
   },
 };
 

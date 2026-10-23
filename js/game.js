@@ -31,16 +31,34 @@ const shuffle = arr => arr.map(v => [Math.random(), v]).sort((a, b) => a[0] - b[
 
 // ---------- player ----------
 
-function newPlayer(name) {
-  const fruitMap = {};
-  shuffle(Object.keys(FRUITS)).forEach((k, i) => { fruitMap[i] = k; });
+const DRAGON_FORM = { kind: 'serpent', horns: true, pal: { c: '#4a8ad9', C: '#bfe0ff', x: '#f2e6c8' } };
+
+function newPlayer(name, raceKey) {
+  const R = RACES[raceKey] || RACES.human;
+  const st = R.stats;
+  const hp = Math.round((60 + (st.hp || 0)) * (st.hpMult || 1));
   return {
-    v: 2, name, lvl: 1, xp: 0, hp: 60, maxHp: 60, atk: 10, def: 4, spd: 5, haki: 0,
+    v: 2, name, race: RACES[raceKey] ? raceKey : 'human',
+    lvl: 1, xp: 0, hp, maxHp: hp, atk: 10 + (st.atk || 0), def: 4, spd: 5 + (st.spd || 0), haki: 0,
     energy: 100, food: 70, mood: 60, berries: 50, bounty: 0,
     day: 1, tick: 0, island: 0, unlocked: 1, bosses: {}, crew: [], fruit: null,
     bag: { meat: 1 }, owned: {}, wins: 0, trained: 0, king: false,
-    hat: false, weapon: null, weapons: [], mastery: {}, explored: {}, fruitMap, fruitsFound: [], fruitBag: [],
+    hat: false, weapon: null, weapons: [], mastery: {}, explored: {}, fruitMap: dealFruits({}, []), fruitsFound: [], fruitBag: [],
   };
+}
+
+// Puts every Devil Fruit that is not yet on the map (or found) onto an island: emptiest islands first.
+function dealFruits(map, found) {
+  const out = {};
+  for (let i = 0; i < ISLANDS.length; i++) out[i] = [].concat(map[i] || []).filter(k => FRUITS[k]);
+  const placed = new Set(Object.values(out).flat().concat(found));
+  for (const k of shuffle(Object.keys(FRUITS))) {
+    if (placed.has(k)) continue;
+    const fewest = Math.min(...Object.values(out).map(a => a.length));
+    const spots = Object.keys(out).filter(i => out[i].length === fewest && (fewest === 0 || +i > 0));
+    out[pick(spots.length ? spots : Object.keys(out))].push(k);
+  }
+  return out;
 }
 
 const island = () => ISLANDS[G.p.island];
@@ -71,7 +89,8 @@ function gainXp(n) {
   while (p.xp >= xpNeed(p.lvl)) {
     p.xp -= xpNeed(p.lvl);
     p.lvl++;
-    p.maxHp += 9; p.atk += 2; p.def += 1; p.spd += 1;
+    p.maxHp += Math.round(9 * (race().stats.hpMult || 1)) + (p.fruit === 'dragon' ? 2 : 0);
+    p.atk += 2; p.def += 1; p.spd += 1;
     p.hp = p.maxHp;
   }
   return { from, to: p.lvl };
@@ -107,6 +126,9 @@ function restore(raw) {
     p.mastery = { fists: p.lvl >= 9 ? 90 : p.lvl >= 4 ? 40 : 10 };
     if (p.fruit) p.mastery[p.fruit] = p.lvl >= 9 ? 120 : p.lvl >= 4 ? 40 : 0;
   }
+  // Older saves map one fruit per island and lack the newer fruits: spread the missing ones out.
+  p.fruitMap = dealFruits(raw.fruitMap || {}, p.fruitsFound);
+  if (!RACES[p.race]) p.race = 'human';
   return p;
 }
 
@@ -322,15 +344,39 @@ function newGameForm(overwrite) {
     Sfx.unlock();
     Sfx.play('select');
     const name = input.value.trim().replace(/\s+/g, ' ').slice(0, 12) || 'Nobody';
-    G.p = newPlayer(name);
-    G.saved = null;
-    save();
-    enterGame(false);
+    raceMenu(name);
   });
   const kids = [form];
   if (overwrite) kids.push(el('button', { type: 'button', class: 'btn ghost', text: 'Back', onclick: () => showTitle() }));
   box.replaceChildren(...kids);
   if (overwrite) say('Starting over replaces your current save.');
+}
+
+function raceMenu(name) {
+  const body = el('div');
+  body.style.display = 'contents';
+  body.append(el('p', { class: 'note', text: `What kind of pirate is ${name}? Your race sets your starting stats, perks and flaws.` }));
+  for (const k of Object.keys(RACES)) {
+    const R = RACES[k];
+    body.append(el('div', { class: 'row race' },
+      el('img', { src: spriteURL(raceSpec(k, false), 3), alt: '' }),
+      el('div', null,
+        el('h3', { text: R.name }),
+        el('p', { text: R.desc }),
+        el('ul', { class: 'traits' },
+          R.perks.map(t => el('li', { class: 'perk', text: t })),
+          R.flaws.map(t => el('li', { class: 'flaw', text: t })))),
+      el('button', { type: 'button', class: 'mini-btn red', text: 'Pick', 'aria-label': `Play as a ${R.name}`, onclick: () => startNewGame(name, k) })));
+  }
+  openModal('Choose your race', body);
+}
+
+function startNewGame(name, raceKey) {
+  closeModal();
+  G.p = newPlayer(name, raceKey);
+  G.saved = null;
+  save();
+  enterGame(false);
 }
 
 async function enterGame(cont) {
@@ -345,7 +391,8 @@ async function enterGame(cont) {
   }
   lock(true);
   homeMenu();
-  await talk(`${p.name} is a nobody from Dawn Village. No weapon, no powers, no crew. Just a big dream.`);
+  await talk(`${p.name} is a nobody ${race().name.toLowerCase()} from Dawn Village. No weapon, no powers, no crew. Just a big dream.`);
+  if (race().move) await talk(`As a ${race().name}, you already know one move: ${race().move.name}.`);
   await talk('EXPLORE to find weapons and hidden Devil Fruits. Use them in fights to master new moves.');
   await talk('Train, eat, and fight to grow. When you feel ready, RAID the island boss! (Psst: tap your pirate to chat.)');
   lock(false);
@@ -355,7 +402,7 @@ async function enterGame(cont) {
 }
 
 function resetHero() {
-  Object.assign(G.hero, { ox: 0, oy: 0, squash: 0, flash: 0, alpha: 1 });
+  Object.assign(G.hero, { ox: 0, oy: 0, squash: 0, flash: 0, alpha: 1, form: null });
   if (G.hero.x < 80 || G.hero.x > 140) G.hero.x = G.hero.tx = 110;
 }
 
@@ -399,7 +446,7 @@ function spend(energy, ticks, food) {
   const p = G.p;
   p.energy = clamp(p.energy - energy, 0, 100);
   p.tick = Math.min(TICKS_PER_DAY, p.tick + ticks);
-  p.food = clamp(p.food - food, 0, 100);
+  p.food = clamp(p.food - (food > 0 && p.race === 'mink' ? food * 1.25 : food), 0, 100);
   p.mood = clamp(p.mood - ticks, 0, 100);
   if (p.food <= 0 && ticks > 0) {
     p.hp = Math.max(1, p.hp - Math.ceil(p.maxHp * 0.04 * ticks));
@@ -543,7 +590,9 @@ async function finishPractice(T, perfects, goods, misses) {
   spend(18, 2, 12);
   p.mood = clamp(p.mood + perfects * 3 - misses * 2, 0, 100);
   p.trained++;
+  const before = mastery(key);
   const unlocked = gainMastery(key, gain);
+  gain = mastery(key) - before;
   const lv = gainXp(4);
   G.train = null;
   G.mode = 'home';
@@ -607,6 +656,7 @@ function reel() {
   if (!F || F.state === 'result') return;
   if (F.state === 'wait') { castResult(null, 'Too early! You yanked the line and scared the fish away.'); return; }
   const c = rollCatch();
+  if (G.p.race === 'fishman') c.berries = Math.round(c.berries * 1.3);
   castResult(c, c.berries
     ? `You caught ${c.name}! +฿${c.berries}${c.fish ? ' and a Grilled Fish for your bag' : ''}.`
     : `You caught ${c.name}. Nobody wants this.`);
@@ -943,6 +993,7 @@ function wantedMenu(confirmReset) {
   body.append(el('div', { class: 'statgrid' }, stats.map(([k, v]) => el('div', null, el('b', { text: k }), el('span', { text: String(v) })))));
   const facts = [
     ['XP', `${p.xp}/${xpNeed(p.lvl)} to Lv ${p.lvl + 1}`],
+    ['Race', race().name],
     ['Weapon', weapon() ? weapon().name : 'Bare fists'],
     ['Fruit', fruit() ? fruit().name : 'None yet'],
     ['Haki', hakiNext],
@@ -1053,7 +1104,7 @@ function startBattle(o) {
 }
 
 function resetHeroPose() {
-  Object.assign(G.hero, { ox: 0, oy: 0, squash: 0, flash: 0, alpha: 1 });
+  Object.assign(G.hero, { ox: 0, oy: 0, squash: 0, flash: 0, alpha: 1, form: null });
 }
 
 function battleMenu() {
@@ -1072,6 +1123,7 @@ function availableSkills() {
   const add = key => styleMoves(key).forEach(m => out.push(Object.assign({}, m, { style: key, locked: mastery(key) < m.at ? m.at : 0 })));
   add(styleKey());
   if (p.fruit) add(p.fruit);
+  if (race().move) add('race');
   if (p.haki >= HAKI.armament) out.push(ARMAMENT_SKILL);
   if (p.haki >= HAKI.conqueror) out.push(CONQUEROR_SKILL);
   return out;
@@ -1129,7 +1181,9 @@ function hitFoe(mult, o) {
     tween(F, { ox: 10 }, 90).then(() => tween(F, { ox: 0 }, 140));
     return 0;
   }
-  const atk = (o.atk || effAtk() * moodMult()) * (B.armament > 0 ? 1.35 : 1);
+  let atk = (o.atk || effAtk() * moodMult()) * (B.armament > 0 ? 1.35 : 1);
+  if (!o.atk && p.race === 'mink' && (p.tick >= 6 || F.night)) atk *= 1.15;
+  if (!o.atk && p.race === 'fishman' && (B.scene === 'desert' || B.scene === 'sky')) atk *= 0.9;
   let dmg = atk * mult * rand(0.9, 1.1) - (o.pierce ? 0 : F.defense * 0.5);
   const crit = Math.random() < clamp(0.05 + p.spd * 0.003, 0.05, 0.3) + (o.critBonus || 0);
   if (crit) dmg *= o.critMult || 1.6;
@@ -1164,6 +1218,7 @@ function hitPlayer(mult, o) {
   let dodge = clamp(0.04 + (p.spd - F.spd) * 0.01, 0.02, 0.22);
   if (p.haki >= HAKI.observation) dodge += 0.12;
   if (fruit() && fruit().dodge) dodge += fruit().dodge;
+  if (p.race === 'skypian') dodge += 0.1;
   if (o.big) dodge *= 0.5;
   const hc = heroC();
   if (Math.random() < dodge) {
@@ -1180,6 +1235,7 @@ function hitPlayer(mult, o) {
   }
   const atk = F.atk * (F.weak > 0 ? 0.75 : 1) * (F.phase === 2 ? 1.25 : 1);
   let dmg = atk * mult * rand(0.9, 1.1) - effDef() * 0.5;
+  if (fruit() && fruit().guard) dmg *= 1 - fruit().guard;
   if (B.guard) dmg *= o.big ? 0.3 : 0.5;
   dmg = Math.max(1, Math.round(dmg));
   p.hp = Math.max(0, p.hp - dmg);
@@ -1224,11 +1280,19 @@ async function playerTurn(act) {
       if (!F.boss && F.lvl <= p.lvl + 2) { F.hp = 0; await talk(`${F.name} foams at the mouth and faints!`); }
       else { F.stun = 1; F.charging = false; await talk(`${F.name} staggers under the pressure of your will! Stunned.`); }
     } else {
-      const wp = s.style === p.fruit ? null : weapon();
+      const wp = s.style === styleKey() ? weapon() : null;
+      const dragon = s.style === p.fruit && fruit().form;
+      if (dragon) {
+        G.hero.form = 'dragon';
+        Sfx.play('haki');
+        particles(heroC().x, heroC().y, 20, { colors: ['#4a8ad9', '#bfe0ff', '#ffffff'], speed: 70 });
+        await wait(300);
+      }
       let dealt = 0;
       await fxPlayer(s.fx, () => {
         dealt += hitFoe(s.mult, { sure: s.sure, critBonus: s.crit, pierce: s.pierce, logiaHit: !!(wp && wp.logiaHit) });
       }, s.hits || 1, s.color || (wp && wp.color));
+      if (dragon) G.hero.form = null;
       if (s.style === p.fruit) B.usedFruit = true;
       unlocked = gainMastery(s.style, 3);
       if (F.hp > 0 && s.burn) { F.burn = s.burn; F.burnDmg = Math.max(3, Math.round(effAtk() * 0.4)); await talk(`${F.name} is on fire!`); }
@@ -1475,7 +1539,7 @@ async function endRound() {
   if (B.armament > 0) { B.armament--; if (!B.armament) await talk('Your Armament Haki fades.'); }
   if (F.weak > 0) F.weak--;
   if (F.solid > 0) { F.solid--; if (!F.solid && F.hp > 0) await talk(`${F.name} has dried off.`); }
-  B.sp = Math.min(100, B.sp + 8);
+  B.sp = Math.min(100, B.sp + 8 + (G.p.race === 'skypian' ? 4 : 0));
 }
 
 async function winBattle() {
@@ -1717,17 +1781,18 @@ async function fxPlayer(kind, hit, hits, color) {
     case 'wave': {
       Sfx.play('splash');
       const x0 = G.hero.x + 12, x1 = foeC().x;
+      const col = color || '#4fa3e0', deep = mixColor(col, '#000000', 0.25);
       await fxRun(620, (c, k) => {
         const x = x0 + (x1 - x0) * k;
         const h = 12 + Math.sin(k * Math.PI) * 12;
         for (let i = 0; i < 18; i++) {
           const hh = h * (1 - i / 18);
-          pxRect(c, x - i * 2, 122 - hh, 2, hh, i % 3 ? '#4fa3e0' : '#2f7ac0');
+          pxRect(c, x - i * 2, 122 - hh, 2, hh, i % 3 ? col : deep);
           pxRect(c, x - i * 2, 122 - hh, 2, 1, '#ffffff');
         }
       });
       hit(0);
-      particles(foeC().x, foeC().y, 24, { colors: ['#4fa3e0', '#bfe6ff', '#ffffff'], speed: 90, grav: 120 });
+      particles(foeC().x, foeC().y, 24, { colors: [col, mixColor(col, '#ffffff', 0.5), '#ffffff'], speed: 90, grav: 120 });
       break;
     }
     case 'sandslash': {
@@ -1761,6 +1826,112 @@ async function fxPlayer(kind, hit, hits, color) {
       shake(5, 300);
       await tween(Hr, { ox: 0 }, 220);
       break;
+    case 'lightkick': {
+      Sfx.play('zap');
+      const x0 = Hr.x + 6;
+      await tween(Hr, { ox: 56 }, 90, easeIn);
+      fxRun(260, (c, k) => {
+        if (k > 0.6 && Math.floor(k * 20) % 2) return;
+        for (let i = 0; i < 5; i++) pxRect(c, x0 + i * 10, 98 + (i % 2) * 5, 10, 2, i % 2 ? '#fff3a0' : '#ffffff');
+      });
+      hit(0);
+      impact(foeC(), ['#ffffff', '#fff3a0'], 14);
+      screenFlash('#fff6a0', 0.3);
+      await wait(140);
+      await tween(Hr, { ox: 0 }, 160);
+      break;
+    }
+    case 'lightrain':
+      Sfx.play('zap');
+      screenFlash('#fff6a0', 0.25);
+      for (let i = 0; i < hits && F.hp > 0; i++) {
+        const fc = foeC();
+        const sx = rand(10, 90), sy = rand(0, 16), tx = fc.x + rand(-10, 10), ty = fc.y + rand(-12, 12);
+        fxRun(160, (c, k) => {
+          const e = Math.min(1, k * 2);
+          pxLine(c, sx, sy, sx + (tx - sx) * e, sy + (ty - sy) * e, '#ffd04a', 2);
+          pxLine(c, sx, sy, sx + (tx - sx) * e, sy + (ty - sy) * e, '#ffffff', 1);
+        });
+        await wait(85);
+        hit(i);
+        particles(tx, ty, 5, { colors: ['#ffffff', '#fff3a0'], speed: 50 });
+      }
+      await wait(150);
+      break;
+    case 'beam': {
+      Sfx.play('charge');
+      await fxRun(350, (c, k) => {
+        const h = heroHand();
+        pxCircle(c, h.x + 4, h.y, 2 + k * 5, '#fff3a0');
+        pxCircle(c, h.x + 4, h.y, 1 + k * 3, '#ffffff');
+      });
+      Sfx.play('zap');
+      screenFlash('#fffbe0', 0.6);
+      const h = heroHand(), fc = foeC();
+      fxRun(450, (c, k) => {
+        const w = Math.max(1, Math.round(7 * (1 - Math.abs(k - 0.3))));
+        pxLine(c, h.x + 4, h.y, fc.x + 20, fc.y, '#ffd04a', w + 2);
+        pxLine(c, h.x + 4, h.y, fc.x + 20, fc.y, '#ffffff', w);
+      });
+      await wait(120);
+      hit(0);
+      shake(5, 300);
+      particles(fc.x, fc.y, 24, { colors: ['#ffffff', '#fff3a0', '#ffd04a'], speed: 100 });
+      await wait(330);
+      break;
+    }
+    case 'doughfist':
+      Sfx.play('stretch');
+      await projectile(heroHand(), foeC(), 330, (c, x, y, k) => {
+        const r = 4 + k * 4;
+        pxCircle(c, x, y, r + 1, PAL.k);
+        pxCircle(c, x, y, r, '#efe2c8');
+        pxCircle(c, x - 2, y - 2, Math.max(1, r - 4), '#fffaf0');
+      });
+      hit(0);
+      impact(foeC(), ['#efe2c8', '#ffffff'], 14);
+      shake(3, 200);
+      break;
+    case 'doughsnare': {
+      Sfx.play('stretch');
+      const fc = foeC();
+      fxRun(800, (c, k) => {
+        for (let i = 0; i < 4; i++) {
+          const r = 22 - Math.min(1, k * 2) * (10 - i * 2);
+          pxRing(c, fc.x, fc.y + i * 4 - 6, r * 0.8, i % 2 ? '#efe2c8' : '#c9a26a', 2);
+        }
+      });
+      await wait(500);
+      hit(0);
+      await wait(300);
+      break;
+    }
+    case 'breath': {
+      Sfx.play('fire');
+      const h = heroHand();
+      fxRun(650, () => {
+        for (let i = 0; i < 4; i++) FX.parts.push({ x: h.x + 6, y: h.y - 8 + rand(-4, 4), vx: 170 + rand(-20, 20), vy: rand(-20, 20), grav: 0, life: 0.5, max: 0.5, color: pick(FIRE), size: 3 });
+      });
+      await wait(400);
+      hit(0);
+      await wait(260);
+      break;
+    }
+    case 'twister': {
+      Sfx.play('boom');
+      const fc = foeC();
+      fxRun(900, c => {
+        for (let i = 0; i < 16; i++) {
+          const a = G.t * 10 + i * 0.9, up = (i / 16) * 64, r = 6 + (i / 16) * 16;
+          pxRect(c, fc.x + Math.cos(a) * r, 120 - up, 3, 2, i % 3 ? '#bfe0ff' : '#ffffff');
+        }
+      });
+      shake(6, 800);
+      await wait(250);
+      hit(0);
+      await wait(650);
+      break;
+    }
     case 'punch':
       await tween(Hr, { ox: 56 }, 150, easeIn);
       hit(0); impact(foeC());
@@ -2032,6 +2203,7 @@ function sceneName() {
 }
 
 function heroSprite() {
+  if (G.hero.form) return getSprite(DRAGON_FORM, G.hero.flash > 0 ? 'flash' : '');
   if (G.hero.flash > 0) return getSprite(heroSpec(), 'flash');
   if (G.battle && G.battle.armament > 0) return getSprite(heroSpec(), 'tint', '#2a1a3a');
   return getSprite(heroSpec());
@@ -2083,9 +2255,9 @@ function drawBattle() {
     const [x, y] = BATTLE_CREW_SPOTS[i];
     return { spr: getSprite(CREW[id].spr), x, y: y + Math.round(Math.sin(G.t * 4 + i) * 0.6), scale: 1 };
   });
-  actors.push({ spr: heroSprite(), x: G.hero.x + G.hero.ox, y: 121 + G.hero.oy, scale: 2, squash: G.hero.squash + Math.sin(G.t * 5) * 0.02, alpha: G.hero.alpha });
+  actors.push({ spr: heroSprite(), x: G.hero.x + G.hero.ox, y: 121 + G.hero.oy, scale: 2, squash: G.hero.squash + Math.sin(G.t * 5) * 0.02, alpha: G.hero.alpha, flip: !!G.hero.form });
   drawActors(actors);
-  if (G.hero.alpha > 0.5) drawHeldWeapon(ctx, G.hero.x + G.hero.ox, 121 + G.hero.oy, 2);
+  if (G.hero.alpha > 0.5 && !G.hero.form) drawHeldWeapon(ctx, G.hero.x + G.hero.ox, 121 + G.hero.oy, 2);
 
   // foe
   const lift = foeLift();

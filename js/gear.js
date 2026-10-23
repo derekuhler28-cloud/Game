@@ -6,9 +6,31 @@ const NOBODY_SPR = { kind: 'player', hat: false, pal: { v: '#cfc6b0', y: '#7a5a3
 
 const weapon = () => (G.p && G.p.weapon ? WEAPONS[G.p.weapon] : null);
 const styleKey = () => G.p.weapon || 'fists';
-const mastery = key => G.p.mastery[key] || 0;
+const mastery = key => Math.floor(G.p.mastery[key] || 0);
 const effAtk = () => G.p.atk + (weapon() ? weapon().atk : 0);
-const heroSpec = () => (G.p && !G.p.hat ? NOBODY_SPR : PLAYER_SPR);
+const race = () => RACES[G.p.race] || RACES.human;
+
+// How each race changes the player sprite: palette swaps plus small overlays (see OVERLAYS).
+const RACE_LOOKS = {
+  human: {},
+  mink: { pal: { s: '#e0b070', S: '#b8864a' }, marks: hat => [hat ? 'minkEarsHat' : 'minkEars'] },
+  skypian: { marks: () => ['wings'] },
+  fishman: { pal: { s: '#7ab4d0', S: '#5a94b0', x: '#3f6f9a' }, marks: hat => (hat ? [] : ['fin']) },
+};
+const RACE_SPECS = new Map();
+function raceSpec(r, hat) {
+  const key = r + '|' + hat;
+  if (!RACE_SPECS.has(key)) {
+    const look = RACE_LOOKS[r] || {};
+    const spec = hat ? { kind: 'player' } : { kind: 'player', hat: false, pal: Object.assign({}, NOBODY_SPR.pal) };
+    if (look.pal) spec.pal = Object.assign({}, spec.pal, look.pal);
+    const marks = look.marks ? look.marks(hat) : [];
+    if (marks.length) spec.marks = marks;
+    RACE_SPECS.set(key, spec);
+  }
+  return RACE_SPECS.get(key);
+}
+const heroSpec = () => (G.p ? raceSpec(G.p.race || 'human', !!G.p.hat) : PLAYER_SPR);
 const weaponSpec = k => (WEAPONS[k].shape ? { kind: 'weapon', shape: WEAPONS[k].shape, pal: WEAPONS[k].pal || {} } : { kind: 'icon', icon: 'wraps' });
 const weaponURL = k => (k === 'fists' ? iconURL('wraps', { w: '#f3c08c', s: '#c98a5a' }) : spriteURL(weaponSpec(k), 3));
 const fruitSpec = k => ({ kind: 'icon', icon: 'fruit', pal: { c: FRUITS[k].color, C: FRUITS[k].color2 } });
@@ -16,11 +38,13 @@ const shortWeapon = () => (weapon() ? weapon().name.split(' ').pop() : 'Fists');
 
 function styleName(key) {
   if (key === 'fists') return 'Brawling';
+  if (key === 'race') return `${race().name} move`;
   return WEAPONS[key] ? WEAPONS[key].name : FRUITS[key].name;
 }
 
 function styleMoves(key) {
   if (key === 'fists') return FIST_MOVES;
+  if (key === 'race') return race().move ? [race().move] : [];
   return WEAPONS[key] ? WEAPONS[key].moves : FRUITS[key].moves;
 }
 
@@ -31,12 +55,14 @@ function rankOf(key) {
   return n >= moves[0].at ? 'Novice' : 'Beginner';
 }
 
-// Adds mastery and returns the moves that just unlocked.
+// Adds mastery (humans learn 25% faster) and returns the moves that just unlocked.
 function gainMastery(key, n) {
-  if (!key || n <= 0) return [];
-  const before = mastery(key);
-  G.p.mastery[key] = before + n;
-  return styleMoves(key).filter(m => before < m.at && before + n >= m.at).map(move => ({ move, key }));
+  if (!key || key === 'race' || n <= 0) return [];
+  const p = G.p;
+  const raw = p.mastery[key] || 0;
+  p.mastery[key] = Math.round((raw + n * (p.race === 'human' ? 1.25 : 1)) * 100) / 100;
+  const before = Math.floor(raw), after = mastery(key);
+  return styleMoves(key).filter(m => before < m.at && after >= m.at).map(move => ({ move, key }));
 }
 
 async function announceUnlocks(list) {
@@ -81,9 +107,12 @@ function drawLoot(c) {
 
 // ---------- island secrets ----------
 
+function islandFruits(idx) {
+  return G.p.fruitMap[idx] || [];
+}
+
 function islandFruit(idx) {
-  const k = G.p.fruitMap[idx];
-  return k && !G.p.fruitsFound.includes(k) ? k : null;
+  return islandFruits(idx).find(k => !G.p.fruitsFound.includes(k)) || null;
 }
 
 function unfoundWeapons(idx) {
@@ -91,8 +120,9 @@ function unfoundWeapons(idx) {
 }
 
 function lootCount(idx) {
-  const total = ISLANDS[idx].weapons.length + (G.p.fruitMap[idx] ? 1 : 0);
-  const left = unfoundWeapons(idx).length + (islandFruit(idx) ? 1 : 0);
+  const fruits = islandFruits(idx);
+  const total = ISLANDS[idx].weapons.length + fruits.length;
+  const left = unfoundWeapons(idx).length + fruits.filter(k => !G.p.fruitsFound.includes(k)).length;
   return { total, found: total - left, left };
 }
 
@@ -148,8 +178,10 @@ async function explore() {
         : key === 'fists' ? 'A retired brawler shows you how to throw a real punch.'
         : weapon().shape === 'gun' || weapon().shape === 'shell' ? 'A grizzled gunslinger fixes your aim.'
         : `An old master watches you swing your ${weapon().name} and corrects your form.`;
-      await talk(`${who} +8 ${styleName(key)} mastery.`);
-      await announceUnlocks(gainMastery(key, 8));
+      const before = mastery(key);
+      const unlocked = gainMastery(key, 8);
+      await talk(`${who} +${mastery(key) - before} ${styleName(key)} mastery.`);
+      await announceUnlocks(unlocked);
     } else {
       const left = lootCount(idx).left;
       await talk(left
@@ -215,11 +247,18 @@ async function eatFruit(k) {
   const p = G.p, f = FRUITS[k];
   p.fruit = k;
   p.fruitBag = p.fruitBag.filter(x => x !== k);
+  if (f.hpBonus) {
+    const add = Math.round(p.maxHp * f.hpBonus);
+    p.maxHp += add;
+    p.hp += add;
+  }
   Sfx.play('haki');
   screenFlash(f.color, 0.8);
   particles(G.hero.x, 100, 30, { colors: [f.color, f.color2, '#ffffff'], speed: 80 });
   bubble('BLEH!');
   await talk(`You ate the ${f.name}! It tastes like old socks... but power surges through you!`);
+  if (f.hpBonus) await talk(`Your body grows tougher. Max HP +${Math.round(f.hpBonus * 100)}%!`);
+  if (p.race === 'fishman') await talk("A fishman who can't swim anymore... Well, that's ironic.");
   await talk(`First move ready: ${f.moves[0].name}. Use your power in fights or practice it to unlock ${f.moves[1].name} and ${f.moves[2].name}.`);
 }
 
@@ -276,7 +315,7 @@ function gearMenu(note) {
         : el('button', { type: 'button', class: 'mini-btn', text: 'Equip', onclick: () => equip(key) })));
   }
 
-  body.append(el('h3', { class: 'sect' }, 'Devil Fruit ', el('span', { text: `${p.fruitsFound.length}/5 found` })));
+  body.append(el('h3', { class: 'sect' }, 'Devil Fruit ', el('span', { text: `${p.fruitsFound.length}/${Object.keys(FRUITS).length} found` })));
   if (p.fruit) {
     const f = FRUITS[p.fruit];
     body.append(el('div', { class: 'row gear current' },
@@ -284,7 +323,7 @@ function gearMenu(note) {
       el('div', null, el('h3', { text: f.name }), masteryBar(p.fruit), movesList(p.fruit)),
       null));
   } else {
-    body.append(el('p', { class: 'note', text: 'No powers yet. One Devil Fruit hides on each of the first five islands.' }));
+    body.append(el('p', { class: 'note', text: 'No powers yet. Devil Fruits hide on every island. Keep exploring!' }));
   }
   for (const k of p.fruitBag) {
     const f = FRUITS[k];

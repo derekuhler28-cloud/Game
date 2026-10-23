@@ -363,7 +363,15 @@ function drawSpriteAt(c, spr, x, y, scale, o) {
     pxRect(c, x - w * 0.32, y - 1, w * 0.64, 2, '#000000');
   }
   c.globalAlpha = o.alpha === undefined ? 1 : o.alpha;
-  c.drawImage(spr, Math.round(x - w / 2), Math.round(y - h), w, h);
+  if (o.flip) {
+    c.save();
+    c.translate(Math.round(x), 0);
+    c.scale(-1, 1);
+    c.drawImage(spr, Math.round(-w / 2), Math.round(y - h), w, h);
+    c.restore();
+  } else {
+    c.drawImage(spr, Math.round(x - w / 2), Math.round(y - h), w, h);
+  }
   c.globalAlpha = 1;
 }
 

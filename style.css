@@ -408,6 +408,15 @@ body {
 }
 .mbar { flex: 1; height: 5px; background: var(--paper-2); }
 .mbar i { display: block; height: 100%; background: var(--ink); }
+.row.race { align-items: start; }
+.row.race img { width: 48px; height: 48px; }
+.row.race .mini-btn { align-self: center; }
+.traits { display: grid; gap: 2px; margin: 6px 0 0; padding: 0; list-style: none; font-size: 14px; }
+.traits li { display: flex; gap: 6px; }
+.traits li::before { flex: none; width: 1ch; font-weight: 600; }
+.perk::before { content: "+"; color: #2f7a3e; }
+.flaw::before { content: "-"; color: var(--red); }
+.flaw { color: var(--ink-soft); }
 .facts { display: grid; gap: 6px; margin: 0; }
 .facts div {
   display: grid;

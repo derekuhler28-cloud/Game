@@ -179,6 +179,11 @@ const OVERLAYS = {
   kanabo: [[0, 0, 3, 9, 'g'], [1, 9, 1, 2, 'n'], [1, 1, 1, 1, 'w'], [0, 4, 1, 1, 'w'], [2, 6, 1, 1, 'w']],
   swords: [[12, 12, 1, 3, 'g'], [13, 11, 1, 3, 'w'], [14, 12, 1, 3, 'r']],
   horns:  [[2, 2, 1, 1, 'x'], [3, 3, 1, 1, 'x'], [6, 2, 1, 1, 'x'], [5, 3, 1, 1, 'x']],
+  // race marks for the player sprite
+  minkEars:    [[3, 0, 2, 2, 'S'], [11, 0, 2, 2, 'S']],
+  minkEarsHat: [[2, 1, 2, 2, 'S'], [12, 1, 2, 2, 'S']],
+  wings:       [[1, 8, 2, 3, 'w'], [13, 8, 2, 3, 'w'], [0, 9, 1, 1, 'w'], [15, 9, 1, 1, 'w']],
+  fin:         [[7, 0, 2, 1, 'x'], [6, 1, 1, 1, 'x'], [9, 1, 1, 1, 'x']],
 };
 
 // Hand-held weapons. `grip` is the [x, y] cell that sits in the pirate's hand.
@@ -233,7 +238,7 @@ function buildGrid(spec) {
   const g = rows.map(r => r.padEnd(width, '.').slice(0, width).split(''));
   if (spec.long) for (let y = 5; y <= 8; y++) { g[y][3] = 'h'; g[y][12] = 'h'; }
   if (spec.head === 'swoop') { g[5][5] = 'h'; g[6][5] = 'h'; g[6][6] = 'h'; }
-  const overlays = [].concat(spec.weapon ? OVERLAYS[spec.weapon] : [], spec.horns ? OVERLAYS.horns : []);
+  const overlays = [].concat(spec.weapon ? OVERLAYS[spec.weapon] : [], spec.horns ? OVERLAYS.horns : [], ...(spec.marks || []).map(m => OVERLAYS[m]));
   for (const [x, y, w, h, ch] of overlays) {
     for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
       if (g[y + j] && x + i < width) g[y + j][x + i] = ch;
