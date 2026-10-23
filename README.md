@@ -15,6 +15,8 @@ Pick one when you start a new game. Each changes your starting stats and has its
 | Skypian | +10% dodge, +4 SP every turn, Impact Dial move | 15% less max HP |
 | Fishman | +4 ATK, +15 max HP, Fishman Karate move (ignores defense), fishing pays 30% more | -2 SPD, -10% damage on Sandora and Cloud Isle |
 
+Secret: tap the word "Choose" in the race picker's title. Every Devil Fruit circles the screen; pick one and it will be hidden on Dawn Village in your new game.
+
 ## How to play
 
 - **Explore**: search the island for hidden weapons and its Devil Fruit, plus berries, food, supplies, ambushes and mentors. The home button shows how many secrets are left.

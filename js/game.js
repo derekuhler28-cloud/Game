@@ -428,17 +428,144 @@ function raceMenu(name) {
       el('button', { type: 'button', class: 'mini-btn red', text: 'Pick', 'aria-label': `Play as a ${R.name}`, onclick: () => startNewGame(name, k) })));
   }
   openModal('Choose your race', body);
+  raceTitle();
+}
+
+// The "Choose" in the title is a secret button that opens the fruit circle.
+function raceTitle() {
+  const f = FRUITS[eggFruit];
+  $('modalTitle').replaceChildren(
+    el('button', { type: 'button', class: 'egg-word', id: 'eggWord', text: 'Choose', onclick: fruitEgg }),
+    ' your race');
+  if (f) $('modalTitle').append(el('img', { class: 'egg-mark', src: iconURL('fruit', { c: f.color, C: f.color2 }), alt: ` (secret: ${f.name})` }));
 }
 
 function startNewGame(name, raceKey) {
   closeModal();
+  const secret = eggFruit;
+  eggFruit = null;
   G.p = newPlayer(name, raceKey);
+  if (secret) plantFruit(G.p.fruitMap, secret, 0);
   G.saved = null;
   save();
-  enterGame(false);
+  enterGame(false, secret);
 }
 
-async function enterGame(cont) {
+// ---------- secret fruit (Easter egg on the race picker) ----------
+
+let eggFruit = null;
+const EGG = { paused: false, hover: false };
+
+// Hides fruit k on island idx; whatever was hidden there swaps over to k's old island.
+function plantFruit(map, k, idx) {
+  const others = (map[idx] || []).filter(f => f !== k);
+  let from = Object.keys(map).find(i => +i !== idx && map[i].includes(k));
+  for (const i in map) map[i] = map[i].filter(f => f !== k);
+  if (from === undefined) from = Object.keys(map).filter(i => +i !== idx).sort((a, b) => map[a].length - map[b].length)[0];
+  map[from] = map[from].concat(others);
+  map[idx] = [k];
+}
+
+function fruitEgg(e) {
+  if ($('egg')) return;
+  Sfx.unlock();
+  Sfx.play('haki');
+  const r = e.currentTarget.getBoundingClientRect();
+  const ox = r.left + r.width / 2, oy = r.top + r.height / 2;
+  const pop = el('div', { class: 'egg-pop' });
+  pop.style.left = ox + 'px';
+  pop.style.top = oy + 'px';
+  pop.addEventListener('animationend', () => pop.remove());
+  const fruits = Object.keys(FRUITS).map(k => {
+    const f = FRUITS[k];
+    return el('button', {
+      type: 'button', class: 'egg-fruit', 'data-k': k, 'aria-label': f.name, title: f.name,
+      onclick: () => eggAsk(k), onpointerenter: () => { EGG.hover = true; }, onpointerleave: () => { EGG.hover = false; },
+    },
+      el('img', { src: iconURL('fruit', { c: f.color, C: f.color2 }), alt: '' }));
+  });
+  const layer = el('div', { class: 'egg-layer', id: 'egg', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Secret Devil Fruits' },
+    pop, fruits,
+    el('div', { class: 'egg-card', id: 'eggCard', hidden: true }),
+    el('button', { type: 'button', class: 'close egg-close', 'aria-label': 'Close', text: 'X', onclick: closeEgg }));
+  layer.addEventListener('pointerdown', ev => { if (ev.target === layer && $('eggCard').hidden) closeEgg(); });
+  document.body.append(layer);
+  EGG.paused = EGG.hover = false;
+  fruits[0].focus({ preventScroll: true });
+
+  // Fruits burst out of the pop, then circle the edge of the screen until one is picked.
+  const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const start = performance.now();
+  let spin = 0, last = start;
+  const frame = now => {
+    if (!layer.isConnected) return;
+    const dt = Math.min(0.05, (now - last) / 1000);
+    last = now;
+    if (!still && !EGG.paused && !EGG.hover) spin += dt * 0.45;
+    const cx = innerWidth / 2, cy = innerHeight / 2;
+    const rx = Math.max(70, cx - 40), ry = Math.max(70, cy - 48);
+    fruits.forEach((b, i) => {
+      const t = still ? 1 : Math.max(0, Math.min(1, (now - start - i * 40) / 650));
+      const ease = 1 - Math.pow(1 - t, 3);
+      const a = spin + (i / fruits.length) * Math.PI * 2 - Math.PI / 2;
+      const x = ox + (cx + Math.cos(a) * rx - ox) * ease;
+      const y = oy + (cy + Math.sin(a) * ry - oy) * ease + (still || EGG.paused ? 0 : Math.sin(now / 280 + i) * 3);
+      b.style.transform = `translate(${x}px, ${y}px) scale(${0.2 + 0.8 * ease})`;
+    });
+    requestAnimationFrame(frame);
+  };
+  requestAnimationFrame(frame);
+}
+
+function eggCard(f, ...kids) {
+  const card = $('eggCard');
+  card.replaceChildren(el('h3', { text: f.name }), el('img', { src: iconURL('fruit', { c: f.color, C: f.color2 }), alt: '' }), ...kids);
+  card.hidden = false;
+  card.querySelector('button').focus({ preventScroll: true });
+}
+
+function eggAsk(k) {
+  if (!$('eggCard').hidden) return;
+  Sfx.play('select');
+  EGG.paused = true;
+  for (const b of document.querySelectorAll('.egg-fruit')) b.classList.toggle('on', b.dataset.k === k);
+  eggCard(FRUITS[k],
+    el('p', { text: 'Pick this fruit?' }),
+    el('div', { class: 'btn-row' },
+      el('button', { type: 'button', class: 'mini-btn red', text: 'Pick it', onclick: () => eggPick(k) }),
+      el('button', { type: 'button', class: 'mini-btn', text: 'Keep looking', onclick: () => eggUnask(k) })));
+}
+
+function eggUnask(k) {
+  Sfx.play('select');
+  $('eggCard').hidden = true;
+  EGG.paused = false;
+  for (const b of document.querySelectorAll('.egg-fruit')) b.classList.remove('on');
+  const b = document.querySelector(`.egg-fruit[data-k="${k}"]`);
+  if (b) b.focus({ preventScroll: true });
+}
+
+function eggPick(k) {
+  const f = FRUITS[k];
+  eggFruit = k;
+  Sfx.play('find');
+  for (const b of document.querySelectorAll('.egg-fruit')) if (b.dataset.k !== k) b.classList.add('gone');
+  eggCard(f,
+    el('p', { text: `Secret set! The ${f.name} is hidden on Dawn Village. Explore to find it!` }),
+    el('div', { class: 'btn-row' }, el('button', { type: 'button', class: 'mini-btn red', text: 'OK', onclick: closeEgg })));
+  if ($('eggWord')) raceTitle();
+}
+
+function closeEgg() {
+  const layer = $('egg');
+  if (!layer) return;
+  layer.remove();
+  EGG.paused = false;
+  const word = $('eggWord');
+  if (word) word.focus({ preventScroll: true });
+}
+
+async function enterGame(cont, secret) {
   G.mode = 'home';
   resetHero();
   updateHud();
@@ -453,6 +580,7 @@ async function enterGame(cont) {
   await talk(`${p.name} is a nobody ${race().name.toLowerCase()} from Dawn Village. No weapon, no powers, no crew. Just a big dream.`);
   if (race().move) await talk(`As a ${race().name}, you already know one move: ${race().move.name}.`);
   await talk('EXPLORE to find weapons and hidden Devil Fruits. Use them in fights to master new moves.');
+  if (secret) await talk(`Psst... a little bird says the ${FRUITS[secret].name} is hidden somewhere on Dawn Village.`);
   await talk('Train, eat, and fight to grow. When you feel ready, RAID the island boss! (Psst: tap your pirate to chat.)');
   lock(false);
   if (G.mode !== 'home') return;
@@ -3420,6 +3548,7 @@ function onCanvasTap(e) {
 
 function onKey(e) {
   if (e.target && e.target.tagName === 'INPUT') return;
+  if (e.key === 'Escape' && $('egg')) { closeEgg(); return; }
   if (e.key === 'Escape' && !$('modal').hidden && !$('modalClose').hidden) { closeModal(); return; }
   if (e.code === 'Space' || e.key === 'Enter') {
     if (G.mode === 'train') { e.preventDefault(); trainStrike(); }

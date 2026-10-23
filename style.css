@@ -544,9 +544,89 @@ body {
   .dock { gap: 2px; padding: 5px 4px; }
 }
 
+/* ---------- secret fruit circle (tap "Choose" on the race picker) ---------- */
+
+.egg-word {
+  margin: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  cursor: inherit;
+}
+.egg-word:focus-visible { outline: 3px solid var(--brass); outline-offset: 2px; }
+.egg-mark { width: 18px; height: 18px; margin-left: 6px; vertical-align: -4px; image-rendering: pixelated; }
+.egg-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  overflow: hidden;
+  background: rgba(5, 8, 20, 0.6);
+}
+.egg-pop {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  margin: -12px 0 0 -12px;
+  background: var(--paper-3);
+  border: 3px solid var(--brass);
+  border-radius: 50%;
+  pointer-events: none;
+  animation: egg-pop 0.55s ease-out forwards;
+}
+@keyframes egg-pop {
+  0% { transform: scale(0.2); opacity: 1; }
+  50% { opacity: 1; }
+  100% { transform: scale(5); opacity: 0; }
+}
+.egg-fruit {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 56px;
+  height: 56px;
+  margin: -28px 0 0 -28px;
+  padding: 4px;
+  background: none;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: opacity 0.4s, background 0.2s;
+  will-change: transform;
+}
+.egg-fruit img { display: block; width: 100%; height: 100%; image-rendering: pixelated; filter: drop-shadow(0 3px 0 rgba(0, 0, 0, 0.5)); }
+.egg-fruit:hover img, .egg-fruit:focus-visible img, .egg-fruit.on img { transform: scale(1.2); }
+.egg-fruit:focus-visible { outline: 3px solid var(--brass); }
+.egg-fruit.on { background: rgba(227, 176, 75, 0.4); }
+.egg-fruit.gone { opacity: 0; pointer-events: none; }
+.egg-card {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: min(220px, calc(100vw - 120px));
+  padding: 12px;
+  text-align: center;
+  color: var(--ink);
+  background: var(--paper);
+  border: 3px solid var(--bezel);
+  box-shadow: 0 6px 0 #070d20;
+  transform: translate(-50%, -50%);
+}
+.egg-card h3 { margin: 0; font-family: var(--pixel); font-size: 10px; font-weight: 400; line-height: 1.5; text-wrap: balance; }
+.egg-card img { width: 72px; height: 72px; margin: 6px auto 0; image-rendering: pixelated; }
+.egg-card p { margin: 4px 0 10px; font-size: 16px; text-wrap: pretty; }
+.egg-card .btn-row { justify-content: center; }
+.egg-close {
+  position: absolute;
+  top: max(12px, env(safe-area-inset-top, 0px));
+  right: max(12px, env(safe-area-inset-right, 0px));
+}
+
 @media (prefers-reduced-motion: reduce) {
   .btn.pulse, .dock-btn.pulse, .msg.waiting .msg-more { animation: none; }
   .mb i { transition: none; }
+  .egg-pop { animation: none; opacity: 0; }
 }
 .checks { list-style: none; margin: 4px 0 10px; padding: 0; display: grid; gap: 4px; font-size: 14px; color: var(--ink-soft); }
 .checks li.ok { color: #2f7a3a; font-weight: bold; }
