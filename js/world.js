@@ -101,6 +101,7 @@ function islandMap(idx) {
     rows = rows.map((r, y) => [...r].map((ch, x) => (ch === 'T' && (y === 0 || x === 0 || x === r.length - 1) ? '~' : ch)).join(''));
   }
   const m = parseMap(rows, th, 'isl:' + idx);
+  m.kind = 'island';
   m.idx = idx;
   m.name = isl.name;
   m.mirror = mirror;
@@ -777,41 +778,67 @@ function walkSprite(spec, dir, frame) {
 
 const OW = {
   key: null, map: null, x: 0, y: 0, dir: 'up', mv: null, parity: 0, trail: [], held: null, keys: [], run: false,
-  path: null, goal: null, npcs: [], inside: null, respawn: false, search: null, lastTarget: null,
+  path: null, goal: null, npcs: [], respawn: false, search: null, lastTarget: null, outside: null, returnTo: null,
 };
 
+// kind: 'island', 'deck', or a building you walked into ('bar', 'shop').
 function owLoad(kind) {
-  const key = kind === 'deck' ? 'deck' : 'isl:' + G.p.island;
+  const idx = G.p.island;
+  const key = kind === 'deck' ? 'deck' : kind === 'island' ? 'isl:' + idx : kind + ':' + idx;
   if (OW.key === key && !OW.respawn) {
     if (kind === 'deck') OW.map = deckMap();
-    if (OW.inside) owExit();
     return;
   }
   OW.key = key;
   OW.respawn = false;
-  OW.map = kind === 'deck' ? deckMap() : islandMap(G.p.island);
-  const s = OW.map.spawn;
-  owPlace(s.x, s.y, s.dir);
-  OW.npcs = kind === 'deck' ? deckCrew(OW.map) : villagers(OW.map).concat(foes(OW.map));
+  OW.map = kind === 'deck' ? deckMap() : kind === 'island' ? islandMap(idx) : roomMap(kind, idx);
+  const s = OW.returnTo || OW.map.spawn;
+  OW.returnTo = null;
+  owPlace(s.x, s.y, s.dir || 'down');
+  OW.npcs = kind === 'deck' ? deckCrew(OW.map) : kind === 'island' ? villagers(OW.map).concat(foes(OW.map)) : roomNpcs(OW.map);
 }
 
 function owPlace(x, y, dir) {
-  Object.assign(OW, { x, y, dir, mv: null, path: null, goal: null, inside: null, fdir: [], peaceUntil: G.t + 5 });
+  Object.assign(OW, { x, y, dir, mv: null, path: null, goal: null, fdir: [], peaceUntil: G.t + 5 });
   OW.trail = (G.p ? G.p.crew : []).map(() => ({ x, y }));
 }
 const dirTo = (a, b) => (b.x > a.x ? 'right' : b.x < a.x ? 'left' : b.y < a.y ? 'up' : 'down');
 
-// Leaving a building: step out below the door.
-function owExit() {
-  const d = OW.inside;
-  OW.inside = null;
-  owPlace(d.x, d.y + 1, 'down');
+// Walking through a door: fade, swap maps, fade back in.
+async function enterBuilding(type, door) {
+  lock(true);
+  Sfx.play('door');
+  await tween(G, { fade: 1 }, 200, linear);
+  G.indoors = type;
+  OW.outside = { x: door.x, y: door.y + 1, dir: 'down' };
+  OW.respawn = true;
+  homeMenu();
+  await tween(G, { fade: 0 }, 250, linear);
+  lock(false);
+  homeMenu();
+  const hiring = OW.npcs.filter(n => n.kind === 'recruit').map(n => CREW[n.key].name);
+  say(type === 'bar'
+    ? `The ${island().bar}.${hiring.length ? ` ${hiring.join(' and ')} ${hiring.length > 1 ? 'are' : 'is'} looking for a crew.` : ''} Talk to the bartender to manage your crew or throw a feast.`
+    : 'The shopkeeper waves from behind the counter. Talk to them to buy things.');
+}
+
+async function leaveBuilding() {
+  lock(true);
+  Sfx.play('door');
+  await tween(G, { fade: 1 }, 200, linear);
+  G.indoors = null;
+  OW.returnTo = OW.outside;
+  OW.respawn = true;
+  homeMenu();
+  await tween(G, { fade: 0 }, 250, linear);
+  lock(false);
+  homeMenu();
 }
 
 const owTile = () => (OW.mv ? { x: OW.mv.tx, y: OW.mv.ty } : { x: OW.x, y: OW.y });
 
 function occupied(x, y, except) {
-  if (OW.map.boss && OW.map.boss.x === x && OW.map.boss.y === y && OW.key !== 'deck') return true;
+  if (OW.map.boss && OW.map.boss.x === x && OW.map.boss.y === y) return true;
   return OW.npcs.some(n => n !== except && ((n.x === x && n.y === y) || (n.mv && n.mv.tx === x && n.mv.ty === y)));
 }
 
@@ -824,13 +851,14 @@ function canWalk(x, y) {
 const FOLK_HEADS = ['hair', 'long', 'cap', 'bandana', 'swoop', 'hair'];
 const FOLK_COLS = ['#d63c2f', '#3b6fd6', '#46b35a', '#e9b43a', '#7a4ac0', '#f08a3a', '#2a9a9a', '#f2f2f2'];
 
+function folkSpec(r) {
+  const head = pick2(r, FOLK_HEADS);
+  return { kind: 'human', head, long: head === 'long', pal: { h: pick2(r, ['#2a2433', '#6a4228', '#c0453a', '#e9c27b', '#9aa4b1']), x: pick2(r, FOLK_COLS), c: pick2(r, FOLK_COLS), C: pick2(r, FOLK_COLS), p: pick2(r, ['#3b6fd6', '#2c2c34', '#6a7a3a', '#7a5a3a']), s: pick2(r, ['#f3c08c', '#e0a070', '#c98a5a', '#8a5a3a']) } };
+}
+
 function villagers(m) {
   const r = seeded(m.idx * 53 + 5);
-  return m.villagers.map((v, i) => {
-    const head = pick2(r, FOLK_HEADS);
-    const spec = { kind: 'human', head, long: head === 'long', pal: { h: pick2(r, ['#2a2433', '#6a4228', '#c0453a', '#e9c27b', '#9aa4b1']), x: pick2(r, FOLK_COLS), c: pick2(r, FOLK_COLS), C: pick2(r, FOLK_COLS), p: pick2(r, ['#3b6fd6', '#2c2c34', '#6a7a3a', '#7a5a3a']), s: pick2(r, ['#f3c08c', '#e0a070', '#c98a5a', '#8a5a3a']) } };
-    return { kind: 'folk', spec, x: v.x, y: v.y, home: { x: v.x, y: v.y }, dir: 'down', mv: null, wait: 1 + r() * 3, i };
-  });
+  return m.villagers.map((v, i) => ({ kind: 'folk', spec: folkSpec(r), x: v.x, y: v.y, home: { x: v.x, y: v.y }, dir: 'down', mv: null, wait: 1 + r() * 3, i }));
 }
 
 function deckCrew(m) {
@@ -849,6 +877,7 @@ function folkLine(n) {
     `Looking for a crew? The ${isl.bar} is where sailors hang out.`,
     `${ENEMIES[isl.enemies[n.i % isl.enemies.length]].name}s prowl the edge of town. Some of them pick fights, so run if you're hurt!`,
     'The job board by the bar always has odd jobs. Steady pay!',
+    'See a bush or a trash can glowing? Folks say that means a Devil Fruit is hiding inside!',
     isl.intro,
   ];
   return lines[(n.i + Math.floor(G.t / 7) + G.p.day) % lines.length];
@@ -876,6 +905,7 @@ function updateNpcs(dt, free) {
       continue;
     }
     if (n.kind === 'foe' && free) { if (foeThink(n, dt, t)) continue; }
+    if (n.still) continue;
     n.wait -= dt;
     if (n.wait > 0) continue;
     n.wait = 1.5 + Math.random() * 3;
@@ -891,7 +921,7 @@ function updateNpcs(dt, free) {
     if (!npcCanStep(n, tx, ty, t)) continue;
     n.mv = { tx, ty, k: 0, t: n.kind === 'foe' ? 0.42 : 0.36 };
   }
-  if (free && OW.key !== 'deck') respawnFoes();
+  if (free && OW.map.kind === 'island') respawnFoes();
 }
 
 function npcCanStep(n, tx, ty, t) {
@@ -969,7 +999,7 @@ function foeThink(n, dt, t) {
   n.think -= dt;
   if (n.think > 0) return false;
   n.think = 1.2 + Math.random() * 1.2;
-  if (G.mode !== 'home' || OW.inside || G.t < n.calm || G.t < (OW.peaceUntil || 0)) return false;
+  if (G.mode !== 'home' || OW.map.kind !== 'island' || G.t < n.calm || G.t < (OW.peaceUntil || 0)) return false;
   if (p.energy < 10 || isLate() || dist1(n, t) > 4) return false;
   if (Math.random() > (p.tick >= 6 ? 0.4 : 0.22)) return false;
   n.chase = 9;
@@ -1012,7 +1042,202 @@ function startFoeFight(n, ambush) {
   });
 }
 
-// ---------- the boat deck// ---------- the boat deck (12 x 8, fits one screen) ----------
+// ---------- the boat deck// ---------- inside the bar and the shop (12 x 8, one screen) ----------
+// W wall  K counter  k staff behind it  s seat  T table  B barrels  P plant  S shelves  R clothes rack  E way out
+
+const ROOMS = {
+  bar: ['WWWWWWWWWWWW', 'WWWWWWWWWWWW', 'W....k..BBBW', 'WKKKKKKK...W', 'W..........W', 'W.sTTs.sTTsW', 'WP.........W', 'WWWWWEEWWWWW'],
+  shop: ['WWWWWWWWWWWW', 'WWWWWWWWWWWW', 'WSS..k..SSSW', 'WSSKKKKKSSSW', 'W..........W', 'W.R......R.W', 'WP........PW', 'WWWWWEEWWWWW'],
+};
+const BARTENDER = { kind: 'human', head: 'hair', pal: { h: '#3a2a22', c: '#f2f2f2', C: '#7a2630', p: '#2c2c34', s: '#e0a070' } };
+const CLERK = { kind: 'human', head: 'cap', pal: { x: '#3b6fd6', w: '#f2f2f2', c: '#3b6fd6', C: '#f2f2f2', p: '#2c2c34' } };
+const ROOM_CACHE = new Map();
+
+function roomMap(type, idx) {
+  const key = type + ':' + idx;
+  if (ROOM_CACHE.has(key)) return ROOM_CACHE.get(key);
+  const rows = ROOMS[type], w = 12, h = 8;
+  const m = { key, kind: type, idx, w, h, rows, th: theme(ISLANDS[idx].scene), solid: new Uint8Array(w * h), obj: new Array(w * h).fill(null), objs: [], lights: [], villagers: [], bushes: [], wild: [], ground: [], seats: [] };
+  m.at = (x, y) => (y >= 0 && y < h && x >= 0 && x < w ? rows[y][x] : 'W');
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const ch = rows[y][x], i = y * w + x;
+      m.ground[i] = 'floor';
+      if ('WKkBPSRTs'.includes(ch)) m.solid[i] = 1;
+      if (ch === 'K') m.obj[i] = { type: 'counter' };
+      if (ch === 'E') m.obj[i] = { type: 'exit' };
+      if (ch === 'R') m.obj[i] = { type: 'rack' };
+      if (ch === 's') m.seats.push({ x, y, dir: m.at(x + 1, y) === 'T' ? 'right' : 'left' });
+      if (ch === 'k') m.staff = { x, y };
+    }
+  }
+  m.spawn = { x: 5, y: 6, dir: 'up' };
+  renderRoom(m);
+  ROOM_CACHE.set(key, m);
+  return m;
+}
+
+// The bartender or shopkeeper, plus (in the bar) this island's recruits and a couple of regulars at the tables.
+function roomNpcs(m) {
+  const list = [{ kind: 'staff', spec: m.kind === 'bar' ? BARTENDER : CLERK, x: m.staff.x, y: m.staff.y, dir: 'down', still: true, i: 0 }];
+  if (m.kind !== 'bar') return list;
+  const seats = m.seats.slice();
+  Object.keys(CREW).filter(k => CREW[k].island === m.idx && !crewOf(k)).forEach((k, i) => {
+    const s = seats.shift();
+    if (s) list.push({ kind: 'recruit', key: k, spec: CREW[k].spr, x: s.x, y: s.y, dir: s.dir, still: true, i: i + 1 });
+  });
+  const r = seeded(m.idx * 71 + 3);
+  for (let i = 0; i < 2 && seats.length; i++) {
+    const s = seats.splice(Math.floor(r() * seats.length), 1)[0];
+    list.push({ kind: 'patron', spec: folkSpec(r), x: s.x, y: s.y, dir: s.dir, still: true, i: 10 + i });
+  }
+  return list;
+}
+
+// The bar's recruits change as you hire people or kick them out.
+function refreshRoom() {
+  if (OW.map && OW.map.kind === 'bar') OW.npcs = roomNpcs(OW.map);
+}
+
+const PATRON_LINES = [
+  'Regular: "Another round! ...Wait, who are you?"',
+  'Regular: "I heard the raid boss up north eats rocks for breakfast."',
+  'Regular: "A glowing bush? That\'s a Devil Fruit, kid. Or I drank too much."',
+  'Regular: "The bartender makes the best feast on this side of the Grand Line."',
+  'Regular: "Pirates, pirates everywhere. Good for business!"',
+];
+
+function recruitMenu(k) {
+  const p = G.p, c = CREW[k], full = p.crew.length >= CREW_MAX;
+  const body = el('div');
+  body.style.display = 'contents';
+  body.append(el('div', { class: 'row current' },
+    el('img', { src: spriteURL(c.spr, 3), alt: '' }),
+    el('div', null, el('h3', null, c.name, el('small', { text: ' ' + crewRole(k) })), el('p', { text: ROLES[c.role].desc })),
+    null));
+  body.append(el('p', { class: 'note', text: full ? `Your crew is full (${CREW_MAX}). Talk to the bartender to kick someone out first.` : `${c.name} looks you over. "You're a captain? Pay my tab and I'm yours."` }));
+  body.append(el('div', { class: 'btn-row' },
+    el('button', { type: 'button', class: 'mini-btn red', text: `Hire ฿${fmt(c.cost)}`, 'aria-label': `Hire ${c.name} for ฿${fmt(c.cost)}`, disabled: full || p.berries < c.cost || null, onclick: () => hire(k) }),
+    el('button', { type: 'button', class: 'mini-btn', text: 'Not now', onclick: closeModal })));
+  openModal(c.name, body, { onClose: () => G.mode === 'home' && homeMenu() });
+}
+
+function renderRoom(m) {
+  const cv = makeCanvas(192, 128), c = cv.getContext('2d');
+  const bar = m.kind === 'bar', accent = m.th.roofs[bar ? 0 : 1];
+  const r = seeded(m.idx * 13 + (bar ? 1 : 2));
+  // floor
+  for (let y = 2; y < 8; y++) {
+    for (let x = 0; x < 12; x++) {
+      const px = x * TS, py = y * TS;
+      if (bar) {
+        pxRect(c, px, py, TS, TS, '#9a6a3f');
+        for (let i = 0; i < 4; i++) { pxRect(c, px, py + i * 4 + 3, TS, 1, '#7a5030'); pxRect(c, px + ((x * 5 + i * 7 + y * 3) % 16), py + i * 4, 1, 3, '#7a5030'); }
+      } else {
+        pxRect(c, px, py, TS, TS, (x + y) % 2 ? '#e8e2d0' : '#d8d0bc');
+        pxRect(c, px, py, TS, 1, '#f4f0e6');
+      }
+    }
+  }
+  // back wall: two rows tall
+  const wall = bar ? '#5a3a22' : '#f2eee4', wall2 = bar ? '#4a2e1a' : '#dcd4c2';
+  pxRect(c, 0, 0, 192, 32, wall);
+  for (let x = 0; x < 192; x += 12) pxRect(c, x, 0, 1, 32, wall2);
+  pxRect(c, 0, 28, 192, 4, shade(wall, 0.3));
+  pxRect(c, 0, 26, 192, 2, accent);
+  if (bar) {
+    // bottle shelves behind the counter
+    for (const sy of [6, 16]) {
+      pxRect(c, 16, sy + 8, 112, 2, '#3a2414');
+      for (let x = 20; x < 124; x += 6) {
+        const col = pick2(r, ['#3a8a3a', '#7a2630', '#c9963b', '#3b6fd6', '#e8e2d0']);
+        pxRect(c, x, sy + 1, 3, 7, PAL.k); pxRect(c, x + 1, sy, 1, 2, PAL.k);
+        pxRect(c, x, sy + 2, 3, 5, col); pxRect(c, x, sy + 2, 1, 2, tint(col, 0.4));
+      }
+    }
+    // a window on the sea and a jolly roger on the wall
+    pxRect(c, 138, 4, 22, 16, PAL.k); pxRect(c, 139, 5, 20, 14, m.th.water[0]); pxRect(c, 139, 5, 20, 6, '#9ad0f5'); pxRect(c, 148, 5, 2, 14, PAL.k);
+    pxRect(c, 166, 5, 16, 12, '#1b1424'); drawJollyRoger(c, 168, 6, 1);
+  } else {
+    // shop: a big sign over the counter and goods on the shelves
+    pxRect(c, 58, 4, 76, 14, PAL.k); pxRect(c, 59, 5, 74, 12, accent);
+    drawText(c, 'SHOP', 96, 8, { color: '#ffffff', align: 'center', shadow: null });
+    pxRect(c, 140, 6, 40, 14, PAL.k); pxRect(c, 141, 7, 38, 12, '#7ac0e8'); pxRect(c, 141, 7, 38, 4, '#bfe6ff'); pxRect(c, 160, 7, 1, 12, PAL.k);
+  }
+  for (let y = 0; y < 8; y++) {
+    for (let x = 0; x < 12; x++) {
+      const ch = m.rows[y][x], px = x * TS, py = y * TS;
+      if (ch === 'W' && y >= 2) {
+        if (y === 7) { pxRect(c, px, py, TS, TS, wall2); pxRect(c, px, py, TS, 3, shade(wall2, 0.3)); }
+        else { pxRect(c, px, py, TS, TS, wall2); pxRect(c, x === 0 ? px + 13 : px, py, 3, TS, shade(wall2, 0.3)); }
+      } else if (ch === 'E') {
+        pxRect(c, px, py, TS, TS, bar ? '#9a6a3f' : '#d8d0bc');
+        pxRect(c, px + 1, py + 2, 14, 12, '#a0302a'); pxRect(c, px + 2, py + 3, 12, 10, '#c0453a'); pxRect(c, px + 2, py + 7, 12, 1, '#a0302a');
+      } else if (ch === 'K') {
+        pxRect(c, px, py - 2, TS, 18, PAL.k);
+        pxRect(c, px, py - 1, TS, 7, bar ? '#a0663a' : '#e8e2d0');
+        pxRect(c, px, py - 1, TS, 2, bar ? '#c08a56' : '#ffffff');
+        pxRect(c, px, py + 6, TS, 9, bar ? '#6a4422' : accent);
+        pxRect(c, px + 7, py + 7, 1, 8, shade(bar ? '#6a4422' : accent, 0.3));
+        if (bar && (x === 2 || x === 6)) { pxRect(c, px + 5, py - 1, 5, 5, PAL.k); pxRect(c, px + 6, py, 3, 3, '#ffd04a'); pxRect(c, px + 6, py, 3, 1, '#ffffff'); }
+        if (!bar && x === 4) { pxRect(c, px + 3, py - 1, 9, 5, PAL.k); pxRect(c, px + 4, py, 7, 3, '#5a5a6a'); pxRect(c, px + 5, py, 2, 1, '#9ad0f5'); }
+      } else if (ch === 'T') {
+        const left = m.at(x - 1, y) !== 'T';
+        pxRect(c, px + (left ? 2 : 0), py + 3, left ? 14 : 14, 11, PAL.k);
+        pxRect(c, px + (left ? 3 : 0), py + 4, left ? 13 : 13, 8, '#8a5a32');
+        pxRect(c, px + (left ? 3 : 0), py + 4, left ? 13 : 13, 2, '#a8784a');
+        if (left) { pxRect(c, px + 8, py + 5, 4, 4, PAL.k); pxRect(c, px + 9, py + 6, 2, 2, '#ffd04a'); }
+        else { pxRect(c, px + 3, py + 6, 3, 2, '#f2f2f2'); }
+      } else if (ch === 's') {
+        pxCircle(c, px + 8, py + 11, 5, PAL.k); pxCircle(c, px + 8, py + 11, 4, '#7a2630'); pxRect(c, px + 6, py + 8, 3, 1, '#a0404a');
+      } else if (ch === 'B') {
+        pxRect(c, px + 2, py + 1, 12, 14, PAL.k); pxRect(c, px + 3, py + 2, 10, 12, '#a0663a');
+        pxRect(c, px + 3, py + 2, 10, 2, '#c08a56'); pxRect(c, px + 3, py + 6, 10, 1, '#5a5a6a'); pxRect(c, px + 3, py + 11, 10, 1, '#5a5a6a');
+      } else if (ch === 'P') {
+        pxRect(c, px + 4, py + 9, 8, 6, PAL.k); pxRect(c, px + 5, py + 10, 6, 4, '#c0603a');
+        pxCircle(c, px + 8, py + 6, 5, PAL.k); pxCircle(c, px + 8, py + 6, 4, '#3f9a3a'); pxCircle(c, px + 7, py + 5, 2, '#6cc24a');
+      } else if (ch === 'S') {
+        pxRect(c, px, py, TS, TS, PAL.k); pxRect(c, px + 1, py + 1, 14, 14, '#a0663a');
+        for (const sy of [4, 9]) {
+          pxRect(c, px + 1, py + sy + 4, 14, 1, '#6a4422');
+          for (let i = 0; i < 3; i++) pxRect(c, px + 2 + i * 5, py + sy, 4, 4, pick2(r, ['#d63c2f', '#3b6fd6', '#ffd04a', '#46b35a', '#f2f2f2']));
+        }
+      } else if (ch === 'R') {
+        pxRect(c, px + 1, py + 2, 14, 2, PAL.k); pxRect(c, px + 7, py + 2, 2, 13, PAL.k); pxRect(c, px + 3, py + 13, 10, 2, PAL.k);
+        for (let i = 0; i < 3; i++) { const col = pick2(r, ['#d63c2f', '#3b6fd6', '#7a4ac0', '#2a2433', '#f2eee4']); pxRect(c, px + 1 + i * 5, py + 4, 4, 7, PAL.k); pxRect(c, px + 2 + i * 5, py + 4, 3, 6, col); }
+      }
+    }
+  }
+  m.layer = cv;
+}
+
+// ---------- the hidden Devil Fruit ----------
+// Each island's fruit hides in one particular bush or trash can, which glows faintly in the fruit's colors.
+
+function fruitSpot(m) {
+  if (!m || m.kind !== 'island') return null;
+  const k = islandFruit(m.idx);
+  const spots = m.bushes.concat(m.objs.filter(o => o.type === 'trash'));
+  if (!k || !spots.length) return null;
+  let h = m.idx * 31;
+  for (const ch of k) h = (h * 33 + ch.charCodeAt(0)) >>> 0;
+  const sp = spots[h % spots.length];
+  return { x: sp.x, y: sp.y, kind: sp.type, fruit: k };
+}
+const isFruitSpot = (m, x, y) => { const f = fruitSpot(m); return !!f && f.x === x && f.y === y; };
+
+function drawFruitGlow(f, cam) {
+  const fr = FRUITS[f.fruit], x = f.x * TS - cam.x + 8, y = f.y * TS - cam.y + 9;
+  const k = 0.5 + Math.sin(G.t * 2.2) * 0.5;
+  ctx.globalAlpha = 0.08 + k * 0.1;
+  pxCircle(ctx, x, y, 11, fr.color);
+  ctx.globalAlpha = 0.1 + k * 0.12;
+  pxCircle(ctx, x, y, 6, fr.color2 || fr.color);
+  ctx.globalAlpha = 1;
+  if (Math.random() < 0.04) particles(x + rand(-6, 6), y + rand(-4, 3), 1, { colors: [fr.color, fr.color2 || '#ffffff'], speed: 6, grav: -18, life: 0.9 });
+}
+
+// ---------- the boat deck (12 x 8, fits one screen) ----------
 // R hull rail  O mast  h helm  m map table  c paint locker  y hammock  w weights  k galley  q aquarium
 
 const DECK_ROWS = [
@@ -1032,7 +1257,7 @@ function deckMap() {
     .replace('w', p.owned.weights ? 'w' : '.')
     .replace('k', p.owned.galley ? 'k' : '.')
     .replace('q', p.owned.aquarium ? 'q' : '.'));
-  const m = { key: 'deck', w: 12, h: 8, rows, th: theme(island().scene), solid: new Uint8Array(96), obj: new Array(96).fill(null), objs: [], lights: [], villagers: [], bushes: [] };
+  const m = { key: 'deck', kind: 'deck', w: 12, h: 8, rows, th: theme(island().scene), solid: new Uint8Array(96), obj: new Array(96).fill(null), objs: [], lights: [], villagers: [], bushes: [] };
   m.at = (x, y) => (y >= 0 && y < 8 && x >= 0 && x < 12 ? rows[y][x] : '~');
   m.ground = [];
   const types = { O: 'mast', h: 'helm', m: 'table', c: 'locker', y: 'hammock', w: 'weights', k: 'galley', q: 'tank' };
@@ -1170,17 +1395,28 @@ function owFacing() {
 function owTarget(x, y) {
   const m = OW.map;
   if (!m || x < 0 || y < 0 || x >= m.w || y >= m.h) return null;
-  if (OW.key !== 'deck' && m.boss && m.boss.x === x && m.boss.y === y) {
+  if (m.kind === 'island' && m.boss && m.boss.x === x && m.boss.y === y) {
     return { kind: 'boss', label: G.p.bosses[island().boss] ? 'REMATCH' : 'RAID', act: () => raidMenu() };
   }
   const n = OW.npcs.find(v => v.x === x && v.y === y && !v.mv);
   if (n && n.kind === 'foe') return { kind: 'foe', label: 'FIGHT', act: () => startFoeFight(n, false) };
+  if (n && n.kind === 'staff') return { kind: 'staff', label: 'TALK', act: () => (m.kind === 'bar' ? barMenu() : shopMenu()) };
+  if (n && n.kind === 'recruit') return { kind: 'recruit', label: 'TALK', act: () => { n.dir = dirTo(n, OW); recruitMenu(n.key); } };
   if (n) return { kind: 'npc', label: 'TALK', act: () => npcTalk(n) };
   const o = m.obj[y * m.w + x];
   if (!o) return null;
   switch (o.type) {
-    case 'bush': return { kind: 'bush', label: bushReady(m, o) ? 'SEARCH' : null, act: () => (bushReady(m, o) ? explore({ kind: 'bush', x, y }) : say('Just an ordinary bush. Shaking bushes are the ones worth searching.')) };
-    case 'trash': return { kind: 'trash', label: searchedToday(x, y) ? null : 'SEARCH', act: () => (searchedToday(x, y) ? say('You already dug through this trash can today.') : explore({ kind: 'trash', x, y })) };
+    case 'bush': {
+      const ready = isFruitSpot(m, x, y) || bushReady(m, o);
+      return { kind: 'bush', label: ready ? 'SEARCH' : null, act: () => (ready ? explore({ kind: 'bush', x, y }) : say('Just an ordinary bush. Shaking bushes are the ones worth searching.')) };
+    }
+    case 'trash': {
+      const ready = isFruitSpot(m, x, y) || !searchedToday(x, y);
+      return { kind: 'trash', label: ready ? 'SEARCH' : null, act: () => (ready ? explore({ kind: 'trash', x, y }) : say('You already dug through this trash can today.')) };
+    }
+    case 'counter': return { kind: 'counter', label: 'TALK', act: () => (m.kind === 'bar' ? barMenu() : shopMenu()) };
+    case 'exit': return { kind: 'exit', label: 'EXIT', act: () => owStepTo(x, y) };
+    case 'rack': return { kind: 'rack', label: 'LOOK', act: () => say('Fresh clothes on display. Talk to the shopkeeper to buy some.') };
     case 'dummy': return { kind: 'dummy', label: 'TRAIN', act: () => trainMenu() };
     case 'job': return { kind: 'job', label: 'WORK', act: () => jobBoard() };
     case 'fish': return { kind: 'fish', label: 'FISH', act: () => startFishing() };
@@ -1208,7 +1444,7 @@ function npcTalk(n) {
   const [dx, dy] = [OW.x - n.x, OW.y - n.y];
   n.dir = dx > 0 ? 'right' : dx < 0 ? 'left' : dy > 0 ? 'down' : 'up';
   n.wait = 3;
-  say(n.kind === 'crew' ? crewLine(n) : folkLine(n));
+  say(n.kind === 'crew' ? crewLine(n) : n.kind === 'patron' ? PATRON_LINES[(n.i + G.p.day) % PATRON_LINES.length] : folkLine(n));
 }
 
 function jobBoard() {
@@ -1287,11 +1523,9 @@ function owUpdate(dt) {
 // Things that happen when you step on a tile. Returns true if it took over.
 function onStep() {
   const m = OW.map, ch = m.at(OW.x, OW.y), o = m.obj[OW.y * m.w + OW.x];
-  if (o && o.type === 'door') {
-    OW.inside = { x: OW.x, y: OW.y };
+  if (o && (o.type === 'door' || o.type === 'exit')) {
     OW.path = null; OW.goal = null; OW.keys = []; OW.held = null; OW.pending = null;
-    Sfx.play('door');
-    if (o.of.type === 'bar') barMenu(); else shopMenu();
+    if (o.type === 'door') enterBuilding(o.of.type, { x: OW.x, y: OW.y }); else leaveBuilding();
     return true;
   }
   if (ch === 'g') {
@@ -1312,7 +1546,8 @@ function owTap(sx, sy) {
   let goal = null, target = null;
   const o = m.obj[y * m.w + x];
   const n = OW.npcs.find(v => v.x === x && v.y === y);
-  if (o && (o.type === 'bar' || o.type === 'shop') && o.door) goal = { x: o.door.x, y: o.door.y };
+  if (n && n.kind === 'staff') target = { x: n.x, y: n.y + 1 };
+  else if (o && (o.type === 'bar' || o.type === 'shop') && o.door) goal = { x: o.door.x, y: o.door.y };
   else if (o && o.type === 'door') goal = { x, y };
   else if (o && o.type === 'ship' && m.gang) goal = m.gang;
   else if (o && o.type === 'lair' && m.boss) target = m.boss;
@@ -1358,7 +1593,7 @@ function findPath(from, isGoal) {
       const nx = x + dx, ny = y + dy, k = key(nx, ny);
       if (!walkable(m, nx, ny) || occupied(nx, ny)) continue;
       const o = m.obj[k];
-      if ((m.at(nx, ny) === 'g' || (o && o.type === 'door')) && !isGoal(nx, ny)) continue;
+      if ((m.at(nx, ny) === 'g' || (o && (o.type === 'door' || o.type === 'exit'))) && !isGoal(nx, ny)) continue;
       const nd = d + 1;
       if (nd < (dist.has(k) ? dist.get(k) : Infinity)) { dist.set(k, nd); prev.set(k, key(x, y)); open.push([nd, nx, ny]); }
     }
@@ -1404,8 +1639,9 @@ function heroScreenPos() {
 
 function drawWorld() {
   const m = OW.map, cam = owCam(), t = G.t;
-  pxRect(ctx, 0, 0, W, H, m.th.water[0]);
-  if (m.key !== 'deck') ctx.drawImage(m.layer, -cam.x, -cam.y);
+  const indoor = m.kind === 'bar' || m.kind === 'shop';
+  pxRect(ctx, 0, 0, W, H, indoor ? '#05081a' : m.th.water[0]);
+  if (m.kind !== 'deck') ctx.drawImage(m.layer, -cam.x, -cam.y);
   // moving water sparkles on visible tiles
   const x0 = Math.max(0, Math.floor(cam.x / TS)), y0 = Math.max(0, Math.floor(cam.y / TS));
   for (let y = y0; y < Math.min(m.h, y0 + 10); y++) {
@@ -1418,9 +1654,9 @@ function drawWorld() {
       if ((ph + Math.floor(t)) % 3 === 0) pxRect(ctx, sx + 9, sy + 11, 2, 1, tint(m.th.water[0], 0.35));
     }
   }
-  if (m.key === 'deck') ctx.drawImage(m.layer, -cam.x, -cam.y);
+  if (m.kind === 'deck') ctx.drawImage(m.layer, -cam.x, -cam.y);
   const actors = [];
-  if (m.key !== 'deck') {
+  if (m.kind === 'island') {
     const ship = m.objs.find(o => o.type === 'ship');
     if (ship) actors.push({ y: ship.y * TS + 20, draw: () => drawShipTop(ctx, ship.x * TS - cam.x, ship.y * TS - cam.y + Math.round(Math.sin(t * 1.6)), Object.assign(shipLook(), { t }), !!m.mirror, t) });
     const shake = shakingBushes(m);
@@ -1430,7 +1666,7 @@ function drawWorld() {
       const def = BOSSES[island().boss];
       actors.push({ y: m.boss.y * TS + 15, draw: () => drawBossOw(def, m.boss, cam) });
     }
-  } else {
+  } else if (m.kind === 'deck') {
     if (G.p.owned.lanterns) drawDeckLanterns();
   }
   for (const n of OW.npcs) {
@@ -1440,8 +1676,8 @@ function drawWorld() {
     const frame = n.mv && n.mv.k < 0.5 ? (n.dir === 'left' || n.dir === 'right' ? 1 : 2) : 0;
     actors.push({ y: pos.y * TS + 15, draw: () => drawWalker(walkSprite(spec, n.dir, frame), pos.x * TS - cam.x + 8, pos.y * TS - cam.y + 15) });
   }
-  // crew follow you around islands in a line
-  if (m.key !== 'deck' && !OW.inside) {
+  // crew follow you around islands (and into buildings) in a line
+  if (m.kind !== 'deck') {
     const k = OW.mv ? Math.min(1, OW.mv.k) : 1;
     const taken = new Set([OW.x + ',' + OW.y]);
     G.p.crew.forEach((cm, i) => {
@@ -1462,7 +1698,7 @@ function drawWorld() {
       actors.push({ y: fy * TS + 14.9 - i * 0.01, draw: () => drawWalker(walkSprite(crewSpec(cm), dir, frame), fx * TS - cam.x + 8, fy * TS - cam.y + 15) });
     });
   }
-  if (!OW.inside) {
+  {
     const hp = owHeroPx(), Hr = G.hero;
     const k = OW.mv ? OW.mv.k : 1;
     const side = OW.dir === 'left' || OW.dir === 'right';
@@ -1471,10 +1707,10 @@ function drawWorld() {
   }
   actors.sort((a, b) => a.y - b.y);
   for (const a of actors) a.draw();
-  // night falls
-  const ti = timeIdx(), late = isLate();
+  // night falls (indoors the lamps are on)
+  const ti = indoor ? 0 : timeIdx(), late = !indoor && isLate();
   const th = m.th;
-  if (th.tint) { ctx.globalAlpha = th.tint[1]; pxRect(ctx, 0, 0, W, H, th.tint[0]); ctx.globalAlpha = 1; }
+  if (th.tint && !indoor) { ctx.globalAlpha = th.tint[1]; pxRect(ctx, 0, 0, W, H, th.tint[0]); ctx.globalAlpha = 1; }
   if (ti === 2 && !late) { ctx.globalAlpha = 0.16; pxRect(ctx, 0, 0, W, H, '#ff8a3a'); ctx.globalAlpha = 1; }
   if (ti === 3 || late) {
     ctx.globalAlpha = late ? 0.55 : 0.45;
@@ -1482,14 +1718,16 @@ function drawWorld() {
     ctx.globalAlpha = 1;
     for (const [lx, ly, lw, lh] of m.lights) { pxRect(ctx, lx - cam.x, ly - cam.y, lw, lh, '#ffd36a'); ctx.globalAlpha = 0.25; pxRect(ctx, lx - cam.x - 2, ly - cam.y - 2, lw + 4, lh + 4, '#ffd36a'); ctx.globalAlpha = 1; }
   }
-  if (th.bubbles) {
+  const fs = fruitSpot(m);
+  if (fs) drawFruitGlow(fs, cam);
+  if (th.bubbles && !indoor) {
     for (let i = 0; i < 6; i++) {
       const bx = (i * 47 + Math.sin(t + i) * 6) % W, by = H - ((t * 14 + i * 37) % (H + 20));
       ctx.globalAlpha = 0.6; pxRing(ctx, bx, by, 2 + (i % 2), '#e0f6ff'); ctx.globalAlpha = 1;
     }
   }
   // what's in front of you
-  if (!G.busy && !OW.mv && $('modal').hidden && !OW.inside) {
+  if (!G.busy && !OW.mv && $('modal').hidden) {
     const f = owFacing(), tg = owTarget(f.x, f.y);
     OW.lastTarget = tg;
     if (tg && tg.label) {

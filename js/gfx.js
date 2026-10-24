@@ -299,7 +299,6 @@ const ICONS = {
   water:    ['...bb...', '..bbbb..', '.nnnnnn.', 'nggggggn', 'nnnnnnnn', 'nnnnnnnn', 'nggggggn', '.nnnnnn.'],
   weights:  ['........', 'gg....gg', 'gg....gg', 'ggwwwwgg', 'gg....gg', 'gg....gg', '........', '........'],
   fish:     ['........', '..bbb..b', '.bbbbbbb', 'bwbbbbb.', 'bbbbbbbb', '.bbbbb.b', '..bbb...', '........'],
-  fruit:    ['....g...', '...gg...', '.cccccc.', 'cCccCccc', 'ccCccCcc', 'cCccCccc', 'ccCccCcc', '.cccccc.'],
   chest:    ['........', '.nnnnnn.', 'nGGGGGGn', 'nnnGGnnn', 'nnnGGnnn', 'nnnnnnnn', 'nnnnnnnn', '........'],
   sails:    ['...n....', '..wwww..', '.rrrrrr.', '.wwwwww.', '.rrrrrr.', '..wwww..', '...n....', 'nnnnnnnn'],
   galley:   ['.w..w...', '..w..w..', '.w..w...', 'gggggggg', '.hhhhhh.', '.hhhhhh.', '.hhhhhh.', '..hhhh..'],
@@ -323,6 +322,17 @@ const ICONS = {
   charm:    ['q......q', '.q....q.', '..q..q..', '...qq...', '..qQQq..', '..qQQq..', '...qq...', '........'],
 };
 
+// Devil Fruits, drawn closer to the anime: each family has its own shape, all covered in swirls.
+// c skin, C swirls, l stem, L leaf. FRUIT_SHAPES rows are 12 wide.
+const FRUIT_SHAPES = {
+  round: ['.....l......', '.....lLL....', '...ccccLL...', '..cCCcccCc..', '.cCccCccCcc.', '.cCcCCcCCcc.', '.ccCcccCccC.', '.cccCCccCCc.', '.cCccCcccCc.', '..cCCcccCc..', '...cccccc...', '............'],
+  pear:  ['.....l......', '.....lLL....', '....cccc....', '....cCCc....', '...cCccCc...', '..cccCCccc..', '.ccCCccCCcc.', '.cCccCCccCc.', '.ccCCccCCcc.', '.cccccccccc.', '..cccccccc..', '............'],
+  heart: ['.....lL.....', '....l.......', '..ccc..ccc..', '.cCCcc.cCCc.', 'cCccCcccCcCc', 'cCcCCcccCCcc', 'ccCccCCccCcc', '.ccccCCcccc.', '..ccCccCcc..', '...ccCCcc...', '....cccc....', '.....cc.....'],
+  grape: ['.....lL.....', '...ccLccc...', '..cCccCccc..', '.cccccccccc.', '.cCcccCcccc.', '.cccccccCcc.', '..cCcccccc..', '..cccCcccc..', '...cccccC...', '...cCccc....', '....ccc.....', '.....c......'],
+  long:  ['.....lL.....', '.....lLL....', '....cccc....', '...cCCccc...', '..ccCccCcc..', '..cCcCCcCc..', '..ccCccCcc..', '..cCcCCcCc..', '..ccCccCcc..', '...cCCccc...', '....cccc....', '............'],
+  paw:   ['.....lL.....', '.cc..cc..cc.', 'cCCccCCccCCc', '.cc..cc..cc.', '............', '...cccccc...', '..cCCCCCCc..', '.cCCcccCCCc.', '.cCCCccCCCc.', '..cCCCCCCc..', '...cccccc...', '............'],
+};
+
 // ---------- sprite building ----------
 
 function buildGrid(spec) {
@@ -331,6 +341,7 @@ function buildGrid(spec) {
   else if (spec.kind === 'human') rows = HUMAN_HEADS[spec.head || 'hair'].concat(HUMAN_BODY);
   else if (spec.kind === 'brute') rows = BRUTE_HEADS[spec.head || 'ape'].concat(BRUTE_BODY);
   else if (spec.kind === 'icon') rows = ICONS[spec.icon];
+  else if (spec.kind === 'devilfruit') rows = FRUIT_SHAPES[spec.shape];
   else if (spec.kind === 'hathead') rows = HUMAN_HEADS[spec.head].concat(PLAYER_BODY.slice(0, 3));
   else if (spec.kind === 'weapon') rows = WEAPON_SHAPES[spec.shape].rows;
   else if (spec.kind === 'figure') rows = FIGURES[spec.head].rows;

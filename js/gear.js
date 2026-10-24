@@ -183,7 +183,10 @@ function dragonSpec(spec) {
 }
 const weaponSpec = k => (WEAPONS[k].shape ? { kind: 'weapon', shape: WEAPONS[k].shape, pal: WEAPONS[k].pal || {} } : { kind: 'icon', icon: 'wraps' });
 const weaponURL = k => (k === 'fists' ? iconURL('wraps', { w: '#f3c08c', s: '#c98a5a' }) : spriteURL(weaponSpec(k), 3));
-const fruitSpec = k => ({ kind: 'icon', icon: 'fruit', pal: { c: FRUITS[k].color, C: FRUITS[k].color2 } });
+// Which shape each Devil Fruit has (see FRUIT_SHAPES): the Op-Op Fruit is a heart, String and Flower grow in bunches...
+const FRUIT_SHAPE = { quake: 'pear', split: 'pear', dark: 'pear', smoke: 'long', dragon: 'long', phoenix: 'long', sand: 'long', ope: 'heart', string: 'grape', flower: 'grape', paw: 'paw' };
+const fruitSpec = k => ({ kind: 'devilfruit', shape: FRUIT_SHAPE[k] || 'round', pal: { c: FRUITS[k].color, C: FRUITS[k].color2, l: '#6a4428', L: '#46b35a' } });
+const fruitURL = k => spriteURL(fruitSpec(k), 3);
 const shortWeapon = () => (weapon() ? weapon().name.split(' ').pop() : 'Fists');
 
 function styleName(key) {
@@ -263,7 +266,7 @@ function drawLoot(c, x, top) {
   const k = G.t - L.t;
   if (k > 2.6) { G.loot = null; return; }
   const y = top - Math.min(1, k * 3) * 8 + Math.sin(G.t * 4) * 1.5;
-  drawSpriteAt(c, getSprite(L.spec), x, y, L.spec.kind === 'icon' || L.spec.kind === 'hathead' ? 2 : 1, { shadow: false });
+  drawSpriteAt(c, getSprite(L.spec), x, y, ['icon', 'hathead', 'devilfruit'].includes(L.spec.kind) ? 2 : 1, { shadow: false });
   if (Math.floor(G.t * 8) % 2) {
     for (const [dx, dy] of [[-14, -16], [13, -22], [-10, -4], [12, -6]]) {
       pxRect(c, x + dx, y + dy - 1, 1, 3, '#fff6a0');
@@ -310,8 +313,11 @@ async function explore(spot) {
   OW.search = null;
   const n = (p.explored[idx] || 0) + 1;
   p.explored[idx] = n;
-  const fruitK = islandFruit(idx), weps = unfoundWeapons(idx), clothK = unfoundClothes(idx)[0];
-  if (fruitK && Math.random() < Math.min(0.45, 0.03 + n * 0.03)) {
+  // The island's Devil Fruit hides in one glowing bush or trash can; nothing else ever turns one up.
+  const fs = spot && OW.map ? fruitSpot(OW.map) : null;
+  const fruitK = fs && fs.x === spot.x && fs.y === spot.y ? fs.fruit : null;
+  const weps = unfoundWeapons(idx), clothK = unfoundClothes(idx)[0];
+  if (fruitK) {
     await findFruit(fruitK);
   } else if (weps.length && Math.random() < (p.weapons.length ? Math.min(0.6, 0.14 + n * 0.04) : 0.35 + n * 0.2)) {
     await findWeapon(pick(weps));
@@ -400,7 +406,7 @@ function fruitChoice(k) {
     const body = el('div');
     body.style.display = 'contents';
     body.append(el('div', { class: 'row' },
-      el('img', { src: iconURL('fruit', { c: f.color, C: f.color2 }), alt: '' }),
+      el('img', { src: fruitURL(k), alt: '' }),
       el('div', null, el('h3', { text: f.name }), el('p', { text: f.desc }), movesList(k, 0)),
       null));
     body.append(el('p', {
@@ -495,7 +501,7 @@ function gearMenu(note) {
   if (p.fruit) {
     const f = FRUITS[p.fruit];
     body.append(el('div', { class: 'row gear current' },
-      el('img', { src: iconURL('fruit', { c: f.color, C: f.color2 }), alt: '' }),
+      el('img', { src: fruitURL(p.fruit), alt: '' }),
       el('div', null, el('h3', { text: f.name }), masteryBar(p.fruit), movesList(p.fruit)),
       null));
     if (f.awaken) body.append(awakenPanel());
@@ -505,7 +511,7 @@ function gearMenu(note) {
   for (const k of p.fruitBag) {
     const f = FRUITS[k];
     body.append(el('div', { class: 'row gear' },
-      el('img', { src: iconURL('fruit', { c: f.color, C: f.color2 }), alt: '' }),
+      el('img', { src: fruitURL(k), alt: '' }),
       el('div', null, el('h3', null, f.name, el('small', { text: ' in bag' })), movesList(k, 0)),
       el('div', { class: 'btn-row' },
         p.fruit ? null : el('button', { type: 'button', class: 'mini-btn red', text: 'Eat', onclick: () => eatFromBag(k) }),

@@ -455,7 +455,7 @@ function raceTitle() {
   $('modalTitle').replaceChildren(
     el('button', { type: 'button', class: 'egg-word', id: 'eggWord', text: 'Choose', onclick: fruitEgg }),
     ' your race');
-  if (f) $('modalTitle').append(el('img', { class: 'egg-mark', src: iconURL('fruit', { c: f.color, C: f.color2 }), alt: ` (secret: ${f.name})` }));
+  if (f) $('modalTitle').append(el('img', { class: 'egg-mark', src: fruitURL(eggFruit), alt: ` (secret: ${f.name})` }));
 }
 
 function startNewGame(name, raceKey) {
@@ -500,7 +500,7 @@ function fruitEgg(e) {
       type: 'button', class: 'egg-fruit', 'data-k': k, 'aria-label': f.name, title: f.name,
       onclick: () => eggAsk(k), onpointerenter: () => { EGG.hover = true; }, onpointerleave: () => { EGG.hover = false; },
     },
-      el('img', { src: iconURL('fruit', { c: f.color, C: f.color2 }), alt: '' }));
+      el('img', { src: fruitURL(k), alt: '' }));
   });
   const layer = el('div', { class: 'egg-layer', id: 'egg', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Secret Devil Fruits' },
     pop, fruits,
@@ -535,9 +535,9 @@ function fruitEgg(e) {
   requestAnimationFrame(frame);
 }
 
-function eggCard(f, ...kids) {
+function eggCard(k, ...kids) {
   const card = $('eggCard');
-  card.replaceChildren(el('h3', { text: f.name }), el('img', { src: iconURL('fruit', { c: f.color, C: f.color2 }), alt: '' }), ...kids);
+  card.replaceChildren(el('h3', { text: FRUITS[k].name }), el('img', { src: fruitURL(k), alt: '' }), ...kids);
   card.hidden = false;
   card.querySelector('button').focus({ preventScroll: true });
 }
@@ -547,7 +547,7 @@ function eggAsk(k) {
   Sfx.play('select');
   EGG.paused = true;
   for (const b of document.querySelectorAll('.egg-fruit')) b.classList.toggle('on', b.dataset.k === k);
-  eggCard(FRUITS[k],
+  eggCard(k,
     el('p', { text: 'Pick this fruit?' }),
     el('div', { class: 'btn-row' },
       el('button', { type: 'button', class: 'mini-btn red', text: 'Pick it', onclick: () => eggPick(k) }),
@@ -568,8 +568,8 @@ function eggPick(k) {
   eggFruit = k;
   Sfx.play('find');
   for (const b of document.querySelectorAll('.egg-fruit')) if (b.dataset.k !== k) b.classList.add('gone');
-  eggCard(f,
-    el('p', { text: `Secret set! The ${f.name} is hidden on Dawn Village. Search its trash cans and bushes to find it!` }),
+  eggCard(k,
+    el('p', { text: `Secret set! The ${f.name} is hidden on Dawn Village. Look for a bush or trash can glowing in its colors!` }),
     el('div', { class: 'btn-row' }, el('button', { type: 'button', class: 'mini-btn red', text: 'OK', onclick: closeEgg })));
   if ($('eggWord')) raceTitle();
 }
@@ -586,6 +586,7 @@ function closeEgg() {
 async function enterGame(cont, secret) {
   G.mode = 'home';
   G.aboard = false;
+  G.indoors = null;
   OW.respawn = true;
   resetHero();
   updateHud();
@@ -601,9 +602,9 @@ async function enterGame(cont, secret) {
   await talk(`${p.name} is a nobody ${race().name.toLowerCase()} from Dawn Village. No weapon, no powers, no crew. Just a big dream.`);
   if (race().move) await talk(`As a ${race().name}, you already know one move: ${race().move.name}.`);
   await talk('Walk around with the D-pad (or arrow keys), or tap where you want to go. Press A to talk, search and go inside.');
-  await talk('Search trash cans and shaking bushes for weapons and hidden Devil Fruits.');
+  await talk('Search trash cans and shaking bushes for weapons and clothes. A faint glow means a Devil Fruit is hiding inside!');
   await talk('Enemies roam the edges of town. Walk up and press A to fight one, but watch out: some charge at you! Hold B to run away.');
-  if (secret) await talk(`Psst... a little bird says the ${FRUITS[secret].name} is hidden somewhere on Dawn Village.`);
+  if (secret) await talk(`Psst... a little bird says the ${FRUITS[secret].name} is hidden somewhere on Dawn Village. Look for the glow!`);
   await talk('Hire a crew at the Bar, train at the dummies, and when you feel ready, RAID the island boss up north! (Psst: tap your pirate to chat.)');
   lock(false);
   if (G.mode !== 'home') return;
@@ -621,7 +622,7 @@ function resetHero() {
 function homeMenu() {
   if (G.aboard) { boatMenu(); return; }
   G.mode = 'home';
-  owLoad('island');
+  owLoad(G.indoors || 'island');
   setPad(worldDock());
 }
 
@@ -1043,9 +1044,9 @@ function barMenu(note) {
   const p = G.p;
   const body = el('div');
   body.style.display = 'contents';
-  if (note) body.append(el('p', { class: 'note', text: note }));
+  body.append(el('p', { class: 'note', text: note || 'The bartender wipes a mug. "What\'ll it be, Captain?"' }));
   body.append(el('h3', { class: 'sect' }, 'Your crew ', el('span', { text: `${p.crew.length}/${CREW_MAX}` })));
-  if (!p.crew.length) body.append(el('p', { class: 'note', text: 'Sailing solo. Hire someone below: crewmates fight beside you, and you choose their weapon and Devil Fruit.' }));
+  if (!p.crew.length) body.append(el('p', { class: 'note', text: 'Sailing solo. Crewmates fight beside you, and you choose their weapon, Devil Fruit and clothes.' }));
   for (const m of p.crew) {
     const c = CREW[m.key];
     body.append(el('div', { class: 'row' },
@@ -1053,18 +1054,8 @@ function barMenu(note) {
       el('div', null, el('h3', null, c.name, el('small', { text: ' ' + crewRole(m.key) })), el('p', { text: crewKit(m) })),
       el('button', { type: 'button', class: 'mini-btn', text: 'Manage', onclick: () => manageCrew(m.key) })));
   }
-  const full = p.crew.length >= CREW_MAX;
-  const here = Object.keys(CREW).filter(k => CREW[k].island === p.island && !crewOf(k));
-  body.append(el('h3', { class: 'sect' }, 'Looking for a crew'));
-  if (!here.length) body.append(el('p', { class: 'note', text: 'Nobody else here wants to set sail. Try the bar on another island.' }));
-  for (const k of here) {
-    const c = CREW[k];
-    body.append(el('div', { class: 'row' },
-      el('img', { src: spriteURL(c.spr, 2), alt: '' }),
-      el('div', null, el('h3', null, c.name, el('small', { text: ' ' + crewRole(k) })), el('p', { text: ROLES[c.role].desc })),
-      el('button', { type: 'button', class: 'mini-btn red', text: `Hire ฿${fmt(c.cost)}`, 'aria-label': `Hire ${c.name} for ฿${fmt(c.cost)}`, disabled: full || p.berries < c.cost || null, onclick: () => hire(k) })));
-  }
-  if (full && here.length) body.append(el('p', { class: 'note', text: `Your ship is full. Kick someone out to make room.` }));
+  const here = Object.keys(CREW).filter(k => CREW[k].island === p.island && !crewOf(k)).map(k => CREW[k].name);
+  body.append(el('p', { class: 'note', text: here.length ? `Looking for crewmates? ${here.join(' and ')} ${here.length > 1 ? 'are' : 'is'} sitting at the tables. Go talk to them.` : 'Nobody here is looking for a crew right now. Try the bar on another island.' }));
   if (p.crew.length) {
     const cost = 30 * (p.crew.length + 1);
     body.append(el('p', { class: 'note', text: 'Crewmates jump into normal fights sometimes. In raids, everyone fights every turn.' }));
@@ -1075,7 +1066,7 @@ function barMenu(note) {
       onclick: () => feast(cost),
     }));
   }
-  openModal(island().bar, body, { onClose: () => G.mode === 'home' && homeMenu() });
+  openModal(`${island().bar}: Bartender`, body, { onClose: () => G.mode === 'home' && homeMenu() });
 }
 
 function manageCrew(k, confirmKick, note) {
@@ -1106,7 +1097,7 @@ function manageCrew(k, confirmKick, note) {
   if (m.fruit) {
     const f = FRUITS[m.fruit];
     body.append(el('div', { class: 'row gear current' },
-      el('img', { src: iconURL('fruit', { c: f.color, C: f.color2 }), alt: '' }),
+      el('img', { src: fruitURL(m.fruit), alt: '' }),
       el('div', null, el('h3', { text: f.name }), el('p', { text: `Uses ${f.moves.map(v => v.name).join(', ')} in fights.` })),
       null));
   } else if (!p.fruitBag.length) {
@@ -1115,7 +1106,7 @@ function manageCrew(k, confirmKick, note) {
     for (const fk of p.fruitBag) {
       const f = FRUITS[fk];
       body.append(el('div', { class: 'row gear' },
-        el('img', { src: iconURL('fruit', { c: f.color, C: f.color2 }), alt: '' }),
+        el('img', { src: fruitURL(fk), alt: '' }),
         el('div', null, el('h3', null, f.name, el('small', { text: ' in bag' })), el('p', { text: f.desc })),
         el('button', { type: 'button', class: 'mini-btn red', text: 'Feed', 'aria-label': `Feed ${f.name} to ${c.name}`, onclick: () => feedFruit(k, fk) })));
     }
@@ -1153,6 +1144,8 @@ async function hire(k) {
   if (p.berries < c.cost || p.crew.length >= CREW_MAX || crewOf(k)) return;
   p.berries -= c.cost;
   p.crew.push({ key: k, weapon: null, fruit: null, wear: { hat: null, coat: null, charm: null } });
+  OW.npcs = OW.npcs.filter(n => !(n.kind === 'recruit' && n.key === k));
+  OW.trail.push(owTile());
   save();
   closeModal();
   lock(true);
@@ -1200,6 +1193,7 @@ function kickOut(k) {
   p.crew = p.crew.filter(x => x !== m);
   Sfx.play('bad');
   save();
+  refreshRoom();
   const back = (m.weapon ? [WEAPONS[m.weapon].name] : []).concat(crewWorn(m).map(x => x.name));
   barMenu(`${c.name} packs a bag and leaves the crew.${back.length ? ` You got the ${back.join(', ')} back.` : ''}`);
 }
@@ -1450,6 +1444,7 @@ async function arrive(idx) {
   const p = G.p;
   p.island = idx;
   G.aboard = false;
+  G.indoors = null;
   G.mode = 'home';
   G.sail = null;
   G.hero.x = G.hero.tx = 110;
@@ -1463,7 +1458,7 @@ async function arrive(idx) {
 
 // ---------- Devil Fruit awakening ----------
 
-const TRIAL_FX = { rubber: 'flurry', flame: 'fire', frost: 'water', quake: 'rokuogan', smoke: 'smoke', light: 'lightrain', dough: 'mochi', dragon: 'bolt', split: 'bomb', magma: 'magma', string: 'strings', paw: 'beam' };
+const TRIAL_FX = { rubber: 'flurry', flame: 'fire', frost: 'water', quake: 'rokuogan', smoke: 'smoke', light: 'lightrain', dough: 'mochi', dragon: 'bolt', split: 'bomb', magma: 'magma', string: 'strings', paw: 'beam', phoenix: 'fire', ope: 'beam', dark: 'shadows', rumble: 'bolt', sand: 'smoke', flower: 'strings' };
 
 function awakenChecks() {
   const p = G.p;
@@ -2044,6 +2039,12 @@ async function playerTurn(act) {
         p.hp = Math.min(p.maxHp, p.hp + h);
         floatText(heroC().x, 74, '+' + h, '#7cff7a');
       }
+      if (s.heal) {
+        const h = Math.max(1, Math.round(p.maxHp * s.heal));
+        p.hp = Math.min(p.maxHp, p.hp + h);
+        Sfx.play('heal');
+        floatText(heroC().x, 74, '+' + h, '#7cff7a');
+      }
       if (s.recoil) {
         const r = Math.round(p.maxHp * s.recoil);
         p.hp = Math.max(1, p.hp - r);
@@ -2490,7 +2491,12 @@ async function endRound() {
     floatText(foeC().x, foeTop() - 4, d, '#c48ae8');
   }
   if (B.awake > 0) { B.awake--; if (!B.awake) await talk('Your awakening fades... for now.'); }
-  B.sp = Math.min(100, B.sp + 8 + (G.p.race === 'skypian' ? 4 : 0) + wearBonus('sp'));
+  B.sp = Math.min(100, B.sp + 8 + (G.p.race === 'skypian' ? 4 : 0) + wearBonus('sp') + ((fruit() && fruit().sp) || 0));
+  if (fruit() && fruit().regen && G.p.hp > 0 && G.p.hp < G.p.maxHp) {
+    const h = Math.max(1, Math.round(G.p.maxHp * fruit().regen));
+    G.p.hp = Math.min(G.p.maxHp, G.p.hp + h);
+    floatText(heroC().x, 66, '+' + h, '#7cd0ff');
+  }
   if (F.info.suffocate && F.hp > 0) {
     B.sp = Math.max(0, B.sp - 15);
     floatText(hc.x, 60, '-15 SP', '#b06ad0');
@@ -2563,6 +2569,7 @@ async function loseBattle() {
   p.mood = clamp(p.mood - 20, 0, 100);
   save();
   G.aboard = false;
+  G.indoors = null;
   OW.respawn = true;
   homeMenu();
   await talk(`You wake up in the clinic the next morning. The doctor charged ฿${fmt(lost)}.`);
@@ -3195,6 +3202,11 @@ async function fxPlayer(kind, hit, hits, color, opts) {
       await wait(900);
       break;
     }
+    default:
+      // A move without its own animation still lands every hit.
+      await tween(Hr, { ox: 50 }, 140, easeIn);
+      for (let i = 0; i < hits && F.hp > 0; i++) { hit(i); impact(foeC(), [color || '#ffffff', '#ffffff'], 8); await wait(120); }
+      await tween(Hr, { ox: 0 }, 200);
   }
 }
 
@@ -3287,7 +3299,7 @@ function drawTitle() {
 }
 
 function drawPlaceLabel() {
-  const a = G.mode === 'boat' ? 'Your ship' : island().name, b = `Day ${G.p.day}  ${timeName()}`;
+  const a = G.mode === 'boat' ? 'Your ship' : G.indoors === 'bar' ? island().bar : G.indoors === 'shop' ? `${island().name} Shop` : island().name, b = `Day ${G.p.day}  ${timeName()}`;
   const w = Math.max(textWidth(a, 1), textWidth(b, 1)) + 6;
   ctx.globalAlpha = 0.5;
   pxRect(ctx, 2, 2, w, 15, '#05081a');
@@ -3295,7 +3307,7 @@ function drawPlaceLabel() {
   drawText(ctx, a, 5, 4, { color: '#ffffff', shadow: null });
   drawText(ctx, b, 5, 10, { color: '#ffe14a', shadow: null });
   // treasures still hidden in this island's bushes and trash cans
-  const left = G.mode === 'home' ? lootCount(G.p.island).left : 0;
+  const left = G.mode === 'home' && !G.indoors ? lootCount(G.p.island).left : 0;
   if (left) {
     const t = `${left} LEFT`, tw = textWidth(t, 1) + 16;
     ctx.globalAlpha = 0.5;

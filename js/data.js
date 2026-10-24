@@ -603,6 +603,66 @@ const FRUITS = {
       { name: 'Bear Shock', at: 120, sp: 90, mult: 3.5, fx: 'bearshock' },
     ],
   },
+  phoenix: {
+    name: 'Bird-Bird Fruit: Phoenix', color: '#3a9ae8', color2: '#ffd04a', regen: 0.05,
+    desc: 'A mythical Zoan. Blue flames of rebirth heal 5% of your HP every turn, and Flames of Rebirth heals you as it burns the foe.',
+    awaken: { name: 'Immortal Phoenix', look: { h: '#ffd04a', v: '#3a9ae8', b: '#2a6ab8' }, moves: [{ name: 'Blue Flame Wings', sp: 45, mult: 3.0, heal: 0.2, fx: 'bluewings' }, { name: 'Phoenix Rebirth Dive', sp: 70, mult: 5.0, fx: 'phoenixdive' }] },
+    moves: [
+      { name: 'Phoenix Brand', at: 0, sp: 25, mult: 1.8, fx: 'phoenixbrand' },
+      { name: 'Flames of Rebirth', at: 40, sp: 45, mult: 0.9, heal: 0.25, fx: 'rebirth' },
+      { name: 'Phoenix Pyreapple', at: 120, sp: 85, mult: 3.2, burn: 2, fx: 'pyreapple' },
+    ],
+  },
+  ope: {
+    name: 'Op-Op Fruit', color: '#e04a7a', color2: '#ffb0c8', sp: 3,
+    desc: 'Make a ROOM and operate on anything inside it. Focus gives you +3 SP every turn, and Shambles never misses.',
+    awaken: { name: 'Surgeon of Death', look: { h: '#2a2433', v: '#ffe14a', b: '#2a2433' }, moves: [{ name: 'Counter Shock', sp: 45, mult: 3.2, stun: 0.5, fx: 'countershock' }, { name: 'Puncture Wille', sp: 70, mult: 5.2, pierce: true, fx: 'puncturewille' }] },
+    moves: [
+      { name: 'Room: Shambles', at: 0, sp: 25, mult: 1.6, sure: true, fx: 'shambles' },
+      { name: 'Mes', at: 40, sp: 45, mult: 1.3, stun: 0.55, fx: 'mes' },
+      { name: 'Gamma Knife', at: 120, sp: 85, mult: 3.4, pierce: true, fx: 'gammaknife' },
+    ],
+  },
+  dark: {
+    name: 'Dark-Dark Fruit', color: '#3a2a4a', color2: '#8a5ac0', defMult: 1.1,
+    desc: 'Command darkness that swallows everything. A heavy body (+10% defense), and Black Hole drains strength to heal you.',
+    awaken: { name: 'Abyss Emperor', look: { h: '#1b1424', v: '#3a2a4a', b: '#1b1424' }, moves: [{ name: 'Black World', sp: 45, mult: 3.1, drain: 0.25, fx: 'blackworld' }, { name: 'Dark Quake', sp: 70, mult: 5.3, fx: 'darkquake' }] },
+    moves: [
+      { name: 'Black Hole', at: 0, sp: 25, mult: 1.6, drain: 0.2, fx: 'blackhole' },
+      { name: 'Black Vortex', at: 40, sp: 45, mult: 1.2, stun: 0.5, fx: 'kurouzu' },
+      { name: 'Liberation', at: 120, sp: 85, mult: 3.3, fx: 'liberation' },
+    ],
+  },
+  rumble: {
+    name: 'Rumble-Rumble Fruit', color: '#3a7ad8', color2: '#bfe6ff', dodge: 0.12,
+    desc: 'Become living lightning, a Logia. Attacks sometimes pass right through you, and El Thor can stun.',
+    awaken: { name: 'God of Thunder', look: { h: '#ffe14a', v: '#3a7ad8', b: '#ffe14a' }, moves: [{ name: 'Thunder Dragon', sp: 45, mult: 3.2, stun: 0.4, fx: 'thunderdragon' }, { name: '200 Million Volt Amaru', sp: 70, mult: 5.2, fx: 'amaru' }] },
+    moves: [
+      { name: 'Vari', at: 0, sp: 25, mult: 1.8, fx: 'vari' },
+      { name: 'El Thor', at: 40, sp: 50, mult: 1.6, stun: 0.4, fx: 'elthor' },
+      { name: 'Raigo', at: 120, sp: 90, mult: 3.5, fx: 'raigo' },
+    ],
+  },
+  sand: {
+    name: 'Sand-Sand Fruit', color: '#e8c890', color2: '#a8864a', dodge: 0.12,
+    desc: 'Become sand, a Logia. Attacks sometimes pass through you, and Desert Spada dries foes out so they hit softer.',
+    awaken: { name: 'Desert King', look: { h: '#2a2433', v: '#e8c890', b: '#a8864a' }, moves: [{ name: 'Desert Girasole', sp: 45, mult: 3.0, stun: 0.5, fx: 'girasole' }, { name: 'Sables Pesado', sp: 70, mult: 5.0, fx: 'pesado' }] },
+    moves: [
+      { name: 'Sables', at: 0, sp: 25, mult: 1.7, fx: 'sables' },
+      { name: 'Desert Spada', at: 40, sp: 50, mult: 1.5, atkDown: true, fx: 'spada' },
+      { name: 'Ground Death', at: 120, sp: 85, mult: 3.2, fx: 'grounddeath' },
+    ],
+  },
+  flower: {
+    name: 'Flower-Flower Fruit', color: '#9a5ac8', color2: '#ffb0e0', dodge: 0.06,
+    desc: 'Sprout arms and eyes anywhere. Eyes in the back of your head help you dodge (+6%), and Clutch never misses.',
+    awaken: { name: 'Demon Bloom', look: { h: '#2a2433', v: '#9a5ac8', b: '#2a2433' }, moves: [{ name: 'Demonio Fleur', sp: 45, mult: 3.0, sure: true, fx: 'demonio' }, { name: 'Gigantesco Mano: Mil', sp: 70, mult: 5.1, fx: 'milgigante' }] },
+    moves: [
+      { name: 'Clutch', at: 0, sp: 25, mult: 1.7, sure: true, fx: 'clutch' },
+      { name: 'Mil Fleur', at: 40, sp: 50, mult: 0.45, hits: 6, fx: 'milfleur' },
+      { name: 'Gigantesco Mano', at: 120, sp: 85, mult: 3.2, stun: 0.4, fx: 'gigantesco' },
+    ],
+  },
 };
 
 // Picked when starting a new game. `stats` adjust the starting stats; perks and flaws are listed on the picker.
