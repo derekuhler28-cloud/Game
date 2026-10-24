@@ -10,7 +10,7 @@ const STEP_WALK = 0.19, STEP_RUN = 0.11;
 
 const BASE_THEME = {
   gk: 'grass', ground: ['#78c850', '#5aa83c', '#98dc70'], path: ['#dcbc84', '#b8955e', '#c8a66c'], sand: ['#f2dca0', '#dcc07c'],
-  water: ['#3a8ad8', '#8fd0f2', '#2a6ab8'], tall: ['#3f9a3a', '#287a2c', '#6cc24a'],
+  water: ['#3a8ad8', '#8fd0f2', '#2a6ab8'],
   tree: 'oak', leaf: ['#3f9a3a', '#2a7430', '#6cc24a'], trunk: '#7a4a24', roofs: ['#c0453a', '#3b6fd6', '#e0703a'], wall: '#f2e4c0',
   flowers: ['#ff6a6a', '#ffe14a', '#ffffff'], lair: { kind: 'fort', a: '#9aa4b1', b: '#5a6474', c: '#c0453a' },
 };
@@ -19,28 +19,28 @@ const THEMES = {
   marine: { ground: ['#70c060', '#52a046', '#90d878'], path: ['#c9c9c0', '#9a9a92', '#b2b2aa'], roofs: ['#8a5a32', '#3b6fd6', '#2f5fb3'], wall: '#f4f4ee', lair: { kind: 'fort', a: '#f4f4ee', b: '#2f5fb3', c: '#9aa4b1' } },
   town: { gk: 'stone', ground: ['#e8bc88', '#cc9c66', '#f6d0a0'], path: ['#c98a5a', '#a86a3a', '#b87a4a'], tree: 'orange', roofs: ['#8a3a22', '#3b6fd6', '#e0703a'], lair: { kind: 'tent', a: '#d63c2f', b: '#ffe14a', c: '#3b6fd6' } },
   syrup: { ground: ['#82c45a', '#62a442', '#a2dc78'], leaf: ['#4a9a3a', '#2e6e2c', '#78c450'], roofs: ['#8a5a32', '#3b6fd6', '#c0453a'], lair: { kind: 'mansion', a: '#f2eee4', b: '#3b6fd6', c: '#c9a26a' } },
-  baratie: { gk: 'planks', ground: ['#c08a56', '#9a6a3a', '#d8a470'], path: ['#9a6a3a', '#7a4a24', '#8a5a32'], sand: ['#c08a56', '#9a6a3a'], tall: ['#8a9aaa', '#5a6a7a', '#b8c8d8'], tree: 'barrel', edge: true, roofs: ['#2f8a6a', '#3b6fd6', '#f2f2f2'], wall: '#fff6dc', lair: { kind: 'fort', a: '#ffd04a', b: '#5a4a3a', c: '#c0453a' } },
+  baratie: { gk: 'planks', ground: ['#c08a56', '#9a6a3a', '#d8a470'], path: ['#9a6a3a', '#7a4a24', '#8a5a32'], sand: ['#c08a56', '#9a6a3a'], tree: 'barrel', edge: true, roofs: ['#2f8a6a', '#3b6fd6', '#f2f2f2'], wall: '#fff6dc', lair: { kind: 'fort', a: '#ffd04a', b: '#5a4a3a', c: '#c0453a' } },
   reef: { tree: 'palm', alt: 'orange', roofs: ['#2f8a6a', '#3b6fd6', '#e0703a'], lair: { kind: 'fort', a: '#5ab8a0', b: '#2a6a7a', c: '#3a4a5a' } },
   logue: { gk: 'stone', ground: ['#b8b0a0', '#968e80', '#d0c8b8'], path: ['#8a8478', '#6a6458', '#7a7468'], roofs: ['#5a3a2a', '#3b6fd6', '#6a5a4a'], lair: { kind: 'tower', a: '#7a6050', b: '#3a3030', c: '#c0453a' } },
-  drum: { gk: 'snow', ground: ['#eef3fa', '#c8d4e4', '#ffffff'], path: ['#c8d4e4', '#9aaabf', '#b0bfd2'], sand: ['#dfe8f5', '#c0cee0'], tall: ['#d6e2f0', '#a2b4ca', '#ffffff'], tree: 'snowpine', leaf: ['#2a6a4a', '#1a4a34', '#3a8a5a'], roofs: ['#3b6fd6', '#c0453a', '#5a6474'], lair: { kind: 'castle', a: '#9aa4b1', b: '#5a6474', c: '#3b6fd6' } },
-  desert: { gk: 'sand', ground: ['#e9c27b', '#cfa45e', '#f5d79a'], path: ['#c9a87a', '#a8865a', '#b8966a'], sand: ['#f0d090', '#d8b070'], tall: ['#c9a05a', '#8a6a32', '#e8c888'], tree: 'cactus', alt: 'palm', roofs: ['#c0453a', '#3b6fd6', '#d8b070'], wall: '#f2dcb0', lair: { kind: 'castle', a: '#e8c890', b: '#b08a52', c: '#ffd04a' } },
-  sky: { gk: 'cloud', ground: ['#f4f7ff', '#d2dcf2', '#ffffff'], path: ['#ffe9a8', '#e0c070', '#f0d890'], sand: ['#e8eefc', '#c8d4f0'], water: ['#9ad0f5', '#e0f4ff', '#6ab4ec'], tall: ['#dfe8fa', '#b0c0e8', '#ffffff'], tree: 'cloud', edge: true, roofs: ['#ffd04a', '#3b6fd6', '#f08a3a'], lair: { kind: 'tower', a: '#ffd04a', b: '#c9963b', c: '#ffffff' } },
+  drum: { gk: 'snow', ground: ['#eef3fa', '#c8d4e4', '#ffffff'], path: ['#c8d4e4', '#9aaabf', '#b0bfd2'], sand: ['#dfe8f5', '#c0cee0'], tree: 'snowpine', leaf: ['#2a6a4a', '#1a4a34', '#3a8a5a'], roofs: ['#3b6fd6', '#c0453a', '#5a6474'], lair: { kind: 'castle', a: '#9aa4b1', b: '#5a6474', c: '#3b6fd6' } },
+  desert: { gk: 'sand', ground: ['#e9c27b', '#cfa45e', '#f5d79a'], path: ['#c9a87a', '#a8865a', '#b8966a'], sand: ['#f0d090', '#d8b070'], tree: 'cactus', alt: 'palm', roofs: ['#c0453a', '#3b6fd6', '#d8b070'], wall: '#f2dcb0', lair: { kind: 'castle', a: '#e8c890', b: '#b08a52', c: '#ffd04a' } },
+  sky: { gk: 'cloud', ground: ['#f4f7ff', '#d2dcf2', '#ffffff'], path: ['#ffe9a8', '#e0c070', '#f0d890'], sand: ['#e8eefc', '#c8d4f0'], water: ['#9ad0f5', '#e0f4ff', '#6ab4ec'], tree: 'cloud', edge: true, roofs: ['#ffd04a', '#3b6fd6', '#f08a3a'], lair: { kind: 'tower', a: '#ffd04a', b: '#c9963b', c: '#ffffff' } },
   water7: { gk: 'stone', ground: ['#c8d0d8', '#a6aebc', '#dde4ec'], path: ['#aab2c0', '#8a92a2', '#9aa2b2'], roofs: ['#3b6fd6', '#f08a3a', '#c0453a'], lair: { kind: 'fort', a: '#f08a3a', b: '#3b6fd6', c: '#5ab8e8' } },
   enies: { gk: 'stone', ground: ['#f2eee4', '#d6d0c2', '#ffffff'], path: ['#e0c890', '#c0a060', '#d0b478'], tree: 'pillar', roofs: ['#2f5fb3', '#3b6fd6', '#c9b88a'], lair: { kind: 'tower', a: '#f4f0e6', b: '#c9b88a', c: '#2f5fb3' } },
-  thriller: { ground: ['#4e5e54', '#3a4840', '#627266'], path: ['#6a6070', '#4a4250', '#5a5260'], tall: ['#5a4a6a', '#34264a', '#7e6e92'], tree: 'dead', roofs: ['#5a3a6a', '#3a2a4a', '#6a4a5a'], wall: '#b8a8c0', flowers: ['#c0a0ff', '#ffffff', '#9aff9a'], lair: { kind: 'mansion', a: '#6a5a7a', b: '#2a1a3a', c: '#9a8aaa' }, tint: ['#2a1a3a', 0.22] },
+  thriller: { ground: ['#4e5e54', '#3a4840', '#627266'], path: ['#6a6070', '#4a4250', '#5a5260'], tree: 'dead', roofs: ['#5a3a6a', '#3a2a4a', '#6a4a5a'], wall: '#b8a8c0', flowers: ['#c0a0ff', '#ffffff', '#9aff9a'], lair: { kind: 'mansion', a: '#6a5a7a', b: '#2a1a3a', c: '#9a8aaa' }, tint: ['#2a1a3a', 0.22] },
   sabaody: { ground: ['#a8d070', '#86b04e', '#c2e492'], path: ['#b08a5a', '#8a6438', '#9a7448'], tree: 'mangrove', bubbles: true, roofs: ['#c0453a', '#3b6fd6', '#ffd04a'], lair: { kind: 'fort', a: '#c0453a', b: '#ffd04a', c: '#3a2a4a' } },
-  impel: { gk: 'stone', ground: ['#6a5a5a', '#524444', '#7e6e6e'], path: ['#9a3a32', '#6a2a24', '#7a3228'], sand: ['#6a5a5a', '#524444'], tall: ['#8a7a4a', '#5a4a2a', '#b0a060'], tree: 'pillar', dark: true, roofs: ['#5a2a2a', '#3a2a2a', '#4a3a3a'], wall: '#9a8a8a', lair: { kind: 'castle', a: '#5a4a4a', b: '#2a1a1a', c: '#c0453a' }, tint: ['#2a0a0a', 0.22] },
+  impel: { gk: 'stone', ground: ['#6a5a5a', '#524444', '#7e6e6e'], path: ['#9a3a32', '#6a2a24', '#7a3228'], sand: ['#6a5a5a', '#524444'], tree: 'pillar', dark: true, roofs: ['#5a2a2a', '#3a2a2a', '#4a3a3a'], wall: '#9a8a8a', lair: { kind: 'castle', a: '#5a4a4a', b: '#2a1a1a', c: '#c0453a' }, tint: ['#2a0a0a', 0.22] },
   marineford: { gk: 'stone', ground: ['#c9c9c0', '#a8a8a0', '#dcdcd4'], path: ['#9aa4b1', '#7a8494', '#8a94a2'], roofs: ['#2f5fb3', '#3b6fd6', '#5a6474'], wall: '#f4f4ee', lair: { kind: 'fort', a: '#f4f4ee', b: '#2f5fb3', c: '#9aa4b1' } },
-  fishman: { gk: 'sand', ground: ['#f2c8b8', '#d8a898', '#ffe0d0'], path: ['#e8b0c0', '#c88898', '#d8a0b0'], sand: ['#f8d8c8', '#e0b8a8'], water: ['#1a5a8a', '#5ab0e0', '#0a3a5a'], tall: ['#3a8a6a', '#1a5a4a', '#62c08e'], tree: 'coral', bubbles: true, roofs: ['#ff9ab8', '#5ab8e8', '#ffd04a'], wall: '#fff0f4', lair: { kind: 'castle', a: '#ff9ab8', b: '#c05a7a', c: '#ffd04a' }, tint: ['#0a4a6a', 0.2] },
-  punkhazard: { ground: ['#a86a50', '#86503c', '#c08068'], path: ['#7a6a6a', '#5a4a4a', '#6a5a5a'], tall: ['#8a6a5a', '#5a3a2a', '#b08a7a'], tree: 'dead', roofs: ['#3a9a9a', '#3b6fd6', '#c94a2a'], lair: { kind: 'fort', a: '#e8f0f0', b: '#3a9a9a', c: '#c94a2a' } },
+  fishman: { gk: 'sand', ground: ['#f2c8b8', '#d8a898', '#ffe0d0'], path: ['#e8b0c0', '#c88898', '#d8a0b0'], sand: ['#f8d8c8', '#e0b8a8'], water: ['#1a5a8a', '#5ab0e0', '#0a3a5a'], tree: 'coral', bubbles: true, roofs: ['#ff9ab8', '#5ab8e8', '#ffd04a'], wall: '#fff0f4', lair: { kind: 'castle', a: '#ff9ab8', b: '#c05a7a', c: '#ffd04a' }, tint: ['#0a4a6a', 0.2] },
+  punkhazard: { ground: ['#a86a50', '#86503c', '#c08068'], path: ['#7a6a6a', '#5a4a4a', '#6a5a5a'], tree: 'dead', roofs: ['#3a9a9a', '#3b6fd6', '#c94a2a'], lair: { kind: 'fort', a: '#e8f0f0', b: '#3a9a9a', c: '#c94a2a' } },
   dressrosa: { gk: 'stone', ground: ['#e8c898', '#c8a878', '#f8dcb0'], path: ['#c98a5a', '#a86a3a', '#b87a4a'], tree: 'sunflower', roofs: ['#ff8ab0', '#ffd04a', '#c0453a'], flowers: ['#ff6a9a', '#ffe14a', '#ff9a3a'], lair: { kind: 'castle', a: '#ffb0c8', b: '#c05a7a', c: '#ffd04a' } },
-  wholecake: { gk: 'candy', ground: ['#ffc8dc', '#f0a8c4', '#ffe4ee'], path: ['#8a5a3a', '#6a4028', '#a8704a'], sand: ['#fff0d8', '#f0d8b8'], tall: ['#ff9ac0', '#d8689a', '#ffd0e4'], tree: 'candy', roofs: ['#8a5a3a', '#ff9ac0', '#5ab8e8'], wall: '#fff0d8', lair: { kind: 'castle', a: '#fff0d8', b: '#ff9ac0', c: '#8a5a3a' } },
-  volcano: { gk: 'stone', ground: ['#5a4a50', '#463840', '#6c5c62'], path: ['#3a2e34', '#2a1e24', '#4a3e44'], sand: ['#4a3a40', '#3a2a30'], tall: ['#6a4a3a', '#3a2418', '#9a6a4a'], tree: 'lavarock', roofs: ['#3a2a30', '#5a3a3a', '#2a1a20'], wall: '#8a7a7a', lair: { kind: 'castle', a: '#4a3a40', b: '#2a1a20', c: '#ff5a2a' }, tint: ['#7a2a2a', 0.12] },
+  wholecake: { gk: 'candy', ground: ['#ffc8dc', '#f0a8c4', '#ffe4ee'], path: ['#8a5a3a', '#6a4028', '#a8704a'], sand: ['#fff0d8', '#f0d8b8'], tree: 'candy', roofs: ['#8a5a3a', '#ff9ac0', '#5ab8e8'], wall: '#fff0d8', lair: { kind: 'castle', a: '#fff0d8', b: '#ff9ac0', c: '#8a5a3a' } },
+  volcano: { gk: 'stone', ground: ['#5a4a50', '#463840', '#6c5c62'], path: ['#3a2e34', '#2a1e24', '#4a3e44'], sand: ['#4a3a40', '#3a2a30'], tree: 'lavarock', roofs: ['#3a2a30', '#5a3a3a', '#2a1a20'], wall: '#8a7a7a', lair: { kind: 'castle', a: '#4a3a40', b: '#2a1a20', c: '#ff5a2a' }, tint: ['#7a2a2a', 0.12] },
 };
 const theme = scene => Object.assign({}, BASE_THEME, THEMES[scene] || {});
 
 // ---------- map templates (24 x 18) ----------
-// T tree  . ground  # path  , sand  " wild grass  ~ water  = pier  F flowers  r rock
+// T tree  . ground  # path  , sand  " wild ground (enemies roam here)  ~ water  = pier  F flowers  r rock
 // B bar (D door)  M shop (N door)  H house  L boss lair  X boss  b bush  t trash can
 // d training dummy  j job board  o fishing spot  S island sign  s ship  g gangplank  v villager
 
@@ -88,7 +88,7 @@ const MAPS = {
 };
 
 const SOLID_CH = '~sTrBMHLbtdjoSXO';
-const WALK_GROUND = { '#': 'path', 'X': 'path', ',': 'sand', 'S': 'sand', '"': 'tall', '~': 'water', 's': 'water', '=': 'pier', 'g': 'pier', 'o': 'pier' };
+const WALK_GROUND = { '#': 'path', 'X': 'path', ',': 'sand', 'S': 'sand', '~': 'water', 's': 'water', '=': 'pier', 'g': 'pier', 'o': 'pier' };
 
 const MAP_CACHE = new Map();
 
@@ -115,7 +115,7 @@ function islandMap(idx) {
 
 function parseMap(rows, th, key) {
   const h = rows.length, w = rows[0].length;
-  const m = { key, w, h, th, rows, ground: [], solid: new Uint8Array(w * h), obj: new Array(w * h).fill(null), objs: [], villagers: [], bushes: [], lights: [] };
+  const m = { key, w, h, th, rows, ground: [], solid: new Uint8Array(w * h), obj: new Array(w * h).fill(null), objs: [], villagers: [], bushes: [], lights: [], wild: [] };
   const at = (x, y) => (y >= 0 && y < h && x >= 0 && x < w ? rows[y][x] : 'T');
   m.at = at;
   // multi-tile buildings: connected blocks of the same letter (doors count as part of their building)
@@ -162,6 +162,7 @@ function parseMap(rows, th, key) {
       }
       if (ch === 'X') { m.boss = { x, y }; }
       if (ch === 'v') m.villagers.push({ x, y });
+      if (ch === '"') m.wild.push({ x, y });
       if (ch === 'g') { m.gang = { x, y }; m.obj[i] = { type: 'gang' }; }
     }
   }
@@ -193,7 +194,6 @@ function renderMapLayer(m) {
       if (g === 'water') paintWater(c, px, py, th, r);
       else if (g === 'path') paintPath(c, m, x, y, th, r);
       else if (g === 'sand') paintSand(c, px, py, th, r);
-      else if (g === 'tall') paintTall(c, px, py, th);
       else if (g === 'pier') paintPier(c, m, x, y);
       else paintGround(c, px, py, th, r);
       if (g === 'water') paintShore(c, m, x, y, th);
@@ -202,7 +202,7 @@ function renderMapLayer(m) {
   for (let y = 0; y < m.h; y++) {
     for (let x = 0; x < m.w; x++) {
       const ch = m.rows[y][x], px = x * TS, py = y * TS;
-      if (ch === 'F') paintFlowers(c, px, py, th, r);
+      if (ch === 'F' || (ch === '"' && r() < 0.12)) paintFlowers(c, px, py, th, r);
       else if (ch === 'T') paintTree(c, px, py, m.treeKind ? m.treeKind(x, y) : th.tree, th, r);
       else if (ch === 'r') paintRock(c, px, py, th);
       else if (ch === 'd') paintDummy(c, px, py);
@@ -275,22 +275,6 @@ function paintSand(c, x, y, th, r) {
   pxRect(c, x, y, TS, TS, th.sand[0]);
   for (let i = 0; i < 6; i++) pxRect(c, x + (r() * 15 | 0), y + (r() * 15 | 0), 1, 1, th.sand[1]);
   if (r() < 0.25) { pxRect(c, x + 4 + (r() * 8 | 0), y + 4 + (r() * 8 | 0), 2, 1, '#ffffff'); }
-}
-
-function paintTall(c, x, y, th) {
-  const [b, d, l] = th.tall;
-  pxRect(c, x, y, TS, TS, shade(b, 0.15));
-  for (let j = 0; j < 2; j++) {
-    for (let i = 0; i < 2; i++) {
-      const ox = x + i * 8, oy = y + j * 8;
-      pxRect(c, ox, oy + 7, 8, 1, d);
-      for (const [bx, top] of [[0, 3], [2, 1], [4, 2], [6, 3]]) {
-        pxRect(c, ox + bx, oy + top, 2, 7 - top, b);
-        pxRect(c, ox + bx, oy + top, 1, 1, l);
-        pxRect(c, ox + bx + 1, oy + top + 1, 1, 6 - top, d);
-      }
-    }
-  }
 }
 
 function paintWater(c, x, y, th, r) {
@@ -808,11 +792,11 @@ function owLoad(kind) {
   OW.map = kind === 'deck' ? deckMap() : islandMap(G.p.island);
   const s = OW.map.spawn;
   owPlace(s.x, s.y, s.dir);
-  OW.npcs = kind === 'deck' ? deckCrew(OW.map) : villagers(OW.map);
+  OW.npcs = kind === 'deck' ? deckCrew(OW.map) : villagers(OW.map).concat(foes(OW.map));
 }
 
 function owPlace(x, y, dir) {
-  Object.assign(OW, { x, y, dir, mv: null, path: null, goal: null, inside: null, fdir: [] });
+  Object.assign(OW, { x, y, dir, mv: null, path: null, goal: null, inside: null, fdir: [], peaceUntil: G.t + 5 });
   OW.trail = (G.p ? G.p.crew : []).map(() => ({ x, y }));
 }
 const dirTo = (a, b) => (b.x > a.x ? 'right' : b.x < a.x ? 'left' : b.y < a.y ? 'up' : 'down');
@@ -863,7 +847,7 @@ function folkLine(n) {
     beaten ? `You beat ${boss.name}? Drinks are on me tonight!` : `${boss.name} lives up north. Don't go up there unless you're tough!`,
     'Shaking bushes and old trash cans hide all kinds of stuff. Some say even Devil Fruits!',
     `Looking for a crew? The ${isl.bar} is where sailors hang out.`,
-    `The wild grass is crawling with ${ENEMIES[pick(isl.enemies)].name}s. Watch your step!`,
+    `${ENEMIES[isl.enemies[n.i % isl.enemies.length]].name}s prowl the edge of town. Some of them pick fights, so run if you're hurt!`,
     'The job board by the bar always has odd jobs. Steady pay!',
     isl.intro,
   ];
@@ -883,31 +867,152 @@ function crewLine(n) {
   return `${c.name}: "${role}"`;
 }
 
-function updateNpcs(dt) {
+function updateNpcs(dt, free) {
+  const t = owTile();
   for (const n of OW.npcs) {
     if (n.mv) {
-      n.mv.k += dt / 0.36;
+      n.mv.k += dt / n.mv.t;
       if (n.mv.k >= 1) { n.x = n.mv.tx; n.y = n.mv.ty; n.mv = null; }
       continue;
     }
-    if (n.talking) continue;
+    if (n.kind === 'foe' && free) { if (foeThink(n, dt, t)) continue; }
     n.wait -= dt;
     if (n.wait > 0) continue;
     n.wait = 1.5 + Math.random() * 3;
     const dir = pick(['up', 'down', 'left', 'right']);
     n.dir = dir;
+    if (dir === 'left' || dir === 'right') n.face = dir;
     const [dx, dy] = DIRV[dir];
     const tx = n.x + dx, ty = n.y + dy;
-    const t = owTile();
-    if (Math.abs(tx - n.home.x) + Math.abs(ty - n.home.y) > 2) continue;
-    if (!walkable(OW.map, tx, ty) || occupied(tx, ty, n) || (tx === t.x && ty === t.y) || (tx === OW.x && ty === OW.y)) continue;
-    const ch = OW.map.at(tx, ty);
-    if (OW.map.ground[ty * OW.map.w + tx] === 'tall' || 'DNg='.includes(ch)) continue;
-    n.mv = { tx, ty, k: 0 };
+    // stay near home (and head back after a chase)
+    const range = n.kind === 'foe' ? 3 : 2;
+    const far = Math.abs(tx - n.home.x) + Math.abs(ty - n.home.y), now = Math.abs(n.x - n.home.x) + Math.abs(n.y - n.home.y);
+    if (far > range && far >= now) continue;
+    if (!npcCanStep(n, tx, ty, t)) continue;
+    n.mv = { tx, ty, k: 0, t: n.kind === 'foe' ? 0.42 : 0.36 };
   }
+  if (free && OW.key !== 'deck') respawnFoes();
 }
 
-// ---------- the boat deck (12 x 8, fits one screen) ----------
+function npcCanStep(n, tx, ty, t) {
+  if (!walkable(OW.map, tx, ty) || occupied(tx, ty, n) || (tx === t.x && ty === t.y) || (tx === OW.x && ty === OW.y)) return false;
+  return !'DNg='.includes(OW.map.at(tx, ty));
+}
+
+// ---------- roaming enemies ----------
+// A few of the island's enemies wander the wild edges of town. Walk up and press A to fight one;
+// now and then one spots you and charges (run with B to get away). Beaten ones come back later.
+
+const FOE_COUNT = 4;
+const FOE_BEATEN = new Map();
+
+function foeSlots(m) {
+  if (!m.foeSlots) {
+    const r = seeded(m.idx * 389 + 11), spots = m.wild.slice(), out = [];
+    while (out.length < FOE_COUNT && spots.length) {
+      const sp = spots.splice(Math.floor(r() * spots.length), 1)[0];
+      if (walkable(m, sp.x, sp.y) && out.every(o => Math.abs(o.x - sp.x) + Math.abs(o.y - sp.y) >= 4)) out.push(sp);
+    }
+    m.foeSlots = out;
+  }
+  return m.foeSlots;
+}
+
+function foeReady(m, i) {
+  const b = FOE_BEATEN.get(m.idx + ':' + i);
+  return !b || b.day !== G.p.day || G.t - b.t > 45;
+}
+
+function makeFoe(m, i) {
+  const sp = foeSlots(m)[i], list = ISLANDS[m.idx].enemies;
+  return { kind: 'foe', key: list[(i + G.p.day) % list.length], slot: i, x: sp.x, y: sp.y, home: { x: sp.x, y: sp.y }, dir: 'down', face: 'left', mv: null, wait: 1 + Math.random() * 2, i: 100 + i, chase: 0, calm: 0, think: 1 + Math.random() };
+}
+
+function foes(m) {
+  return foeSlots(m).map((_, i) => (foeReady(m, i) ? makeFoe(m, i) : null)).filter(Boolean);
+}
+
+// Bring beaten enemies back once their time is up, out of sight.
+function respawnFoes() {
+  if (G.t < (OW.respawnAt || 0)) return;
+  OW.respawnAt = G.t + 3;
+  const m = OW.map, cam = owCam(), t = owTile();
+  foeSlots(m).forEach((sp, i) => {
+    if (OW.npcs.some(n => n.kind === 'foe' && n.slot === i) || !foeReady(m, i)) return;
+    const sx = sp.x * TS - cam.x, sy = sp.y * TS - cam.y;
+    if (sx > -TS && sx < W && sy > -TS && sy < H) return;
+    if (!walkable(m, sp.x, sp.y) || occupied(sp.x, sp.y) || (sp.x === t.x && sp.y === t.y)) return;
+    OW.npcs.push(makeFoe(m, i));
+  });
+}
+
+const dist1 = (a, b) => Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
+
+// Returns true when the enemy is busy chasing (so it skips its normal wander).
+function foeThink(n, dt, t) {
+  const p = G.p;
+  if (n.chase) {
+    const d = dist1(n, t);
+    if (d === 1 && !OW.mv) { foeAmbush(n); return true; }
+    if (d > 7 || n.chase <= 0.5) { n.chase = 0; n.calm = G.t + 8; return true; }
+    const opts = Object.keys(DIRV).map(dir => ({ dir, x: n.x + DIRV[dir][0], y: n.y + DIRV[dir][1] }))
+      .filter(o => npcCanStep(n, o.x, o.y, t) || (o.x === t.x && o.y === t.y))
+      .sort((a, b) => dist1(a, t) - dist1(b, t));
+    const o = opts[0];
+    if (!o || (o.x === t.x && o.y === t.y) || dist1(o, t) >= d + 1) { n.chase -= dt; return true; }
+    n.dir = o.dir;
+    if (o.dir === 'left' || o.dir === 'right') n.face = o.dir;
+    n.chase -= 1;
+    n.mv = { tx: o.x, ty: o.y, k: 0, t: 0.17 };
+    return true;
+  }
+  n.think -= dt;
+  if (n.think > 0) return false;
+  n.think = 1.2 + Math.random() * 1.2;
+  if (G.mode !== 'home' || OW.inside || G.t < n.calm || G.t < (OW.peaceUntil || 0)) return false;
+  if (p.energy < 10 || isLate() || dist1(n, t) > 4) return false;
+  if (Math.random() > (p.tick >= 6 ? 0.4 : 0.22)) return false;
+  n.chase = 9;
+  n.alert = G.t;
+  n.face = t.x > n.x ? 'right' : t.x < n.x ? 'left' : n.face;
+  Sfx.play('alert');
+  return true;
+}
+
+async function foeAmbush(n) {
+  n.chase = 0;
+  OW.path = null; OW.goal = null; OW.keys = []; OW.held = null;
+  OW.dir = dirTo(OW, n);
+  n.dir = dirTo(n, OW);
+  lock(true);
+  Sfx.play('hurt');
+  shake(2, 250);
+  await wait(400);
+  lock(false);
+  startFoeFight(n, true);
+}
+
+function startFoeFight(n, ambush) {
+  if (!ambush && isLate()) { Sfx.play('bad'); say("It's way past bedtime. Get some sleep!"); return; }
+  n.dir = dirTo(n, OW);
+  fightEnemy(n.key, {
+    intro: F => (ambush
+      ? `${F.night ? 'Night prowler! ' : ''}The ${F.name} (Lv ${F.lvl}) charges at you!`
+      : `You pick a fight with the ${F.name} (Lv ${F.lvl})!${F.night ? ' Night prowlers hit harder.' : ''}`),
+    after: async res => {
+      OW.peaceUntil = G.t + 8;
+      if (res === 'win' && OW.map && OW.map.idx !== undefined) {
+        FOE_BEATEN.set(OW.map.idx + ':' + n.slot, { day: G.p.day, t: G.t });
+        OW.npcs = OW.npcs.filter(v => v !== n);
+      } else {
+        n.chase = 0;
+        n.calm = G.t + 12;
+      }
+    },
+  });
+}
+
+// ---------- the boat deck// ---------- the boat deck (12 x 8, fits one screen) ----------
 // R hull rail  O mast  h helm  m map table  c paint locker  y hammock  w weights  k galley  q aquarium
 
 const DECK_ROWS = [
@@ -1069,6 +1174,7 @@ function owTarget(x, y) {
     return { kind: 'boss', label: G.p.bosses[island().boss] ? 'REMATCH' : 'RAID', act: () => raidMenu() };
   }
   const n = OW.npcs.find(v => v.x === x && v.y === y && !v.mv);
+  if (n && n.kind === 'foe') return { kind: 'foe', label: 'FIGHT', act: () => startFoeFight(n, false) };
   if (n) return { kind: 'npc', label: 'TALK', act: () => npcTalk(n) };
   const o = m.obj[y * m.w + x];
   if (!o) return null;
@@ -1139,8 +1245,8 @@ function owInputDir() {
 
 function owUpdate(dt) {
   if (!OW.map) return;
-  updateNpcs(dt);
   const free = !G.busy && $('modal').hidden && !$('egg');
+  updateNpcs(dt, free);
   if (OW.mv) {
     OW.mv.k += dt / OW.mv.t;
     if (OW.mv.k < 1) return;
@@ -1196,29 +1302,7 @@ function onStep() {
     if (OW.key === 'deck') goAshore(); else boardShip();
     return true;
   }
-  if (m.ground[OW.y * m.w + OW.x] === 'tall') {
-    particles(...owScreen(OW.x, OW.y, 8, 12), 3, { colors: m.th.tall, speed: 25, grav: 60, dir: -Math.PI / 2, spread: 1.2, life: 0.35 });
-    const p = G.p;
-    if (p.energy >= 10 && !isLate() && Math.random() < 0.12) {
-      OW.path = null; OW.goal = null;
-      wildEncounter();
-      return true;
-    }
-  }
   return false;
-}
-
-async function wildEncounter() {
-  lock(true);
-  Sfx.play('alert');
-  bubble('!', 0.9);
-  await wait(650);
-  screenFlash('#ffffff', 0.9);
-  await wait(150);
-  screenFlash('#ffffff', 0.9);
-  await wait(200);
-  lock(false);
-  fightRandom();
 }
 
 // Tap the screen to walk somewhere (or to whatever you tapped).
@@ -1259,7 +1343,7 @@ function owTap(sx, sy) {
   }
 }
 
-// Shortest walk to a goal; wild grass costs extra so tapping somewhere avoids fights when it can.
+// Shortest walk to a goal (doors and the gangplank only count when they're where you're going).
 function findPath(from, isGoal) {
   const m = OW.map, key = (x, y) => y * m.w + x;
   const dist = new Map([[key(from.x, from.y), 0]]), prev = new Map();
@@ -1278,7 +1362,7 @@ function findPath(from, isGoal) {
       if (!walkable(m, nx, ny) || occupied(nx, ny)) continue;
       const o = m.obj[k];
       if ((m.at(nx, ny) === 'g' || (o && o.type === 'door')) && !isGoal(nx, ny)) continue;
-      const nd = d + (m.ground[k] === 'tall' ? 6 : 1);
+      const nd = d + 1;
       if (nd < (dist.has(k) ? dist.get(k) : Infinity)) { dist.set(k, nd); prev.set(k, key(x, y)); open.push([nd, nx, ny]); }
     }
   }
@@ -1353,9 +1437,10 @@ function drawWorld() {
     if (G.p.owned.lanterns) drawDeckLanterns();
   }
   for (const n of OW.npcs) {
+    if (n.kind === 'foe') { actors.push({ y: (n.mv ? n.y + (n.mv.ty - n.y) * n.mv.k : n.y) * TS + 15, draw: () => drawFoe(n, cam) }); continue; }
     const spec = n.kind === 'crew' ? crewSpec(n.m) : n.spec;
     const pos = n.mv ? { x: n.x + (n.mv.tx - n.x) * n.mv.k, y: n.y + (n.mv.ty - n.y) * n.mv.k } : n;
-    const frame = n.mv ? (n.mv.k < 0.5 ? 1 : 0) : 0;
+    const frame = n.mv && n.mv.k < 0.5 ? (n.dir === 'left' || n.dir === 'right' ? 1 : 2) : 0;
     actors.push({ y: pos.y * TS + 15, draw: () => drawWalker(walkSprite(spec, n.dir, frame), pos.x * TS - cam.x + 8, pos.y * TS - cam.y + 15) });
   }
   // crew follow you around islands in a line
@@ -1422,19 +1507,34 @@ function drawWorld() {
   drawLoot(ctx, hs.x, hs.y - 10);
 }
 
-function drawWalker(spr, x, footY, flash) {
-  const m = OW.map, cam = owCam();
-  const tx = Math.floor((x + cam.x) / TS), ty = Math.floor((footY + cam.y) / TS);
-  const inGrass = m.key !== 'deck' && tx >= 0 && ty >= 0 && tx < m.w && ty < m.h && m.ground[ty * m.w + tx] === 'tall';
-  if (!inGrass) {
-    ctx.globalAlpha = 0.28;
-    pxRect(ctx, Math.round(x - 5), Math.round(footY - 1), 10, 2, '#000000');
-    ctx.globalAlpha = 1;
-  }
+function drawWalker(spr, x, footY, flash, flip, lift) {
+  ctx.globalAlpha = 0.28;
+  pxRect(ctx, Math.round(x - 5), Math.round(footY - 1), 10, 2, '#000000');
+  ctx.globalAlpha = 1;
   const img = flash ? variantOf(spr, 'flash') : spr;
-  ctx.drawImage(img, Math.round(x - spr.width / 2), Math.round(footY - spr.height + 1));
-  // tall grass hides the legs of anyone standing in it
-  if (inGrass) ctx.drawImage(m.layer, tx * TS, ty * TS + 9, TS, 7, tx * TS - cam.x, ty * TS - cam.y + 9, TS, 7);
+  const dx = Math.round(x - spr.width / 2), dy = Math.round(footY - spr.height + 1 - (lift || 0));
+  if (flip) {
+    ctx.save();
+    ctx.translate(dx + spr.width, dy);
+    ctx.scale(-1, 1);
+    ctx.drawImage(img, 0, 0);
+    ctx.restore();
+  } else ctx.drawImage(img, dx, dy);
+}
+
+// Enemies: people turn to face where they walk; beasts are drawn side-on, facing left unless flipped.
+function drawFoe(n, cam) {
+  const def = ENEMIES[n.key], spec = def.spr;
+  const pos = n.mv ? { x: n.x + (n.mv.tx - n.x) * n.mv.k, y: n.y + (n.mv.ty - n.y) * n.mv.k } : n;
+  const sx = pos.x * TS - cam.x + 8, sy = pos.y * TS - cam.y + 15;
+  const step = n.mv && n.mv.k < 0.5;
+  if (spec.kind === 'human' || spec.kind === 'brute') {
+    drawWalker(walkSprite(spec, n.dir, step ? (n.dir === 'left' || n.dir === 'right' ? 1 : 2) : 0), sx, sy);
+  } else {
+    const lift = def.flies ? 5 + Math.round(Math.sin(G.t * 6 + n.i) * 2) : step ? 1 : 0;
+    drawWalker(getSprite(spec), sx, sy, false, n.face === 'right', lift);
+  }
+  if (n.chase || G.t - (n.alert || -9) < 0.8) drawBubble(ctx, sx, sy - 20, '!');
 }
 
 function drawBush(b, cam, shaking) {

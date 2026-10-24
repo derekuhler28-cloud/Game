@@ -582,7 +582,8 @@ async function enterGame(cont, secret) {
   await talk(`${p.name} is a nobody ${race().name.toLowerCase()} from Dawn Village. No weapon, no powers, no crew. Just a big dream.`);
   if (race().move) await talk(`As a ${race().name}, you already know one move: ${race().move.name}.`);
   await talk('Walk around with the D-pad (or arrow keys), or tap where you want to go. Press A to talk, search and go inside.');
-  await talk('Search trash cans and shaking bushes for weapons and hidden Devil Fruits. Wild grass is full of enemies to fight.');
+  await talk('Search trash cans and shaking bushes for weapons and hidden Devil Fruits.');
+  await talk('Enemies roam the edges of town. Walk up and press A to fight one, but watch out: some charge at you! Hold B to run away.');
   if (secret) await talk(`Psst... a little bird says the ${FRUITS[secret].name} is hidden somewhere on Dawn Village.`);
   await talk('Hire a crew at the Bar, train at the dummies, and when you feel ready, RAID the island boss up north! (Psst: tap your pirate to chat.)');
   lock(false);
@@ -1656,12 +1657,14 @@ function startRaid(key, lvl) {
   startBattle({ def: BOSSES[key], key, lvl, boss: true });
 }
 
-function fightRandom() {
-  if (!needEnergy(10)) return;
-  const key = pick(island().enemies);
+// A fight with one of the enemies roaming the island.
+function fightEnemy(key, o) {
+  o = o || {};
+  if (!needEnergy(10)) return false;
   const night = G.p.tick >= 6;
   spend(10, 1, 6);
-  startBattle({ def: ENEMIES[key], key, lvl: ENEMIES[key].lvl + randInt(0, 1) + (night ? 2 : 0), night });
+  startBattle({ def: ENEMIES[key], key, lvl: ENEMIES[key].lvl + randInt(0, 1) + (night ? 2 : 0), night, after: o.after, intro: o.intro });
+  return true;
 }
 
 // ---------- battle ----------
@@ -1693,7 +1696,7 @@ function startBattle(o) {
       await talk(`RAID BOSS! ${F.name} (Lv ${lvl}) blocks your path!`);
       await talk(def.intro);
     } else {
-      await talk(`${F.night ? 'Night prowler! ' : ''}A wild ${F.name} (Lv ${lvl}) appears!`);
+      await talk(o.intro ? o.intro(F) : `${F.night ? 'Night prowler! ' : ''}A wild ${F.name} (Lv ${lvl}) appears!`);
     }
     lock(false);
     battleMenu();
