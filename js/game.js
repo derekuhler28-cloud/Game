@@ -183,6 +183,16 @@ function restore(raw) {
   p.clothes = (p.clothes || []).filter(k => CLOTHES[k]);
   p.wear = Object.assign({ hat: null, coat: null, charm: null }, p.wear);
   for (const sl of SLOTS) if (!p.clothes.includes(p.wear[sl])) p.wear[sl] = null;
+  // Each piece is worn by one person at most.
+  const taken = new Set(SLOTS.map(sl => p.wear[sl]).filter(Boolean));
+  for (const m of p.crew) {
+    m.wear = Object.assign({ hat: null, coat: null, charm: null }, m.wear);
+    for (const sl of SLOTS) {
+      const k = m.wear[sl];
+      if (k && (!p.clothes.includes(k) || CLOTHES[k].slot !== sl || taken.has(k))) m.wear[sl] = null;
+      else if (k) taken.add(k);
+    }
+  }
   // Bosses beaten before clothes existed still owe you their signature piece.
   const owed = Object.keys(CLOTHES).filter(k => CLOTHES[k].boss && p.bosses[CLOTHES[k].boss] && !p.clothes.includes(k));
   p.clothes.push(...owed);
@@ -653,7 +663,7 @@ function spend(energy, ticks, food) {
   const p = G.p;
   p.energy = clamp(p.energy - energy, 0, 100);
   p.tick = Math.min(TICKS_PER_DAY, p.tick + ticks);
-  p.food = clamp(p.food - (food > 0 ? food * (p.race === 'mink' ? 1.25 : 1) * (1 - wearBonus('hunger')) : food), 0, 100);
+  p.food = clamp(p.food - (food > 0 ? food * (p.race === 'mink' ? 1.25 : 1) * (1 - teamBonus('hunger')) : food), 0, 100);
   p.mood = clamp(p.mood - ticks, 0, 100);
   if (p.food <= 0 && ticks > 0) {
     p.hp = Math.max(1, p.hp - Math.ceil(p.maxHp * 0.04 * ticks));
@@ -1001,26 +1011,31 @@ function buy(k) {
 
 // ---------- bar & crew ----------
 
-const crewAtk = m => Math.round(3 + G.p.lvl * ROLES[CREW[m.key].role].atk + (m.weapon ? WEAPONS[m.weapon].atk : 0));
-const crewHeal = m => Math.round(4 + G.p.lvl * ROLES[CREW[m.key].role].heal + (m.weapon ? WEAPONS[m.weapon].atk * 0.8 : 0));
-// A crewmate's sprite; one who ate the Dragon-Dragon Fruit is half dragon from then on.
-const CREW_DRAGON = new Map();
-function crewSpec(m) {
-  const spr = CREW[m.key].spr;
-  if (m.fruit !== 'dragon') return spr;
-  if (!CREW_DRAGON.has(m.key)) {
-    CREW_DRAGON.set(m.key, Object.assign({}, spr, {
-      marks: (spr.marks || []).concat(spr.kind === 'brute' ? 'dragonBrute' : 'dragonCrew', 'dragonHorns'),
-      pal: Object.assign({}, spr.pal, spr.head === 'tophat' ? {} : { a: '#f2e6c8' }),
-    }));
+const crewAtk = m => Math.round(3 + G.p.lvl * ROLES[CREW[m.key].role].atk + (m.weapon ? WEAPONS[m.weapon].atk : 0) + crewWearPower(m));
+const crewHeal = m => Math.round(4 + G.p.lvl * ROLES[CREW[m.key].role].heal + ((m.weapon ? WEAPONS[m.weapon].atk : 0) + crewWearPower(m)) * 0.8);
+const NO_WEAR = { hat: null, coat: null, charm: null };
+// A crewmate's sprite in the clothes you gave them; one who ate the Dragon-Dragon Fruit is half dragon from then on.
+const CREW_SPECS = new Map();
+function crewSpec(m, wear) {
+  const w = wear || m.wear || NO_WEAR;
+  const key = [m.key, m.fruit === 'dragon'].concat(SLOTS.map(sl => w[sl] || '')).join('|');
+  if (!CREW_SPECS.has(key)) {
+    let spec = dressCrew(CREW[m.key].spr, w);
+    if (m.fruit === 'dragon') {
+      spec = Object.assign({}, spec, {
+        marks: (spec.marks || []).concat(spec.kind === 'brute' ? 'dragonBrute' : 'dragonCrew', 'dragonHorns'),
+        pal: Object.assign({}, spec.pal, spec.head === 'tophat' ? {} : { a: '#f2e6c8' }),
+      });
+    }
+    CREW_SPECS.set(key, spec);
   }
-  return CREW_DRAGON.get(m.key);
+  return CREW_SPECS.get(key);
 }
 const crewRole = k => `${CREW[k].race} ${ROLES[CREW[k].role].name}`;
 
 function crewKit(m) {
   const r = ROLES[CREW[m.key].role];
-  const gear = [m.weapon ? WEAPONS[m.weapon].name : 'Bare hands'].concat(m.fruit ? FRUITS[m.fruit].name : []).join(' + ');
+  const gear = [m.weapon ? WEAPONS[m.weapon].name : 'Bare hands'].concat(m.fruit ? FRUITS[m.fruit].name : [], crewWorn(m).map(c => c.name)).join(' + ');
   return `${gear}. Power ${crewAtk(m)}${r.heal ? `, heals ${crewHeal(m)}` : ''}.`;
 }
 
@@ -1107,8 +1122,21 @@ function manageCrew(k, confirmKick, note) {
     body.append(el('p', { class: 'note', text: 'A fruit can never be taken back: it is theirs for life.' }));
   }
 
+  body.append(el('h3', { class: 'sect' }, 'Clothes'));
+  if (!p.clothes.length) body.append(el('p', { class: 'note', text: 'No clothes to hand out yet. Raid bosses drop them, shops sell them, and some hide in trash cans and bushes.' }));
+  for (const slot of SLOTS) {
+    for (const ck of p.clothes.filter(x => CLOTHES[x].slot === slot).sort((a, b) => (m.wear[slot] === b) - (m.wear[slot] === a))) {
+      const cl = CLOTHES[ck], holder = clothHolder(ck), on = holder === m;
+      const who = holder === 'you' ? 'you' : holder && !on ? CREW[holder.key].name : null;
+      body.append(el('div', { class: 'row gear' + (on ? ' current' : '') },
+        el('img', { src: spriteURL(crewSpec(m, Object.assign({}, m.wear, { [slot]: ck })), 2), alt: '' }),
+        el('div', null, el('h3', null, cl.name, el('small', { text: ` ${SLOT_NAMES[slot]}${who ? ` - worn by ${who}` : ''}` })), el('p', { text: crewClothStats(cl) })),
+        el('button', { type: 'button', class: 'mini-btn' + (on ? '' : ' red'), text: on ? 'Take back' : 'Give', 'aria-label': `${on ? 'Take back' : 'Give'} ${cl.name} ${on ? 'from' : 'to'} ${c.name}`, onclick: () => giveClothes(k, ck, on) })));
+    }
+  }
+
   if (confirmKick) {
-    body.append(el('p', { text: `Kick ${c.name} out of the crew?${m.weapon ? ` You get the ${WEAPONS[m.weapon].name} back.` : ''}${m.fruit ? ` ${c.name} leaves with the ${FRUITS[m.fruit].name} powers.` : ''}` }));
+    body.append(el('p', { text: `Kick ${c.name} out of the crew?${m.weapon || crewWorn(m).length ? ` You get the ${(m.weapon ? [WEAPONS[m.weapon].name] : []).concat(crewWorn(m).map(x => x.name)).join(', ')} back.` : ''}${m.fruit ? ` ${c.name} leaves with the ${FRUITS[m.fruit].name} powers.` : ''}` }));
     body.append(el('div', { class: 'btn-row' },
       el('button', { type: 'button', class: 'mini-btn red', text: 'Kick out', onclick: () => kickOut(k) }),
       el('button', { type: 'button', class: 'mini-btn', text: 'Keep them', onclick: () => manageCrew(k) })));
@@ -1124,7 +1152,7 @@ async function hire(k) {
   const p = G.p, c = CREW[k];
   if (p.berries < c.cost || p.crew.length >= CREW_MAX || crewOf(k)) return;
   p.berries -= c.cost;
-  p.crew.push({ key: k, weapon: null, fruit: null });
+  p.crew.push({ key: k, weapon: null, fruit: null, wear: { hat: null, coat: null, charm: null } });
   save();
   closeModal();
   lock(true);
@@ -1172,7 +1200,27 @@ function kickOut(k) {
   p.crew = p.crew.filter(x => x !== m);
   Sfx.play('bad');
   save();
-  barMenu(`${c.name} packs a bag and leaves the crew.${m.weapon ? ` You got the ${WEAPONS[m.weapon].name} back.` : ''}`);
+  const back = (m.weapon ? [WEAPONS[m.weapon].name] : []).concat(crewWorn(m).map(x => x.name));
+  barMenu(`${c.name} packs a bag and leaves the crew.${back.length ? ` You got the ${back.join(', ')} back.` : ''}`);
+}
+
+// Hand a piece of clothing to a crewmate (from you, another crewmate, or the wardrobe), or take it back.
+function giveClothes(crewKey, k, back) {
+  const p = G.p, m = crewOf(crewKey), c = CLOTHES[k], name = CREW[crewKey].name;
+  let note;
+  if (back) {
+    m.wear[c.slot] = null;
+    note = `You took the ${c.name} back.`;
+  } else {
+    const from = clothHolder(k);
+    if (from === 'you') takeOff(c.slot);
+    else if (from) from.wear[c.slot] = null;
+    m.wear[c.slot] = k;
+    note = `${name} puts on the ${c.name}.` + (from === 'you' ? ' You take it off and hand it over.' : from ? ` ${CREW[from.key].name} hands it over.` : '');
+  }
+  Sfx.play('select');
+  save();
+  manageCrew(crewKey, false, note);
 }
 
 const FEAST_LINES = {
@@ -2074,7 +2122,7 @@ async function crewTurn() {
   if (B.solo) return;
   for (let i = 0; i < p.crew.length; i++) {
     if (F.hp <= 0) return;
-    if (!F.boss && Math.random() > 0.35) continue;
+    if (!F.boss && Math.random() > crewJoin(p.crew[i])) continue;
     await crewAct(p.crew[i], i);
   }
   if (F.boss && p.owned.cannon && F.hp > 0) {
@@ -2150,7 +2198,7 @@ async function crewAct(m, i) {
     Sfx.play('hit');
     impact(fc, null, 10);
   }
-  hitFoe(1, { atk, sure, critBonus: r.crit, critMult: r.critMult, slash: fx === 'slash', shot: fx === 'shot', logiaHit: !!(w && w.logiaHit) });
+  hitFoe(1, { atk, sure, critBonus: (r.crit || 0) + crewWearCrit(m), critMult: r.critMult, slash: fx === 'slash', shot: fx === 'shot', logiaHit: !!(w && w.logiaHit) });
   if (r.weak && F.hp > 0 && Math.random() < r.weak) { F.weak = Math.max(F.weak, 2); floatText(foeC().x, foeTop() - 12, 'WEAK', '#c48ae8'); }
   await wait(320);
 }
@@ -2459,7 +2507,7 @@ async function winBattle() {
   await tween(F, { alpha: 0, oy: 8 }, 500);
   Sfx.play('win');
   const first = F.boss && !p.bosses[F.key];
-  const xp = Math.round((10 + F.lvl * 7) * (F.boss ? 6 : 1) * (F.night ? 1.5 : 1) * (1 + wearBonus('xp')));
+  const xp = Math.round((10 + F.lvl * 7) * (F.boss ? 6 : 1) * (F.night ? 1.5 : 1) * (1 + teamBonus('xp')));
   let berries = Math.round((15 + F.lvl * 10) * (F.night ? 1.5 : 1));
   let bounty = F.lvl * 100000;
   if (F.boss) {
@@ -2467,7 +2515,7 @@ async function winBattle() {
     bounty = first ? info.bounty : Math.round(info.bounty * 0.08);
   }
   if (crewWith('navigator')) berries = Math.round(berries * 1.2);
-  berries = Math.round(berries * (1 + wearBonus('berries')));
+  berries = Math.round(berries * (1 + teamBonus('berries')));
   p.berries += berries;
   p.bounty += bounty;
   p.mood = clamp(p.mood + 4, 0, 100);

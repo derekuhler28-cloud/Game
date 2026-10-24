@@ -232,6 +232,9 @@ const OVERLAYS = {
   necklace:   [[6, 9, 4, 1, 'q'], [7, 10, 2, 1, 'q']],
   pendant:    [[7, 9, 2, 2, 'q']],
   shades:     [[5, 6, 6, 1, 'Q']],
+  // crewmates' faces sit a row lower at the neck, so collars and scarves move down
+  furCollarCrew: [[4, 9, 8, 1, 'z']],
+  scarfCrew:  [[5, 9, 6, 1, 'q'], [10, 10, 2, 2, 'q']],
   scarf:      [[4, 8, 8, 1, 'q'], [10, 9, 2, 2, 'q']],
   drums:      [[0, 7, 2, 2, 'q'], [14, 7, 2, 2, 'q'], [1, 9, 1, 1, 'q'], [14, 9, 1, 1, 'q']],
 };

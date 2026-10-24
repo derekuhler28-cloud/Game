@@ -99,6 +99,8 @@ function clothIcon(k) {
 
 function putOn(k) {
   const p = G.p, c = CLOTHES[k];
+  const holder = clothHolder(k);
+  if (holder && holder !== 'you') holder.wear[c.slot] = null;
   takeOff(c.slot);
   p.wear[c.slot] = k;
   if (c.hp) { p.maxHp += c.hp; p.hp += c.hp; }
@@ -108,6 +110,57 @@ function takeOff(slot) {
   const p = G.p, c = CLOTHES[p.wear[slot]];
   p.wear[slot] = null;
   if (c && c.hp) { p.maxHp -= c.hp; p.hp = clamp(p.hp, 1, p.maxHp); }
+}
+
+// ---------- clothes on crewmates ----------
+// Crewmates never get hit, so on them a piece turns into attack power (ATK, half of DEF and SPD, a tenth of HP,
+// plus SP, armor and dodge), crit chance, and a better chance to jump into normal fights (SPD and dodge).
+// Team perks (XP, berries, mastery, slower hunger) still help you, at half strength.
+
+const crewWorn = m => (m.wear ? SLOTS.map(sl => CLOTHES[m.wear[sl]]).filter(Boolean) : []);
+const crewPower = c => (c.atk || 0) + Math.round(((c.def || 0) + (c.spd || 0)) / 2 + (c.hp || 0) / 10 + (c.sp || 0) + ((c.armor || 0) + (c.dodge || 0)) * 40);
+const crewWearPower = m => crewWorn(m).reduce((a, c) => a + crewPower(c), 0);
+const crewWearCrit = m => crewWorn(m).reduce((a, c) => a + (c.crit || 0), 0);
+const crewJoin = m => Math.min(0.6, 0.35 + crewWorn(m).reduce((a, c) => a + (c.spd || 0) * 0.015 + (c.dodge || 0), 0));
+const teamBonus = k => wearBonus(k) + 0.5 * G.p.crew.reduce((a, m) => a + crewWorn(m).reduce((b, c) => b + (c[k] || 0), 0), 0);
+
+// Who has piece k on: 'you', a crewmate, or nobody.
+function clothHolder(k) {
+  const p = G.p;
+  if (SLOTS.some(sl => p.wear[sl] === k)) return 'you';
+  return p.crew.find(m => m.wear && SLOTS.some(sl => m.wear[sl] === k)) || null;
+}
+
+function crewClothStats(c) {
+  const out = [], power = crewPower(c);
+  if (power) out.push(`+${power} power`);
+  if (c.crit) out.push(`+${pct(c.crit)} crit`);
+  if (c.spd || c.dodge) out.push('joins more fights');
+  for (const [k, label] of [['xp', 'XP'], ['berries', 'berries'], ['mastery', 'mastery']]) if (c[k]) out.push(`+${pct(c[k] / 2)} ${label} for you`);
+  if (c.hunger) out.push(`you get hungry ${pct(c.hunger / 2)} slower`);
+  return out.join(', ') || 'Looks sharp';
+}
+
+// A crewmate's sprite in their clothes. Regular builds wear everything; big brutes keep their own heads
+// and only show their coat's colors.
+const CREW_MARK = { furCollar: 'furCollarCrew', scarf: 'scarfCrew' };
+function dressCrew(spec, w) {
+  const pieces = SLOTS.map(sl => CLOTHES[w[sl]]).filter(Boolean);
+  if (!pieces.length) return spec;
+  const human = spec.kind === 'human';
+  const out = Object.assign({}, spec, { pal: Object.assign({}, spec.pal), marks: (spec.marks || []).slice() });
+  for (const c of pieces) {
+    const L = c.look || {}, pal = L.pal || {};
+    if (c.slot === 'hat') {
+      if (human && L.head) { out.head = L.head; delete out.pal.x; delete out.pal.X; Object.assign(out.pal, pal); }
+      continue;
+    }
+    if (pal.v) Object.assign(out.pal, { c: pal.v, v: pal.v, C: pal.z || mixColor(pal.v, '#1b1424', 0.2) });
+    for (const ch of ['z', 'q', 'Q']) if (pal[ch]) out.pal[ch] = pal[ch];
+    if (human && L.marks) out.marks.push(...L.marks.map(mk => CREW_MARK[mk] || mk));
+  }
+  if (!out.marks.length) delete out.marks;
+  return out;
 }
 
 async function findClothes(k, from) {
@@ -157,7 +210,7 @@ function gainMastery(key, n) {
   if (!key || key === 'race' || n <= 0) return [];
   const p = G.p;
   const raw = p.mastery[key] || 0;
-  p.mastery[key] = Math.round((raw + n * (p.race === 'human' ? 1.25 : 1) * (1 + wearBonus('mastery'))) * 100) / 100;
+  p.mastery[key] = Math.round((raw + n * (p.race === 'human' ? 1.25 : 1) * (1 + teamBonus('mastery'))) * 100) / 100;
   const before = Math.floor(raw), after = mastery(key);
   return styleMoves(key).filter(m => before < m.at && after >= m.at).map(move => ({ move, key }));
 }
@@ -472,12 +525,13 @@ function clothesSection(body) {
     return;
   }
   for (const slot of SLOTS) {
-    const mine = p.clothes.filter(k => CLOTHES[k].slot === slot).sort((a, b) => (p.wear[b] === b) - (p.wear[a] === a));
+    const mine = p.clothes.filter(k => CLOTHES[k].slot === slot).sort((a, b) => (p.wear[slot] === b) - (p.wear[slot] === a));
     for (const k of mine) {
-      const c = CLOTHES[k], on = p.wear[slot] === k;
+      const c = CLOTHES[k], on = p.wear[slot] === k, holder = clothHolder(k);
+      const crew = holder && holder !== 'you' ? ` - worn by ${CREW[holder.key].name}` : '';
       body.append(el('div', { class: 'row gear' + (on ? ' current' : '') },
         el('img', { src: spriteURL(heroSpec(Object.assign({}, p.wear, { [slot]: k })), 2), alt: '' }),
-        el('div', null, el('h3', null, c.name, el('small', { text: ' ' + SLOT_NAMES[slot] })), el('p', { text: clothStats(c) })),
+        el('div', null, el('h3', null, c.name, el('small', { text: ' ' + SLOT_NAMES[slot] + crew })), el('p', { text: clothStats(c) })),
         el('button', { type: 'button', class: 'mini-btn' + (on ? '' : ' red'), text: on ? 'Take off' : 'Wear', 'aria-label': `${on ? 'Take off' : 'Wear'} ${c.name}`, onclick: () => dress(k, on) })));
     }
   }
@@ -485,10 +539,11 @@ function clothesSection(body) {
 
 function dress(k, off) {
   const c = CLOTHES[k];
+  const from = off ? null : clothHolder(k);
   if (off) takeOff(c.slot); else putOn(k);
   Sfx.play('select');
   save();
-  gearMenu(off ? `You took off the ${c.name}.` : `You put on the ${c.name}. ${clothStats(c)}.`);
+  gearMenu(off ? `You took off the ${c.name}.` : `You put on the ${c.name}.${from && from !== 'you' ? ` ${CREW[from.key].name} hands it over.` : ''} ${clothStats(c)}.`);
 }
 
 function equip(key) {
