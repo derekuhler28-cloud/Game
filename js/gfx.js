@@ -26,6 +26,10 @@ const PAL = {
   b: '#3b6fd6', // blue
   d: '#4a8ad9', // dragon scales
   D: '#2a5a9a', // dark dragon scales
+  X: '#f2f2f2', // hat trim
+  z: '#5a2a6a', // coat trim, capes, fur collars
+  q: '#e6b422', // charms: chains, pendants, scarves
+  Q: '#1b1424', // lenses
 };
 
 // ---------- sprite shapes (16x16, '.' = empty; outline is added automatically) ----------
@@ -57,6 +61,12 @@ const HUMAN_HEADS = {
   tophat:  ['..a..xxxxxx..a..', '..aa.xxxxxx.aa..', '...a.xxwwxx.a...', '...xxxxxxxxxx...', '....hhhhhhhh....'],
   fin:     ['......xx........', '.....xxx........', '....hhhhhhhh....', '...hhhhhhhhhh...', '...hhhhhhhhhh...'],
   swoop:   ['................', '....hhhhhhh.....', '...hhhhhhhhhh...', '...hhhhhhhhhh...', '...hhhhhhh......'],
+  // hats your pirate can wear (x main color, X trim)
+  headband: ['................', '.....h.hh.h.....', '....hhhhhhhh.x..', '...xxxxxxxxxxxx.', '...hhhhhhhhhh...'],
+  crown:   ['....G.G..G.G....', '....GGGGGGGG....', '....GXGGGGXG....', '...hhhhhhhhhh...', '...hhhhhhhhhh...'],
+  silk:    ['.....xxxxxx.....', '.....xxxxxx.....', '.....XXXXXX.....', '...xxxxxxxxxx...', '...hhhhhhhhhh...'],
+  bicorne: ['................', '......xxxx......', '..xxxxxxxxxxxx..', '.xxxxxXXXXxxxxx.', '...hhhhhhhhhh...'],
+  furhat:  ['................', '....xxxxxxxx....', '...xxxxxxxxxx...', '...XXXXXXXXXX...', '...XXXXXXXXXX...'],
 };
 
 const HUMAN_BODY = [
@@ -211,6 +221,19 @@ const OVERLAYS = {
     [3, 12, 1, 1, 'd'], [2, 13, 1, 1, 'd'], [1, 14, 1, 1, 'd'], [0, 15, 2, 1, 'D'], [2, 12, 1, 1, 'D']],
   dragonBrute:    [[1, 8, 1, 4, 'd'], [14, 8, 1, 4, 'd'], [2, 10, 1, 2, 'd'], [13, 10, 1, 2, 'd'], [10, 4, 1, 2, 'd'], [9, 4, 1, 1, 'y'],
     [3, 12, 1, 1, 'd'], [2, 13, 1, 1, 'd'], [1, 14, 1, 1, 'd'], [0, 15, 2, 1, 'D'], [2, 12, 1, 1, 'D']],
+  // clothes for your pirate: coats recolor v (z trim), charms use q (Q lenses)
+  coatClosed: [[6, 9, 4, 2, 'v']],
+  coatLong:   [[3, 9, 1, 2, 'v'], [12, 9, 1, 2, 'v'], [3, 12, 1, 3, 'v'], [12, 12, 1, 3, 'v']],
+  furCollar:  [[4, 8, 8, 1, 'z']],
+  stripes:    [[4, 10, 8, 1, 'z']],
+  flowers:    [[4, 9, 1, 1, 'z'], [10, 9, 1, 1, 'z'], [5, 10, 1, 1, 'z'], [11, 10, 1, 1, 'z']],
+  cape:       [[2, 9, 1, 6, 'z'], [13, 9, 1, 6, 'z'], [3, 12, 1, 3, 'z'], [12, 12, 1, 3, 'z'], [1, 13, 1, 2, 'z'], [14, 13, 1, 2, 'z']],
+  armor:      [[3, 9, 1, 1, 'G'], [12, 9, 1, 1, 'G'], [4, 9, 8, 2, 'G'], [7, 9, 2, 1, 'z']],
+  necklace:   [[6, 9, 4, 1, 'q'], [7, 10, 2, 1, 'q']],
+  pendant:    [[7, 9, 2, 2, 'q']],
+  shades:     [[5, 6, 6, 1, 'Q']],
+  scarf:      [[4, 8, 8, 1, 'q'], [10, 9, 2, 2, 'q']],
+  drums:      [[0, 7, 2, 2, 'q'], [14, 7, 2, 2, 'q'], [1, 9, 1, 1, 'q'], [14, 9, 1, 1, 'q']],
 };
 
 // Hand-held weapons. `grip` is the [x, y] cell that sits in the pirate's hand.
@@ -293,16 +316,19 @@ const ICONS = {
   burst:    ['........', 'rr......', 'Rrhhhhhh', 'RRhhhhhh', 'Rrhhhhhh', 'rr......', '.nnnnnn.', '........'],
   bubble:   ['..wwww..', '.w....w.', 'w..ww..w', 'w.w....w', 'w......w', 'w......w', '.w....w.', '..wwww..'],
   cannon:   ['........', '.......g', 'hhhhhhhh', 'hhhhhhh.', 'hhhhhh..', '.nn.nn..', 'nnnnnn..', '.nn.nn..'],
+  coat:     ['.vv..vv.', 'vvvvvvvv', 'vvvzzvvv', '.vvzzvv.', '.vvzzvv.', '.vvvvvv.', '.vvvvvv.', '........'],
+  charm:    ['q......q', '.q....q.', '..q..q..', '...qq...', '..qQQq..', '..qQQq..', '...qq...', '........'],
 };
 
 // ---------- sprite building ----------
 
 function buildGrid(spec) {
   let rows;
-  if (spec.kind === 'player') rows = HUMAN_HEADS.hair.concat(PLAYER_BODY);
+  if (spec.kind === 'player') rows = HUMAN_HEADS[spec.head || 'hair'].concat(PLAYER_BODY);
   else if (spec.kind === 'human') rows = HUMAN_HEADS[spec.head || 'hair'].concat(HUMAN_BODY);
   else if (spec.kind === 'brute') rows = BRUTE_HEADS[spec.head || 'ape'].concat(BRUTE_BODY);
   else if (spec.kind === 'icon') rows = ICONS[spec.icon];
+  else if (spec.kind === 'hathead') rows = HUMAN_HEADS[spec.head].concat(PLAYER_BODY.slice(0, 3));
   else if (spec.kind === 'weapon') rows = WEAPON_SHAPES[spec.shape].rows;
   else if (spec.kind === 'figure') rows = FIGURES[spec.head].rows;
   else rows = SHAPES[spec.kind];

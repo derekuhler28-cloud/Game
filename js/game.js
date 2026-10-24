@@ -43,7 +43,7 @@ function newPlayer(name, raceKey) {
     day: 1, tick: 0, island: 0, unlocked: 1, bosses: {}, crew: [], fruit: null,
     bag: { meat: 1 }, owned: {}, wins: 0, trained: 0, king: false,
     weapon: null, weapons: [], mastery: {}, explored: {}, fruitMap: dealFruits({}, []), fruitsFound: [], fruitBag: [],
-    ship: { paint: 'wood', head: null }, awakened: {},
+    ship: { paint: 'wood', head: null }, awakened: {}, clothes: [], wear: { hat: null, coat: null, charm: null },
   };
 }
 
@@ -83,7 +83,8 @@ const isLate = () => G.p.tick >= TICKS_PER_DAY;
 const xpNeed = l => Math.round(12 * Math.pow(l, 1.35));
 const moodMult = () => (G.p.mood >= 75 ? 1.1 : G.p.mood <= 25 ? 0.9 : 1);
 const fruit = () => (G.p.fruit ? FRUITS[G.p.fruit] : null);
-const effDef = () => Math.round((G.p.def + ((weapon() && weapon().def) || 0)) * ((fruit() && fruit().defMult) || 1));
+const effDef = () => Math.round((G.p.def + ((weapon() && weapon().def) || 0) + wearBonus('def')) * ((fruit() && fruit().defMult) || 1));
+const effSpd = () => G.p.spd + wearBonus('spd');
 const crewOf = key => G.p.crew.find(m => m.key === key);
 const crewWith = role => G.p.crew.find(m => CREW[m.key].role === role);
 const foodBoost = () => (crewWith('cook') ? 1.5 : 1) * (G.p.owned.galley ? 1.25 : 1);
@@ -179,6 +180,13 @@ function restore(raw) {
   delete p.hat;
   delete p.pirate;
   p.awakened = Object.assign({}, p.awakened);
+  p.clothes = (p.clothes || []).filter(k => CLOTHES[k]);
+  p.wear = Object.assign({ hat: null, coat: null, charm: null }, p.wear);
+  for (const sl of SLOTS) if (!p.clothes.includes(p.wear[sl])) p.wear[sl] = null;
+  // Bosses beaten before clothes existed still owe you their signature piece.
+  const owed = Object.keys(CLOTHES).filter(k => CLOTHES[k].boss && p.bosses[CLOTHES[k].boss] && !p.clothes.includes(k));
+  p.clothes.push(...owed);
+  G.owedClothes = owed.length;
   p.crew = (p.crew || []).filter(m => m && CREW[m.key]).slice(0, CREW_MAX);
   for (const m of p.crew) {
     if (!p.weapons.includes(m.weapon) || m.weapon === p.weapon) m.weapon = null;
@@ -574,7 +582,8 @@ async function enterGame(cont, secret) {
   const p = G.p;
   if (cont) {
     homeMenu();
-    say(`Welcome back, Captain ${p.name}! Day ${p.day} at ${island().name}.`);
+    say(`Welcome back, Captain ${p.name}! Day ${p.day} at ${island().name}.${G.owedClothes ? ` The bosses you already beat left you ${G.owedClothes} piece${G.owedClothes > 1 ? 's' : ''} of clothing. Check Gear!` : ''}`);
+    G.owedClothes = 0;
     return;
   }
   lock(true);
@@ -644,7 +653,7 @@ function spend(energy, ticks, food) {
   const p = G.p;
   p.energy = clamp(p.energy - energy, 0, 100);
   p.tick = Math.min(TICKS_PER_DAY, p.tick + ticks);
-  p.food = clamp(p.food - (food > 0 && p.race === 'mink' ? food * 1.25 : food), 0, 100);
+  p.food = clamp(p.food - (food > 0 ? food * (p.race === 'mink' ? 1.25 : 1) * (1 - wearBonus('hunger')) : food), 0, 100);
   p.mood = clamp(p.mood - ticks, 0, 100);
   if (p.food <= 0 && ticks > 0) {
     p.hp = Math.max(1, p.hp - Math.ceil(p.maxHp * 0.04 * ticks));
@@ -952,7 +961,28 @@ function shopMenu(note) {
     const count = it.once ? null : el('span', { class: 'count', text: 'x' + (p.bag[k] || 0) });
     body.append(itemRow(k, el('div', { class: 'btn-row' }, count, btn)));
   }
+  const clothes = Object.keys(CLOTHES).filter(k => CLOTHES[k].shop === G.p.island);
+  if (clothes.length) body.append(el('h3', { class: 'sect', text: 'Clothes' }));
+  for (const k of clothes) {
+    const c = CLOTHES[k], owned = p.clothes.includes(k), on = p.wear[c.slot] === k;
+    body.append(el('div', { class: 'row' },
+      el('img', { src: spriteURL(clothIcon(k), 3), alt: '' }),
+      el('div', null, el('h3', null, c.name, el('small', { text: ' ' + SLOT_NAMES[c.slot] })), el('p', { text: clothStats(c) })),
+      owned
+        ? (on ? el('span', { class: 'count', text: 'Wearing' }) : el('button', { type: 'button', class: 'mini-btn red', text: 'Wear', 'aria-label': `Wear ${c.name}`, onclick: () => { putOn(k); Sfx.play('select'); save(); shopMenu(`You put on the ${c.name}.`); } }))
+        : el('button', { type: 'button', class: 'mini-btn', text: '฿' + fmt(c.price), 'aria-label': `Buy ${c.name} for ฿${fmt(c.price)}`, disabled: p.berries < c.price || null, onclick: () => buyClothes(k) })));
+  }
   openModal('Shop', body, { onClose: () => G.mode === 'home' && homeMenu() });
+}
+
+function buyClothes(k) {
+  const p = G.p, c = CLOTHES[k];
+  if (p.berries < c.price || p.clothes.includes(k)) return;
+  p.berries -= c.price;
+  p.clothes.push(k);
+  Sfx.play('coin');
+  save();
+  shopMenu(`Bought the ${c.name}! Tap Wear to put it on. You have ฿${fmt(p.berries)} left.`);
 }
 
 function buy(k) {
@@ -1568,13 +1598,14 @@ function wantedMenu(confirmReset) {
     el('div', { class: 'pbounty', text: '฿ ' + fmt(p.bounty) + ' -' }),
     el('div', { class: 'ptitle', text: pirateTitle(p.bounty) })));
   const hakiNext = p.haki < HAKI.armament ? `Armament at ${HAKI.armament}` : p.haki < HAKI.observation ? `Observation at ${HAKI.observation}` : p.haki < HAKI.conqueror ? `Conqueror's at ${HAKI.conqueror}` : 'All awakened';
-  const stats = [['LV', p.lvl], ['HP', p.maxHp], ['HAKI', p.haki], ['ATK', effAtk()], ['DEF', effDef()], ['SPD', p.spd]];
+  const stats = [['LV', p.lvl], ['HP', p.maxHp], ['HAKI', p.haki], ['ATK', effAtk()], ['DEF', effDef()], ['SPD', effSpd()]];
   body.append(el('div', { class: 'statgrid' }, stats.map(([k, v]) => el('div', null, el('b', { text: k }), el('span', { text: String(v) })))));
   const facts = [
     ['XP', `${p.xp}/${xpNeed(p.lvl)} to Lv ${p.lvl + 1}`],
     ['Race', race().name],
     ['Weapon', weapon() ? weapon().name : 'Bare fists'],
     ['Fruit', fruit() ? fruit().name : 'None yet'],
+    ['Wearing', worn().length ? worn().map(c => c.name).join(', ') : 'Just the clothes on your back'],
     ['Haki', hakiNext],
     ['Crew', p.crew.length ? p.crew.map(m => CREW[m.key].name).join(', ') : 'Nobody yet'],
     ['Awakened', Object.keys(p.awakened).length ? Object.keys(p.awakened).map(k => FRUITS[k].awaken.name).join(', ') : 'Not yet'],
@@ -1620,7 +1651,7 @@ function raidMenu() {
     el('div', null, el('h3', { text: `${def.name} - Lv ${lvl}` }), el('p', { text: def.intro })),
     null));
   const facts = [['Level', beaten ? `Rematch #${beaten}, stronger` : `${lvl - (key === 'grizzle' ? 1 : 2)}+ suggested (you: ${p.lvl})`]];
-  if (!beaten && def.drop) facts.push(['Loot', WEAPONS[def.drop].name + (key === 'grizzle' ? ' + ???' : '')]);
+  if (!beaten && def.drop) facts.push(['Loot', WEAPONS[def.drop].name + (bossWear(key) ? ` + ${CLOTHES[bossWear(key)].name}` : '')]);
   if (def.logia) facts.push(['Logia', p.haki >= HAKI.armament ? 'Use Armament Haki to land hits' : `Hits pass through. Get Haki ${HAKI.armament} or Water Barrels`]);
   if (def.element === 'lightning' && p.fruit === 'rubber') facts.push(['Rubber', "Lightning can't hurt you"]);
   for (const t in TWIST_TIPS) if (def[t]) facts.push(TWIST_TIPS[t]);
@@ -1784,7 +1815,7 @@ function hitFoe(mult, o) {
   const B = G.battle, F = B.F, p = G.p;
   if (F.hp <= 0) return 0;
   const sight = F.info.futureSight ? (p.haki >= HAKI.observation ? 0.12 : 0.4) : 0;
-  const dodge = clamp(0.04 + (F.spd - p.spd) * 0.012, 0.02, 0.2) + (F.info.dodge || 0) + sight;
+  const dodge = clamp(0.04 + (F.spd - effSpd()) * 0.012, 0.02, 0.2) + (F.info.dodge || 0) + sight;
   if (!F.freeze && !F.stun && !o.sure && Math.random() < dodge) {
     if (sight && !B.dodgeHint) { B.dodgeHint = true; B.note = p.haki >= HAKI.observation ? `${F.name} sees the future, but your Observation Haki reads him right back!` : `${F.name} saw that coming! He dodges almost everything unless you have Observation Haki (${HAKI.observation} Haki).`; }
     if (F.info.dodge && !B.dodgeHint) { B.dodgeHint = true; B.note = `${F.name} vanishes and reappears behind you! Sure-hit moves, stuns and freezes pin him down.`; }
@@ -1797,7 +1828,7 @@ function hitFoe(mult, o) {
   if (!o.atk && p.race === 'mink' && (p.tick >= 6 || F.night)) atk *= 1.15;
   if (!o.atk && p.race === 'fishman' && (B.scene === 'desert' || B.scene === 'sky')) atk *= 0.9;
   let dmg = atk * mult * rand(0.9, 1.1) - (o.pierce ? 0 : F.defense * 0.5);
-  const crit = Math.random() < clamp(0.05 + p.spd * 0.003, 0.05, 0.3) + (o.critBonus || 0);
+  const crit = Math.random() < clamp(0.05 + effSpd() * 0.003, 0.05, 0.3) + (o.critBonus || 0) + (o.atk ? 0 : wearBonus('crit'));
   if (crit) dmg *= o.critMult || 1.6;
   if (F.info.armor && F.phase === 1 && !o.pierce) {
     dmg *= 1 - F.info.armor;
@@ -1850,9 +1881,10 @@ function hitFoe(mult, o) {
 function hitPlayer(mult, o) {
   o = o || {};
   const B = G.battle, F = B.F, p = G.p;
-  let dodge = clamp(0.04 + (p.spd - F.spd) * 0.01, 0.02, 0.22);
+  let dodge = clamp(0.04 + (effSpd() - F.spd) * 0.01, 0.02, 0.22);
   if (p.haki >= HAKI.observation) dodge += 0.12;
   if (fruit() && fruit().dodge) dodge += fruit().dodge;
+  dodge += wearBonus('dodge');
   if (p.race === 'skypian') dodge += 0.1;
   if (o.big) dodge *= 0.5;
   const hc = heroC();
@@ -1873,6 +1905,7 @@ function hitPlayer(mult, o) {
   if (fruit() && fruit().guard) dmg *= 1 - fruit().guard;
   if (B.awake > 0) dmg *= 0.75;
   if (B.guard) dmg *= o.big ? 0.3 : 0.5;
+  dmg *= 1 - wearBonus('armor');
   dmg = Math.max(1, Math.round(dmg));
   p.hp = Math.max(0, p.hp - dmg);
   G.hero.flash = 0.15;
@@ -1978,7 +2011,7 @@ async function playerTurn(act) {
   } else if (act.type === 'item') {
     await useBattleItem(act.item);
   } else if (act.type === 'run') {
-    const chance = clamp(0.55 + (p.spd - F.spd) * 0.04, 0.2, 0.95);
+    const chance = clamp(0.55 + (effSpd() - F.spd) * 0.04, 0.2, 0.95);
     if (Math.random() < chance) {
       Sfx.play('miss');
       await tween(G.hero, { ox: -70, alpha: 0 }, 400, easeIn);
@@ -2409,7 +2442,7 @@ async function endRound() {
     floatText(foeC().x, foeTop() - 4, d, '#c48ae8');
   }
   if (B.awake > 0) { B.awake--; if (!B.awake) await talk('Your awakening fades... for now.'); }
-  B.sp = Math.min(100, B.sp + 8 + (G.p.race === 'skypian' ? 4 : 0));
+  B.sp = Math.min(100, B.sp + 8 + (G.p.race === 'skypian' ? 4 : 0) + wearBonus('sp'));
   if (F.info.suffocate && F.hp > 0) {
     B.sp = Math.max(0, B.sp - 15);
     floatText(hc.x, 60, '-15 SP', '#b06ad0');
@@ -2426,7 +2459,7 @@ async function winBattle() {
   await tween(F, { alpha: 0, oy: 8 }, 500);
   Sfx.play('win');
   const first = F.boss && !p.bosses[F.key];
-  const xp = Math.round((10 + F.lvl * 7) * (F.boss ? 6 : 1) * (F.night ? 1.5 : 1));
+  const xp = Math.round((10 + F.lvl * 7) * (F.boss ? 6 : 1) * (F.night ? 1.5 : 1) * (1 + wearBonus('xp')));
   let berries = Math.round((15 + F.lvl * 10) * (F.night ? 1.5 : 1));
   let bounty = F.lvl * 100000;
   if (F.boss) {
@@ -2434,6 +2467,7 @@ async function winBattle() {
     bounty = first ? info.bounty : Math.round(info.bounty * 0.08);
   }
   if (crewWith('navigator')) berries = Math.round(berries * 1.2);
+  berries = Math.round(berries * (1 + wearBonus('berries')));
   p.berries += berries;
   p.bounty += bounty;
   p.mood = clamp(p.mood + 4, 0, 100);
@@ -2514,6 +2548,8 @@ async function bossAftermath(key) {
   }
   const drop = BOSSES[key].drop;
   if (drop && !p.weapons.includes(drop)) await findWeapon(drop, BOSSES[key].name);
+  const wear = bossWear(key);
+  if (wear && !p.clothes.includes(wear)) await findClothes(wear, BOSSES[key].name);
   if (idx + 1 < ISLANDS.length && p.unlocked < idx + 2) {
     p.unlocked = idx + 2;
     if (key === 'smoker') {

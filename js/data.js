@@ -428,6 +428,59 @@ const FIST_MOVES = [
 ];
 
 // Every island hides at least one fruit (shuffled every new game; a few hide a second). Only one can ever be eaten.
+// Clothes for your pirate: a hat, a coat and a charm. Each piece comes from one place: a raid boss drops it the
+// first time you beat them (boss), an island shop sells it (shop: island index, price), or it hides in an island's
+// trash cans and shaking bushes (find: island index). atk/def/spd/hp add to your stats. Perks: crit and dodge
+// chance, armor (less damage taken), sp (extra SP every turn), xp, berries and mastery bonuses, and hunger
+// (food lasts longer). look: hats swap your head for a HUMAN_HEADS shape (x main, X trim); coats recolor v and
+// add marks (z trim); charms add marks (q metal, Q lenses).
+const CLOTHES = {
+  headband:      { name: 'Cloth Headband', slot: 'hat', shop: 0, price: 150, atk: 1, look: { head: 'headband', pal: { x: '#d63c2f' } } },
+  luckycoin:     { name: 'Lucky Coin', slot: 'charm', shop: 0, price: 300, berries: 0.1, look: { marks: ['pendant'], pal: { q: '#e6b422' } } },
+  sailorshirt:   { name: 'Sailor Shirt', slot: 'coat', shop: 1, price: 400, def: 2, hp: 10, look: { pal: { v: '#f2f2f2', z: '#2f5fb3' }, marks: ['coatClosed', 'stripes'] } },
+  jugglervest:   { name: "Juggler's Vest", slot: 'coat', shop: 2, price: 700, spd: 1, crit: 0.03, look: { pal: { v: '#7a4ac0', z: '#ffe14a' }, marks: ['flowers'] } },
+  chefwhites:    { name: "Chef's Whites", slot: 'coat', shop: 4, price: 900, hp: 15, hunger: 0.25, look: { pal: { v: '#f4f4ee' }, marks: ['coatClosed'] } },
+  skullbandana:  { name: 'Skull Bandana', slot: 'hat', shop: 6, price: 1200, atk: 3, look: { head: 'bandana', pal: { x: '#2a2433' } } },
+  leatherjacket: { name: 'Leather Jacket', slot: 'coat', shop: 6, price: 1600, def: 4, hp: 20, look: { pal: { v: '#6a4428' }, marks: ['coatClosed', 'coatLong'] } },
+  furhat:        { name: 'Fur Hat', slot: 'hat', shop: 7, price: 1800, hp: 40, look: { head: 'furhat', pal: { x: '#8a5a3a', X: '#f2eee4' } } },
+  turban:        { name: 'Desert Turban', slot: 'hat', shop: 8, price: 2400, spd: 3, look: { head: 'turban', pal: { x: '#f2eee4' } } },
+  goggles:       { name: 'Shipwright Goggles', slot: 'hat', shop: 10, price: 3500, mastery: 0.15, look: { head: 'goggles', pal: { x: '#6a4428' } } },
+  bubblecharm:   { name: 'Bubble Charm', slot: 'charm', shop: 13, price: 6000, xp: 0.15, look: { marks: ['pendant'], pal: { q: '#bfe6ff' } } },
+  gladhelm:      { name: 'Gladiator Helm', slot: 'hat', shop: 18, price: 9000, def: 8, hp: 40, look: { head: 'helmet', pal: { x: '#9aa4b1' } } },
+  candychain:    { name: 'Candy Necklace', slot: 'charm', shop: 19, price: 12000, sp: 3, look: { marks: ['necklace'], pal: { q: '#ff8ab0' } } },
+  oldcape:       { name: 'Tattered Cape', slot: 'coat', find: 3, hp: 25, look: { pal: { z: '#a0302a' }, marks: ['cape'] } },
+  tangerine:     { name: 'Tangerine Charm', slot: 'charm', find: 5, hp: 15, hunger: 0.15, look: { marks: ['pendant'], pal: { q: '#ff9a2a' } } },
+  skyscarf:      { name: 'Sky Scarf', slot: 'charm', find: 9, dodge: 0.04, look: { marks: ['scarf'], pal: { q: '#7ad0ff' } } },
+  officercoat:   { name: 'Marine Officer Coat', slot: 'coat', find: 11, def: 6, hp: 30, look: { pal: { v: '#f4f4ee' }, marks: ['coatClosed', 'coatLong'] } },
+  bandages:      { name: 'Zombie Bandages', slot: 'hat', find: 12, hp: 50, look: { head: 'bandana', pal: { x: '#e8e2d0' } } },
+  stripes:       { name: 'Prisoner Stripes', slot: 'coat', find: 14, armor: 0.05, hunger: 0.2, look: { pal: { v: '#f2f2f2', z: '#2a2433' }, marks: ['coatClosed', 'stripes'] } },
+  herocap:       { name: "Marine Hero's Cap", slot: 'hat', find: 15, atk: 6, crit: 0.03, look: { head: 'cap', pal: { x: '#2f5fb3' } } },
+  pearls:        { name: 'Pearl Necklace', slot: 'charm', find: 16, xp: 0.15, look: { marks: ['necklace'], pal: { q: '#fff6dc' } } },
+  hazmat:        { name: 'Hazmat Goggles', slot: 'hat', find: 17, armor: 0.06, hp: 30, look: { head: 'goggles', pal: { x: '#e9b43a' } } },
+  beastcape:     { name: 'Beast Pirate Cape', slot: 'coat', find: 20, atk: 10, hp: 50, look: { pal: { z: '#2a2433' }, marks: ['cape'] } },
+  banditbandana: { name: 'Bandit Bandana', slot: 'hat', boss: 'grizzle', atk: 2, crit: 0.03, look: { head: 'bandana', pal: { x: '#b23a3a' } } },
+  captaincoat:   { name: "Ironjaw's Captain Coat", slot: 'coat', boss: 'ironjaw', def: 3, hp: 15, look: { pal: { v: '#f4f4ee', z: '#2f5fb3' }, marks: ['coatClosed', 'coatLong'] } },
+  clownhat:      { name: "Buggy's Captain Hat", slot: 'hat', boss: 'buggy', atk: 2, berries: 0.2, look: { head: 'bicorne', pal: { x: '#d63c2f', X: '#ffe14a' } } },
+  kuroglasses:   { name: "Kuro's Glasses", slot: 'charm', boss: 'kuro', spd: 2, dodge: 0.05, look: { marks: ['shades'], pal: { Q: '#bfe6ff' } } },
+  goldarmor:     { name: "Krieg's Gold Armor", slot: 'coat', boss: 'krieg', def: 6, armor: 0.08, look: { pal: { v: '#c9a26a', z: '#d63c2f' }, marks: ['armor'] } },
+  sharktooth:    { name: 'Shark-Tooth Necklace', slot: 'charm', boss: 'arlong', atk: 4, crit: 0.04, look: { marks: ['necklace'], pal: { q: '#f2f2f2' } } },
+  smokerjacket:  { name: "Smoker's Jacket", slot: 'coat', boss: 'smoker', def: 4, hp: 40, look: { pal: { v: '#3a5a8a', z: '#f2eee4' }, marks: ['coatClosed', 'coatLong', 'furCollar'] } },
+  wapolcrown:    { name: "Wapol's Crown", slot: 'hat', boss: 'wapol', hp: 30, hunger: 0.3, look: { head: 'crown', pal: { X: '#d63c2f' } } },
+  furcoat:       { name: 'Desert King Fur Coat', slot: 'coat', boss: 'sandor', atk: 5, def: 4, look: { pal: { v: '#2a2433', z: '#c9a26a' }, marks: ['coatClosed', 'coatLong', 'furCollar'] } },
+  thunderdrums:  { name: 'Thunder Drums', slot: 'charm', boss: 'voltz', sp: 4, look: { marks: ['drums'], pal: { q: '#e6b422' } } },
+  supershirt:    { name: 'SUPER Hawaiian Shirt', slot: 'coat', boss: 'franky', spd: 3, hp: 30, look: { pal: { v: '#3a8ad8', z: '#ffe14a' }, marks: ['flowers'] } },
+  cp9tophat:     { name: 'CP9 Top Hat', slot: 'hat', boss: 'lucci', spd: 4, dodge: 0.05, look: { head: 'silk', pal: { x: '#2a2433', X: '#f2f2f2' } } },
+  shadowcape:    { name: 'Shadow Cape', slot: 'coat', boss: 'moria', hp: 60, armor: 0.08, look: { pal: { z: '#4a2a6a' }, marks: ['cape'] } },
+  admiralshades: { name: 'Admiral Shades', slot: 'charm', boss: 'kizaru', spd: 5, crit: 0.06, look: { marks: ['shades'], pal: { Q: '#e6b422' } } },
+  wardenhelm:    { name: "Warden's Horned Helm", slot: 'hat', boss: 'magellan', def: 8, armor: 0.08, look: { head: 'helmet', pal: { x: '#5a2a6a' } } },
+  admiralcoat:   { name: "Admiral's Coat", slot: 'coat', boss: 'akainu', atk: 8, def: 6, look: { pal: { v: '#c0453a', z: '#f4f4ee' }, marks: ['coatClosed', 'coatLong', 'furCollar'] } },
+  fishbandana:   { name: 'New Fish-Man Bandana', slot: 'hat', boss: 'hody', atk: 8, crit: 0.05, look: { head: 'bandana', pal: { x: '#2a6a9a' } } },
+  labcoat:       { name: "Caesar's Lab Coat", slot: 'coat', boss: 'caesar', hp: 30, mastery: 0.3, look: { pal: { v: '#f4f4ee', z: '#3a9a9a' }, marks: ['coatClosed', 'coatLong'] } },
+  pinkfeathers:  { name: 'Pink Feather Coat', slot: 'coat', boss: 'doflamingo', atk: 9, spd: 5, look: { pal: { v: '#ff8ab0', z: '#ffb0c8' }, marks: ['coatLong', 'furCollar'] } },
+  mochiscarf:    { name: "Katakuri's Scarf", slot: 'charm', boss: 'katakuri', spd: 5, dodge: 0.08, look: { marks: ['scarf'], pal: { q: '#7a2a3a' } } },
+  dragonhelm:    { name: 'Dragon Horn Helm', slot: 'hat', boss: 'drakko', atk: 12, hp: 80, look: { head: 'horns', pal: { x: '#f2e6c8' } } },
+};
+
 const FRUIT_PRICE = 4000;
 const FRUITS = {
   rubber: {

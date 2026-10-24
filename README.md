@@ -22,6 +22,7 @@ Secret: tap the word "Choose" in the race picker's title. Every Devil Fruit circ
 Every island is a little town you walk around, old-handheld style. Use the on-screen **D-pad** (or arrow keys / WASD), or just tap where you want to go. **A** (Space, Enter or Z) talks, fights, searches, reads and goes inside; hold **B** (Shift or X) to run. Your crew follows you in a line.
 
 - **Search**: dig through **trash cans** and **shaking bushes** for hidden weapons and the island's Devil Fruit, plus berries, food, supplies, ambushes and mentors. Each trash can can be searched once a day, and a few different bushes shake every morning. The chest in the top corner shows how many secrets are left.
+- **Clothes**: wear a hat, a coat and a charm, each with its own boost (stats, crit or dodge chance, less damage taken, extra SP, more XP, berries or mastery, or slower hunger). Every raid boss drops a signature piece the first time you beat them, shops sell some, and a few hide in trash cans and bushes. Put them on and take them off in Gear (or right in the shop); your pirate only changes looks when you choose to wear something.
 - **Gear**: equip weapons and see every move you have unlocked or are working toward. Found fruits can be eaten (only one, ever), kept, or sold.
 - **Mastery**: each weapon, your fists, and your Devil Fruit have their own mastery. Using them in fights, winning with them, and practicing with Drills raises mastery and unlocks their 2nd and 3rd moves.
 - **Train**: walk up to a training dummy (or the weights on your ship). A timing mini-game: Stop the marker in the gold zone (dead center is PERFECT) to raise ATK, DEF/HP, SPD or Haki (each stat has a limit that rises with your level), or do Drills and Fruit Power practice for mastery.
@@ -36,6 +37,14 @@ Every island is a little town you walk around, old-handheld style. Use the on-sc
 - **Reverse Mountain**: after you beat Smoker in Logue Town, the sea chart lets you cross the Red Line. The current carries your ship UP the mountain and drops it down the waterfall into the Grand Line.
 - **Awakening**: much later in the game, your Devil Fruit can awaken (Gear 5 for the Rubber fruit, Awakened Dough, Awakened Strings, and so on). You need 300 fruit mastery, level 55, Conqueror's Haki, and to have beaten Admiral Akainu at Marineford. Then the Gear menu offers the Awakening Trial: a solo fight against your fruit's own Will. Win it, and in battle you can **Awaken** for 3 turns: you hit 40% harder, take 25% less damage, change color, and can use two ultimate moves.
 - **Moves**: every move has its own animation and calls its name in a banner, and a weapon's plain attack shows that weapon swinging, stabbing, smashing or firing.
+
+## Clothes
+
+| Where | Hats | Coats | Charms |
+| --- | --- | --- | --- |
+| Raid bosses | Bandit Bandana (Grizzle), Buggy's Captain Hat, Wapol's Crown, CP9 Top Hat (Lucci), Warden's Horned Helm (Magellan), New Fish-Man Bandana (Hody), Dragon Horn Helm (Drakko) | Ironjaw's Captain Coat, Krieg's Gold Armor, Smoker's Jacket, Desert King Fur Coat (Sandor), SUPER Hawaiian Shirt (Franky), Shadow Cape (Moria), Admiral's Coat (Akainu), Caesar's Lab Coat, Pink Feather Coat (Doflamingo) | Kuro's Glasses, Shark-Tooth Necklace (Arlong), Thunder Drums (Voltz), Admiral Shades (Kizaru), Katakuri's Scarf |
+| Shops | Cloth Headband (Dawn Village), Skull Bandana (Logue Town), Fur Hat (Drum), Desert Turban (Sandora), Shipwright Goggles (Water 7), Gladiator Helm (Dressrosa) | Sailor Shirt (Shell Port), Juggler's Vest (Orange Town), Chef's Whites (Baratie), Leather Jacket (Logue Town) | Lucky Coin (Dawn Village), Bubble Charm (Sabaody), Candy Necklace (Whole Cake) |
+| Hidden | Zombie Bandages (Thriller Bark), Marine Hero's Cap (Marineford), Hazmat Goggles (Punk Hazard) | Tattered Cape (Syrup Village), Marine Officer Coat (Enies Lobby), Prisoner Stripes (Impel Down), Beast Pirate Cape (Last Isle) | Tangerine Charm (Arlong Park), Sky Scarf (Cloud Isle), Pearl Necklace (Fish-Man Island) |
 
 ## Crew roles
 

@@ -8,7 +8,7 @@ const PLAYER_PAL = { v: '#cfc6b0', y: '#7a5a3a', b: '#7a6a52' };
 const weapon = () => (G.p && G.p.weapon ? WEAPONS[G.p.weapon] : null);
 const styleKey = () => G.p.weapon || 'fists';
 const mastery = key => Math.floor(G.p.mastery[key] || 0);
-const effAtk = () => G.p.atk + (weapon() ? weapon().atk : 0);
+const effAtk = () => G.p.atk + (weapon() ? weapon().atk : 0) + wearBonus('atk');
 const race = () => RACES[G.p.race] || RACES.human;
 
 // How each race changes the player sprite: palette swaps plus small overlays (see OVERLAYS).
@@ -30,11 +30,94 @@ function raceSpec(r) {
   return RACE_SPECS.get(key);
 }
 const DRAGON_SPECS = new Map();
-// Your look: your race, plus dragon features for good once you eat the Dragon-Dragon Fruit.
-function heroSpec() {
+const HERO_SPECS = new Map();
+// Your look: your race, the clothes you chose to wear, and dragon features for good once you eat the Dragon-Dragon Fruit.
+function heroSpec(wear) {
   if (!G.p) return PLAYER_SPR;
-  const spec = raceSpec(G.p.race || 'human');
-  return G.p.fruit === 'dragon' ? dragonSpec(spec) : spec;
+  const w = wear || G.p.wear || {};
+  const key = [G.p.race, G.p.fruit === 'dragon'].concat(SLOTS.map(sl => w[sl] || '')).join('|');
+  if (!HERO_SPECS.has(key)) {
+    let spec = dressSpec(raceSpec(G.p.race || 'human'), w);
+    if (G.p.fruit === 'dragon') spec = dragonSpec(spec);
+    HERO_SPECS.set(key, spec);
+  }
+  return HERO_SPECS.get(key);
+}
+function dressSpec(spec, w) {
+  const pieces = SLOTS.map(sl => CLOTHES[w[sl]]).filter(Boolean);
+  if (!pieces.length) return spec;
+  const out = { kind: spec.kind, pal: Object.assign({}, spec.pal), marks: (spec.marks || []).slice() };
+  for (const c of pieces) {
+    const L = c.look || {};
+    if (L.head) out.head = L.head;
+    Object.assign(out.pal, L.pal || {});
+    if (L.marks) out.marks.push(...L.marks);
+  }
+  if (!out.marks.length) delete out.marks;
+  return out;
+}
+
+// ---------- clothes ----------
+
+const SLOTS = ['hat', 'coat', 'charm'];
+const SLOT_NAMES = { hat: 'Hat', coat: 'Coat', charm: 'Charm' };
+const worn = () => (G.p && G.p.wear ? SLOTS.map(sl => CLOTHES[G.p.wear[sl]]).filter(Boolean) : []);
+const wearBonus = k => worn().reduce((a, c) => a + (c[k] || 0), 0);
+const pct = v => Math.round(v * 100) + '%';
+const bossWear = key => Object.keys(CLOTHES).find(k => CLOTHES[k].boss === key) || null;
+const islandClothes = idx => Object.keys(CLOTHES).filter(k => CLOTHES[k].find === idx);
+const unfoundClothes = idx => islandClothes(idx).filter(k => !G.p.clothes.includes(k));
+
+function clothStats(c) {
+  const out = [];
+  for (const [k, label] of [['atk', 'ATK'], ['def', 'DEF'], ['spd', 'SPD'], ['hp', 'max HP']]) if (c[k]) out.push(`+${c[k]} ${label}`);
+  if (c.crit) out.push(`+${pct(c.crit)} crit chance`);
+  if (c.dodge) out.push(`+${pct(c.dodge)} dodge`);
+  if (c.armor) out.push(`${pct(c.armor)} less damage taken`);
+  if (c.sp) out.push(`+${c.sp} SP every turn`);
+  if (c.xp) out.push(`+${pct(c.xp)} XP`);
+  if (c.berries) out.push(`+${pct(c.berries)} berries from fights`);
+  if (c.mastery) out.push(`+${pct(c.mastery)} mastery`);
+  if (c.hunger) out.push(`get hungry ${pct(c.hunger)} slower`);
+  return out.join(', ');
+}
+
+function clothSource(k) {
+  const c = CLOTHES[k];
+  if (c.boss) return `Dropped by ${BOSSES[c.boss].name}`;
+  if (c.shop !== undefined) return `Sold in ${ISLANDS[c.shop].name}`;
+  return `Hidden on ${ISLANDS[c.find].name}`;
+}
+
+// A little icon of the piece itself (for the loot pop-up and the shop).
+function clothIcon(k) {
+  const c = CLOTHES[k], pal = (c.look && c.look.pal) || {};
+  if (c.slot === 'hat') return { kind: 'hathead', head: c.look.head, pal: { x: pal.x || '#e6b422', X: pal.X || '#f2f2f2' } };
+  if (c.slot === 'coat') { const v = pal.v || pal.z; return { kind: 'icon', icon: 'coat', pal: { v, z: pal.z || mixColor(v, '#1b1424', 0.3) } }; }
+  return { kind: 'icon', icon: 'charm', pal: { q: pal.q || '#e6b422', Q: pal.Q || '#5ab8e8' } };
+}
+
+function putOn(k) {
+  const p = G.p, c = CLOTHES[k];
+  takeOff(c.slot);
+  p.wear[c.slot] = k;
+  if (c.hp) { p.maxHp += c.hp; p.hp += c.hp; }
+}
+
+function takeOff(slot) {
+  const p = G.p, c = CLOTHES[p.wear[slot]];
+  p.wear[slot] = null;
+  if (c && c.hp) { p.maxHp -= c.hp; p.hp = clamp(p.hp, 1, p.maxHp); }
+}
+
+async function findClothes(k, from) {
+  const p = G.p, c = CLOTHES[k];
+  if (p.clothes.includes(k)) return;
+  p.clothes.push(k);
+  showLoot(clothIcon(k));
+  Sfx.play('find');
+  await talk(from ? `${from} dropped the ${c.name}! ${clothStats(c)}.` : `Clothes! You found the ${c.name}. ${clothStats(c)}.`);
+  await talk(`Open Gear to put it on${p.wear[c.slot] ? ` instead of your ${CLOTHES[p.wear[c.slot]].name}` : ''}.`);
 }
 function dragonSpec(spec) {
   if (!DRAGON_SPECS.has(spec)) {
@@ -74,7 +157,7 @@ function gainMastery(key, n) {
   if (!key || key === 'race' || n <= 0) return [];
   const p = G.p;
   const raw = p.mastery[key] || 0;
-  p.mastery[key] = Math.round((raw + n * (p.race === 'human' ? 1.25 : 1)) * 100) / 100;
+  p.mastery[key] = Math.round((raw + n * (p.race === 'human' ? 1.25 : 1) * (1 + wearBonus('mastery'))) * 100) / 100;
   const before = Math.floor(raw), after = mastery(key);
   return styleMoves(key).filter(m => before < m.at && after >= m.at).map(move => ({ move, key }));
 }
@@ -127,7 +210,7 @@ function drawLoot(c, x, top) {
   const k = G.t - L.t;
   if (k > 2.6) { G.loot = null; return; }
   const y = top - Math.min(1, k * 3) * 8 + Math.sin(G.t * 4) * 1.5;
-  drawSpriteAt(c, getSprite(L.spec), x, y, L.spec.kind === 'icon' ? 2 : 1, { shadow: false });
+  drawSpriteAt(c, getSprite(L.spec), x, y, L.spec.kind === 'icon' || L.spec.kind === 'hathead' ? 2 : 1, { shadow: false });
   if (Math.floor(G.t * 8) % 2) {
     for (const [dx, dy] of [[-14, -16], [13, -22], [-10, -4], [12, -6]]) {
       pxRect(c, x + dx, y + dy - 1, 1, 3, '#fff6a0');
@@ -152,8 +235,8 @@ function unfoundWeapons(idx) {
 
 function lootCount(idx) {
   const fruits = islandFruits(idx);
-  const total = ISLANDS[idx].weapons.length + fruits.length;
-  const left = unfoundWeapons(idx).length + fruits.filter(k => !G.p.fruitsFound.includes(k)).length;
+  const total = ISLANDS[idx].weapons.length + fruits.length + islandClothes(idx).length;
+  const left = unfoundWeapons(idx).length + fruits.filter(k => !G.p.fruitsFound.includes(k)).length + unfoundClothes(idx).length;
   return { total, found: total - left, left };
 }
 
@@ -174,11 +257,13 @@ async function explore(spot) {
   OW.search = null;
   const n = (p.explored[idx] || 0) + 1;
   p.explored[idx] = n;
-  const fruitK = islandFruit(idx), weps = unfoundWeapons(idx);
+  const fruitK = islandFruit(idx), weps = unfoundWeapons(idx), clothK = unfoundClothes(idx)[0];
   if (fruitK && Math.random() < Math.min(0.45, 0.03 + n * 0.03)) {
     await findFruit(fruitK);
   } else if (weps.length && Math.random() < (p.weapons.length ? Math.min(0.6, 0.14 + n * 0.04) : 0.35 + n * 0.2)) {
     await findWeapon(pick(weps));
+  } else if (clothK && Math.random() < Math.min(0.5, 0.1 + n * 0.04)) {
+    await findClothes(clothK);
   } else {
     const r = Math.random();
     if (r < 0.2) {
@@ -374,7 +459,36 @@ function gearMenu(note) {
         el('button', { type: 'button', class: 'mini-btn', text: `฿${fmt(FRUIT_PRICE)}`, 'aria-label': `Sell ${f.name}`, onclick: () => sellFromBag(k) }))));
   }
   body.append(el('p', { class: 'note', text: 'Fight with a weapon or power, or do Drills, to raise mastery and unlock its moves.' }));
+  clothesSection(body);
   openModal('Gear', body, { onClose: () => G.mode === 'home' && homeMenu() });
+}
+
+// Your wardrobe: wear one hat, one coat and one charm. Each row shows your pirate wearing that piece.
+function clothesSection(body) {
+  const p = G.p;
+  body.append(el('h3', { class: 'sect' }, 'Clothes ', el('span', { text: `${p.clothes.length}/${Object.keys(CLOTHES).length} found` })));
+  if (!p.clothes.length) {
+    body.append(el('p', { class: 'note', text: 'Just the clothes on your back. Raid bosses drop their signature gear, shops sell some, and a few hide in trash cans and bushes.' }));
+    return;
+  }
+  for (const slot of SLOTS) {
+    const mine = p.clothes.filter(k => CLOTHES[k].slot === slot).sort((a, b) => (p.wear[b] === b) - (p.wear[a] === a));
+    for (const k of mine) {
+      const c = CLOTHES[k], on = p.wear[slot] === k;
+      body.append(el('div', { class: 'row gear' + (on ? ' current' : '') },
+        el('img', { src: spriteURL(heroSpec(Object.assign({}, p.wear, { [slot]: k })), 2), alt: '' }),
+        el('div', null, el('h3', null, c.name, el('small', { text: ' ' + SLOT_NAMES[slot] })), el('p', { text: clothStats(c) })),
+        el('button', { type: 'button', class: 'mini-btn' + (on ? '' : ' red'), text: on ? 'Take off' : 'Wear', 'aria-label': `${on ? 'Take off' : 'Wear'} ${c.name}`, onclick: () => dress(k, on) })));
+    }
+  }
+}
+
+function dress(k, off) {
+  const c = CLOTHES[k];
+  if (off) takeOff(c.slot); else putOn(k);
+  Sfx.play('select');
+  save();
+  gearMenu(off ? `You took off the ${c.name}.` : `You put on the ${c.name}. ${clothStats(c)}.`);
 }
 
 function equip(key) {
