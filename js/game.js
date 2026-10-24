@@ -813,10 +813,11 @@ function startTraining(k) {
   if (!needEnergy(18)) return;
   const level = isStat ? { atk: p.atk - 10, def: (p.def - 4) * 2, spd: (p.spd - 5) * 2, haki: p.haki * 2 }[k]
     : mastery(k === 'drill' ? styleKey() : p.fruit) * 0.6;
-  const diff = clamp(level / 90, 0, 1);
+  // Gets a little harder as you grow, but stays fair late in the game.
+  const diff = clamp(level / 150, 0, 1);
   G.train = {
     k, rep: 0, reps: 3, results: [], cur: 0, dir: 1,
-    speed: 0.8 + diff * 0.7, zoneW: 0.24 - diff * 0.09, zone: rand(0.25, 0.75),
+    speed: 0.8 + diff * 0.35, zoneW: 0.24 - diff * 0.04, zone: rand(0.25, 0.75),
     active: true, pose: 0, dust: 0, anim: TRAININGS[k].anim,
   };
   G.mode = 'train';
@@ -850,7 +851,7 @@ function trainStrike() {
     setTimeout(finishTraining, 700);
   } else {
     T.zone = rand(0.2, 0.8);
-    T.speed *= 1.15;
+    T.speed *= 1.08;
   }
 }
 
@@ -2614,7 +2615,8 @@ async function winBattle() {
   await tween(F, { alpha: 0, oy: 8 }, 500);
   Sfx.play('win');
   const first = F.boss && !p.bosses[F.key];
-  const xp = Math.round((10 + F.lvl * 7) * (F.boss ? 6 : 1) * (F.night ? 1.5 : 1) * (1 + teamBonus('xp')));
+  // Rematches pay less XP than the first win.
+  const xp = Math.round((10 + F.lvl * 7) * (F.boss ? (first ? 6 : 4) : 1) * (F.night ? 1.5 : 1) * (1 + teamBonus('xp')));
   let berries = Math.round((15 + F.lvl * 10) * (F.night ? 1.5 : 1));
   let bounty = F.lvl * 100000;
   if (F.boss) {
