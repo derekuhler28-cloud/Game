@@ -13,7 +13,6 @@ const ICE = ['#5fd3f0', '#bff2ff', '#ffffff'];
 const SMOKE = ['#ffffff', '#dfe2ea', '#b9bdc9'];
 const SAND = ['#e8c27b', '#c9963b', '#f5d79a'];
 const SHORT = { meat: 'Meat', bigmeat: 'Giant Meat', fish: 'Fish', kingmeat: 'King Steak', medicine: 'Medicine', cola: 'Cola', water: 'Water' };
-const HOME_CREW_SPOTS = [[148, 121], [170, 118], [62, 122], [182, 124], [40, 123]];
 const BATTLE_CREW_SPOTS = [[24, 111], [36, 106], [12, 106], [30, 116], [16, 117]];
 
 const G = {
@@ -237,6 +236,7 @@ function setActions(list, layout, dock) {
   box.replaceChildren(...list.map(a => actionButton(a, 'btn')));
   const bar = $('dock');
   bar.hidden = !dock;
+  bar.style.setProperty('--n', dock ? dock.length : 8);
   bar.classList.toggle('locked', G.busy);
   bar.replaceChildren(...(dock || []).map(a => actionButton(a, 'dock-btn')));
 }
@@ -384,7 +384,7 @@ function showTitle() {
     say('Welcome back, Captain. Your ship is waiting.');
   } else {
     newGameForm(false);
-    say('Start as a nobody. Explore for weapons and Devil Fruits, master their moves, and fight your way to Pirate King!');
+    say('Start as a nobody. Walk the islands, search for weapons and Devil Fruits, master their moves, and fight your way to Pirate King!');
   }
   updateHud();
 }
@@ -551,7 +551,7 @@ function eggPick(k) {
   Sfx.play('find');
   for (const b of document.querySelectorAll('.egg-fruit')) if (b.dataset.k !== k) b.classList.add('gone');
   eggCard(f,
-    el('p', { text: `Secret set! The ${f.name} is hidden on Dawn Village. Explore to find it!` }),
+    el('p', { text: `Secret set! The ${f.name} is hidden on Dawn Village. Search its trash cans and bushes to find it!` }),
     el('div', { class: 'btn-row' }, el('button', { type: 'button', class: 'mini-btn red', text: 'OK', onclick: closeEgg })));
   if ($('eggWord')) raceTitle();
 }
@@ -567,6 +567,8 @@ function closeEgg() {
 
 async function enterGame(cont, secret) {
   G.mode = 'home';
+  G.aboard = false;
+  OW.respawn = true;
   resetHero();
   updateHud();
   const p = G.p;
@@ -579,9 +581,10 @@ async function enterGame(cont, secret) {
   homeMenu();
   await talk(`${p.name} is a nobody ${race().name.toLowerCase()} from Dawn Village. No weapon, no powers, no crew. Just a big dream.`);
   if (race().move) await talk(`As a ${race().name}, you already know one move: ${race().move.name}.`);
-  await talk('EXPLORE to find weapons and hidden Devil Fruits. Use them in fights to master new moves.');
+  await talk('Walk around with the D-pad (or arrow keys), or tap where you want to go. Press A to talk, search and go inside.');
+  await talk('Search trash cans and shaking bushes for weapons and hidden Devil Fruits. Wild grass is full of enemies to fight.');
   if (secret) await talk(`Psst... a little bird says the ${FRUITS[secret].name} is hidden somewhere on Dawn Village.`);
-  await talk('Train, eat, and fight to grow. When you feel ready, RAID the island boss! (Psst: tap your pirate to chat.)');
+  await talk('Hire a crew at the Bar, train at the dummies, and when you feel ready, RAID the island boss up north! (Psst: tap your pirate to chat.)');
   lock(false);
   if (G.mode !== 'home') return;
   homeMenu();
@@ -596,29 +599,36 @@ function resetHero() {
 // ---------- home ----------
 
 function homeMenu() {
+  if (G.aboard) { boatMenu(); return; }
   G.mode = 'home';
-  const p = G.p;
+  owLoad('island');
+  setPad(worldDock());
+}
+
+// The menu bar under the controls while you walk around (islands and the deck).
+function worldDock() {
   const late = isLate();
-  const tooLate = late ? "It's way past bedtime. Get some sleep!" : null;
-  const isl = island();
-  const beaten = p.bosses[isl.boss];
-  const loot = lootCount(p.island).left;
-  const paper = { C: '#f2e4c0' };
-  setActions([
-    { label: 'Explore', badge: loot || null, onClick: explore, blocked: tooLate },
-    { label: 'Fight', onClick: fightRandom, blocked: tooLate },
-    { label: 'Train', onClick: trainMenu, blocked: tooLate },
-    { label: beaten ? 'Rematch' : 'Raid', cls: 'raid', onClick: raidMenu, blocked: tooLate },
-  ], 'cols4', [
+  return [
     { label: 'Gear', icon: iconURL('sword'), onClick: () => gearMenu() },
-    { label: 'Eat', icon: iconURL('meat'), onClick: bagMenu },
-    { label: 'Work', icon: iconURL('fish'), onClick: workMenu, blocked: tooLate },
-    { label: 'Shop', icon: iconURL('chest'), onClick: shopMenu },
-    { label: 'Bar', icon: iconURL('mug'), onClick: () => barMenu() },
-    { label: 'Boat', icon: iconURL('ship'), onClick: boardShip },
-    { label: 'Stats', icon: iconURL('poster', paper), onClick: wantedMenu },
+    { label: 'Bag', icon: iconURL('meat'), onClick: bagMenu },
+    { label: 'Stats', icon: iconURL('poster', { C: '#f2e4c0' }), onClick: wantedMenu },
     { label: 'Sleep', icon: iconURL('moon'), onClick: sleep, cls: late ? 'pulse' : '' },
-  ]);
+  ];
+}
+
+// D-pad and A/B buttons replace the action grid while you walk around.
+function setPad(dock) {
+  const box = $('actions');
+  if (!box.querySelector('.pad')) {
+    OW.held = null;
+    box.replaceChildren(padControls());
+  }
+  box.className = 'actions padmode' + (G.busy ? ' locked' : '');
+  const bar = $('dock');
+  bar.hidden = false;
+  bar.style.setProperty('--n', dock.length);
+  bar.classList.toggle('locked', G.busy);
+  bar.replaceChildren(...dock.map(a => actionButton(a, 'dock-btn')));
 }
 
 function needEnergy(n) {
@@ -797,15 +807,6 @@ async function finishPractice(T, perfects, goods, misses) {
 
 // ---------- work: odd jobs and fishing ----------
 
-function workMenu() {
-  setActions([
-    { label: 'Fishing', sub: '12 EN', onClick: startFishing },
-    { label: 'Odd Job', sub: '15 EN', onClick: oddJob },
-    { label: 'Back', cls: 'ghost', onClick: homeMenu },
-  ], 'cols3');
-  say('Fishing: three casts, tap REEL the moment the bobber dips. Odd Job: steady pay, no skill needed.');
-}
-
 async function oddJob() {
   if (!needEnergy(15)) return;
   lock(true);
@@ -813,7 +814,8 @@ async function oddJob() {
   const pay = 55 + G.p.island * 45 + randInt(0, 20);
   G.p.berries += pay;
   Sfx.play('coin');
-  floatText(G.hero.x, 80, '+' + pay, '#ffe14a', 1);
+  const hs = heroScreenPos();
+  floatText(hs.x, hs.y - 6, '+' + pay, '#ffe14a', 1);
   await talk(`${island().job} You earned ฿${pay}.`);
   save();
   lock(false);
@@ -1096,10 +1098,10 @@ async function hire(k) {
   closeModal();
   lock(true);
   Sfx.play('level');
-  const [x, y] = HOME_CREW_SPOTS[p.crew.length - 1];
-  particles(x, y - 14, 18, { colors: ['#ffe14a', '#ffffff', '#ff8ab0'], speed: 60, grav: 60, life: 0.8 });
+  const hs = heroScreenPos();
+  particles(hs.x, hs.y, 18, { colors: ['#ffe14a', '#ffffff', '#ff8ab0'], speed: 60, grav: 60, life: 0.8 });
   await talk(c.join);
-  await talk(`${c.name} the ${ROLES[c.role].name} joined your crew! Open the Bar to give ${c.name} a weapon or a Devil Fruit.`);
+  await talk(`${c.name} the ${ROLES[c.role].name} joined your crew! Visit any Bar to give ${c.name} a weapon or a Devil Fruit.`);
   lock(false);
   homeMenu();
 }
@@ -1368,6 +1370,7 @@ async function diveToFishman() {
 async function arrive(idx) {
   const p = G.p;
   p.island = idx;
+  G.aboard = false;
   G.mode = 'home';
   G.sail = null;
   G.hero.x = G.hero.tx = 110;
@@ -1445,28 +1448,29 @@ const travelReady = () => G.p.unlocked - 1 > G.p.island;
 
 async function boardShip() {
   lock(true);
-  await tween(G, { fade: 0.9 }, 250, linear);
-  G.mode = 'boat';
+  Sfx.play('door');
+  await tween(G, { fade: 1 }, 250, linear);
+  G.aboard = true;
+  OW.respawn = true;
+  boatMenu();
   await tween(G, { fade: 0 }, 300, linear);
   lock(false);
   boatMenu();
-  say(travelReady() ? 'All aboard! A new island is on the chart. Tap the map to set a course.' : 'All aboard! Tap the map on the easel to see the sea chart.');
+  say(travelReady() ? 'All aboard! A new island is on the chart. Walk to the map table to set a course.' : 'All aboard! The map table has the sea chart. The gangplank takes you back ashore.');
 }
 
 function boatMenu() {
   G.mode = 'boat';
-  const late = isLate();
-  setActions([
-    { label: 'Sea Chart', cls: travelReady() ? 'raid' : '', onClick: mapMenu },
-    { label: 'Customize', onClick: () => customizeMenu() },
-    { label: 'Sleep', onClick: sleep, cls: late ? 'pulse' : '' },
-    { label: 'Go Ashore', onClick: goAshore },
-  ], 'cols4');
+  owLoad('deck');
+  setPad(worldDock());
 }
 
 async function goAshore() {
   lock(true);
-  await tween(G, { fade: 0.9 }, 250, linear);
+  Sfx.play('door');
+  await tween(G, { fade: 1 }, 250, linear);
+  G.aboard = false;
+  OW.respawn = true;
   resetHero();
   homeMenu();
   await tween(G, { fade: 0 }, 300, linear);
@@ -1513,10 +1517,11 @@ function customizeMenu(note) {
 
 async function sleep() {
   const p = G.p;
-  const aboard = G.mode === 'boat';
+  const aboard = !!G.aboard;
   lock(true);
   Sfx.play('sleep');
-  say('You curl up in your hammock...');
+  say(aboard ? 'You curl up in your hammock...' : 'You find a cozy spot and curl up...');
+  G.sleeping = true;
   await tween(G, { fade: 1 }, 700, linear);
   p.day++;
   p.tick = 0;
@@ -1529,6 +1534,7 @@ async function sleep() {
   save();
   await wait(500);
   await tween(G, { fade: 0 }, 700, linear);
+  G.sleeping = false;
   await talk(`Day ${p.day}. ${fed ? 'You slept like a log. Fully rested!' : 'You went to bed hungry and slept badly. Only 60 energy.'}`);
   if (ev) await talk(ev);
   if (p.food < 30) { bubble('HUNGRY..'); await talk('Your stomach growls. Better eat something soon.'); }
@@ -2471,6 +2477,8 @@ async function loseBattle() {
   p.food = clamp(p.food - 10, 0, 100);
   p.mood = clamp(p.mood - 20, 0, 100);
   save();
+  G.aboard = false;
+  OW.respawn = true;
   homeMenu();
   await talk(`You wake up in the clinic the next morning. The doctor charged ฿${fmt(lost)}.`);
   if (after) await after('lose');
@@ -3191,33 +3199,24 @@ function drawTitle() {
   if (Math.floor(G.t * 1.5) % 4 === 0) drawBubble(ctx, 110, 84, 'AHOY!');
 }
 
-function drawHome() {
-  const p = G.p, Hr = G.hero;
-  const moving = Math.abs(Hr.tx - Hr.x) >= 1 && Hr.pause <= 0;
-  const step = moving ? (Math.floor(G.t * 8) % 2) : 0;
-  const actors = p.crew.map((m, i) => {
-    const [x, y] = HOME_CREW_SPOTS[i];
-    return { spr: getSprite(crewSpec(m)), x, y: y + Math.round(Math.sin(G.t * 2 + i) * 0.6), scale: 2, squash: Math.sin(G.t * 2.5 + i) * 0.02, m };
-  });
-  actors.push({ spr: heroSprite(), x: Hr.x + Hr.ox, y: 121 + Hr.oy - step, scale: 2, squash: Hr.squash + (moving ? 0 : Math.sin(G.t * 3) * 0.025), alpha: Hr.alpha });
-  drawActors(actors);
-  drawCrewWeapons(actors);
-  if (Hr.alpha > 0.5) drawHeldWeapon(ctx, Hr.x + Hr.ox, 121 + Hr.oy - step, 2);
-  drawLoot(ctx);
-  const napper = p.crew.findIndex(m => CREW[m.key].role === 'swordsman');
-  if (napper >= 0 && timeIdx() === 1) drawText(ctx, 'Z', HOME_CREW_SPOTS[napper][0] + 10, 80 - (G.t * 6) % 8, { color: '#ffffff' });
-  if (G.bubble && G.t < G.bubble.until) drawBubble(ctx, Hr.x + Hr.ox, 82 + Hr.oy, G.bubble.text);
-  drawPlaceLabel();
-}
-
 function drawPlaceLabel() {
-  const a = island().name, b = `Day ${G.p.day}  ${timeName()}`;
+  const a = G.mode === 'boat' ? 'Your ship' : island().name, b = `Day ${G.p.day}  ${timeName()}`;
   const w = Math.max(textWidth(a, 1), textWidth(b, 1)) + 6;
   ctx.globalAlpha = 0.5;
   pxRect(ctx, 2, 2, w, 15, '#05081a');
   ctx.globalAlpha = 1;
   drawText(ctx, a, 5, 4, { color: '#ffffff', shadow: null });
   drawText(ctx, b, 5, 10, { color: '#ffe14a', shadow: null });
+  // treasures still hidden in this island's bushes and trash cans
+  const left = G.mode === 'home' ? lootCount(G.p.island).left : 0;
+  if (left) {
+    const t = `${left} LEFT`, tw = textWidth(t, 1) + 16;
+    ctx.globalAlpha = 0.5;
+    pxRect(ctx, W - tw - 2, 2, tw, 12, '#05081a');
+    ctx.globalAlpha = 1;
+    ctx.drawImage(getSprite({ kind: 'icon', icon: 'chest' }), W - tw, 3);
+    drawText(ctx, t, W - tw + 12, 5, { color: '#ffe14a', shadow: null });
+  }
 }
 
 function drawBattle() {
@@ -3394,30 +3393,6 @@ function drawSail() {
   drawText(ctx, `TO ${ISLANDS[S.dest].name}`, W / 2, 6, { color: '#ffffff', align: 'center' });
 }
 
-// Boat mode: you and your crew sit on deck around the map; the rooms you bought show below.
-const DECK_SEATS = [70, 124, 48, 146, 30, 164];
-function drawBoat() {
-  const p = G.p, look = Object.assign(shipLook(), { t: G.t, ready: travelReady(), sea: seaColors(island().scene, timeIdx()).sea });
-  drawDeckBack(ctx, look);
-  const people = [{ spr: heroSprite() }].concat(p.crew.map(m => ({ spr: getSprite(crewSpec(m)), m })));
-  people.forEach((o, i) => {
-    const spr = o.spr, sh = Math.round(spr.height * 0.74);
-    const x = DECK_SEATS[i], bob = Math.round(Math.sin(G.t * 2 + i) * 0.6);
-    ctx.drawImage(spr, 0, 0, spr.width, sh, x - spr.width, 74 - sh * 2 + bob, spr.width * 2, sh * 2);
-  });
-  drawDeckFront(ctx, look);
-  if (look.night) {
-    ctx.globalAlpha = 0.35;
-    pxRect(ctx, 0, 0, W, H, '#0a1030');
-    ctx.globalAlpha = 1;
-    if (p.owned.lanterns) { drawLanternString(ctx, 97, 22, 4, 30, true, 2, 8); drawLanternString(ctx, 97, 22, 190, 30, true, 2, 8); }
-  }
-  const napper = p.crew.findIndex(m => CREW[m.key].role === 'swordsman');
-  if (napper >= 0 && timeIdx() === 1) drawText(ctx, 'Z', DECK_SEATS[napper + 1] + 8, 40 - (G.t * 6) % 8, { color: '#ffffff' });
-  if (!G.busy) drawBubble(ctx, 97, 42 + Math.round(Math.sin(G.t * 4)), travelReady() ? 'SET SAIL!' : 'MAP');
-  if (G.bubble && G.t < G.bubble.until) drawBubble(ctx, DECK_SEATS[0], 38, G.bubble.text);
-}
-
 function drawDiveCut() {
   const look = Object.assign(shipLook(), { t: G.t });
   if (!G.shipCv) G.shipCv = makeCanvas(76, 64);
@@ -3437,33 +3412,37 @@ function drawMountainCut() {
 }
 
 function draw() {
-  const ti = G.mode === 'title' ? 0 : timeIdx();
-  const scene = sceneName();
   pxRect(ctx, 0, 0, W, H, '#05081a');
   ctx.save();
   if (FX.shakeMag > 0) ctx.translate(Math.round(rand(-1, 1) * FX.shakeMag), Math.round(rand(-1, 1) * FX.shakeMag));
-  ctx.drawImage(backdrop(scene, ti), 0, 0);
-  drawAnimated(ctx, scene, ti, G.t, G.mode === 'sail' ? 5 : 1);
-  const docked = G.mode === 'title' ? { t: G.t } : G.p ? Object.assign(shipLook(), { t: G.t }) : null;
-  if (docked && G.p && G.mode !== 'title') docked.bubble = island().scene === 'fishman';
-  if (scene !== 'sea' && scene !== 'deck' && G.mode !== 'boat' && G.mode !== 'mountain' && G.mode !== 'dive') drawShip(ctx, -8, GROUND - 2 + Math.round(Math.sin(G.t * 1.5)), docked);
-  if (G.mode === 'mountain') drawMountainCut();
-  else if (G.mode === 'dive') drawDiveCut();
-  else if (G.mode === 'boat' && G.p) drawBoat();
-  else if (G.mode === 'title') drawTitle();
-  else if (G.mode === 'home' && G.p) drawHome();
-  else if (G.mode === 'battle' && G.battle) drawBattle();
-  else if (G.mode === 'train' && G.train) drawTrain();
-  else if (G.mode === 'fish' && G.fish) drawFish();
-  else if (G.mode === 'sail' && G.sail) drawSail();
+  const world = (G.mode === 'home' || G.mode === 'boat') && G.p && OW.map;
+  if (world) {
+    drawWorld();
+  } else {
+    const ti = G.mode === 'title' ? 0 : timeIdx();
+    const scene = sceneName();
+    ctx.drawImage(backdrop(scene, ti), 0, 0);
+    drawAnimated(ctx, scene, ti, G.t, G.mode === 'sail' ? 5 : 1);
+    const docked = G.mode === 'title' ? { t: G.t } : G.p ? Object.assign(shipLook(), { t: G.t }) : null;
+    if (docked && G.p && G.mode !== 'title') docked.bubble = island().scene === 'fishman';
+    if (scene !== 'sea' && scene !== 'deck' && G.mode !== 'mountain' && G.mode !== 'dive') drawShip(ctx, -8, GROUND - 2 + Math.round(Math.sin(G.t * 1.5)), docked);
+    if (G.mode === 'mountain') drawMountainCut();
+    else if (G.mode === 'dive') drawDiveCut();
+    else if (G.mode === 'title') drawTitle();
+    else if (G.mode === 'battle' && G.battle) drawBattle();
+    else if (G.mode === 'train' && G.train) drawTrain();
+    else if (G.mode === 'fish' && G.fish) drawFish();
+    else if (G.mode === 'sail' && G.sail) drawSail();
+  }
   drawFx(ctx);
   ctx.restore();
+  if (world) drawPlaceLabel();
   if (FX.flashA > 0) { ctx.globalAlpha = Math.min(1, FX.flashA); pxRect(ctx, 0, 0, W, H, FX.flashColor); ctx.globalAlpha = 1; }
   if (G.fade > 0) {
     ctx.globalAlpha = G.fade;
     pxRect(ctx, 0, 0, W, H, '#05081a');
     ctx.globalAlpha = 1;
-    if (G.fade > 0.6) drawText(ctx, 'Z Z Z', W / 2, H / 2 - 5, { color: '#9aa8d8', scale: 2, align: 'center' });
+    if (G.fade > 0.6 && G.sleeping) drawText(ctx, 'Z Z Z', W / 2, H / 2 - 5, { color: '#9aa8d8', scale: 2, align: 'center' });
   }
 }
 
@@ -3478,14 +3457,9 @@ function update(dt) {
   Hr.flash = Math.max(0, Hr.flash - dt);
   if (G.battle) G.battle.F.flash = Math.max(0, G.battle.F.flash - dt);
 
-  if (G.mode === 'home' && G.p && !G.busy) {
-    if (Hr.pause > 0) Hr.pause -= dt;
-    else {
-      const d = Hr.tx - Hr.x;
-      if (Math.abs(d) < 1) { Hr.pause = rand(1.2, 3.5); Hr.tx = rand(84, 136); }
-      else Hr.x += Math.sign(d) * Math.min(Math.abs(d), 16 * dt);
-    }
-    if (G.t > idleBubbleAt) {
+  if ((G.mode === 'home' || G.mode === 'boat') && G.p) {
+    owUpdate(dt);
+    if (!G.busy && G.t > idleBubbleAt) {
       idleBubbleAt = G.t + rand(6, 10);
       const p = G.p;
       const line = isLate() ? 'ZZZ...' : p.food < 25 ? 'HUNGRY..' : p.energy < 20 ? 'SLEEPY..' : p.hp < p.maxHp * 0.3 ? 'OUCH..' : p.mood >= 85 ? 'SHISHI!' : null;
@@ -3541,15 +3515,39 @@ function onCanvasTap(e) {
   const y = (e.clientY - r.top) * H / r.height;
   if (G.mode === 'train') { trainStrike(); return; }
   if (G.mode === 'fish') { reel(); return; }
-  if (G.mode === 'boat' && !G.busy && $('modal').hidden && x > 78 && x < 116 && y > 32 && y < 80) { Sfx.play('select'); mapMenu(); return; }
-  if (G.mode === 'home' && !G.busy && Math.abs(x - G.hero.x) < 16 && y > 80 && y < 124) talkToHero();
-  else if (G.busy) onMsgTap();
+  if ((G.mode === 'home' || G.mode === 'boat') && OW.map) {
+    if (G.busy) onMsgTap();
+    else if ($('modal').hidden) owTap(x, y);
+    return;
+  }
+  if (G.busy) onMsgTap();
+}
+
+const KEY_DIRS = { arrowup: 'up', arrowdown: 'down', arrowleft: 'left', arrowright: 'right', w: 'up', s: 'down', a: 'left', d: 'right' };
+const walking = () => (G.mode === 'home' || G.mode === 'boat') && $('modal').hidden && !$('egg');
+
+function onKeyUp(e) {
+  const d = KEY_DIRS[e.key.toLowerCase()];
+  if (d) OW.keys = OW.keys.filter(k => k !== d);
+  if (e.key === 'Shift' || e.key.toLowerCase() === 'x') OW.run = false;
 }
 
 function onKey(e) {
   if (e.target && e.target.tagName === 'INPUT') return;
   if (e.key === 'Escape' && $('egg')) { closeEgg(); return; }
   if (e.key === 'Escape' && !$('modal').hidden && !$('modalClose').hidden) { closeModal(); return; }
+  if (walking() && !e.ctrlKey && !e.metaKey && !e.altKey) {
+    const d = KEY_DIRS[e.key.toLowerCase()];
+    if (d) { e.preventDefault(); if (!OW.keys.includes(d)) OW.keys.push(d); return; }
+    if (e.key === 'Shift' || e.key.toLowerCase() === 'x') { OW.run = true; return; }
+    // Enter on a focused menu button presses that button; otherwise Space, Enter and Z are the A button.
+    const onButton = document.activeElement && document.activeElement.tagName === 'BUTTON' && !document.activeElement.closest('.pad');
+    if (e.code === 'Space' || e.key.toLowerCase() === 'z' || (e.key === 'Enter' && !onButton)) {
+      e.preventDefault();
+      if (!e.repeat) owPressA();
+      return;
+    }
+  }
   if (e.code === 'Space' || e.key === 'Enter') {
     if (G.mode === 'train') { e.preventDefault(); trainStrike(); }
     else if (G.mode === 'fish') { e.preventDefault(); reel(); }
@@ -3575,6 +3573,8 @@ function boot(data) {
   $('modalClose').addEventListener('click', () => { Sfx.play('select'); closeModal(); });
   $('modal').addEventListener('pointerdown', e => { if (e.target === $('modal') && !$('modalClose').hidden) closeModal(); });
   document.addEventListener('keydown', onKey);
+  document.addEventListener('keyup', onKeyUp);
+  window.addEventListener('blur', () => { OW.keys = []; OW.held = null; OW.run = false; });
   $('muteBtn').addEventListener('click', () => { Sfx.toggle(); updateMuteLabel(); Sfx.play('select'); });
   updateMuteLabel();
 

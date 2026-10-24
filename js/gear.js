@@ -120,14 +120,14 @@ function showLoot(spec) {
   G.loot = { spec, t: G.t };
 }
 
-function drawLoot(c) {
+// The thing you just found floats up over your head.
+function drawLoot(c, x, top) {
   const L = G.loot;
   if (!L) return;
   const k = G.t - L.t;
   if (k > 2.6) { G.loot = null; return; }
-  const x = G.hero.x + G.hero.ox;
-  const y = 80 - Math.min(1, k * 3) * 10 + Math.sin(G.t * 4) * 1.5;
-  drawSpriteAt(c, getSprite(L.spec), x, y, 2, { shadow: false });
+  const y = top - Math.min(1, k * 3) * 8 + Math.sin(G.t * 4) * 1.5;
+  drawSpriteAt(c, getSprite(L.spec), x, y, L.spec.kind === 'icon' ? 2 : 1, { shadow: false });
   if (Math.floor(G.t * 8) % 2) {
     for (const [dx, dy] of [[-14, -16], [13, -22], [-10, -4], [12, -6]]) {
       pxRect(c, x + dx, y + dy - 1, 1, 3, '#fff6a0');
@@ -157,17 +157,21 @@ function lootCount(idx) {
   return { total, found: total - left, left };
 }
 
-async function explore() {
+// Searching a trash can or a shaking bush (spot = { kind, x, y } on the island map).
+async function explore(spot) {
   if (!needEnergy(12)) return;
-  const p = G.p, idx = p.island, Hr = G.hero;
+  const p = G.p, idx = p.island;
+  const trash = spot && spot.kind === 'trash';
   spend(12, 1, 8);
   lock(true);
-  say(pick(['You head into the brush to look around...', 'You poke around behind the houses...', 'You climb the rocks to scout the island...', 'You follow a suspicious trail of footprints...']));
-  await tween(Hr, { x: W + 24 }, 650, linear);
-  await wait(450);
-  Hr.x = -24;
-  await tween(Hr, { x: 104 }, 650, linear);
-  Hr.tx = 104;
+  if (spot) markSearched(spot.x, spot.y);
+  say(trash
+    ? pick(['You lift the lid and dig through the trash...', 'You hold your nose and rummage around...', 'Something rattles at the bottom of the can...'])
+    : pick(['You push into the rustling bush...', 'Something is moving in there...', 'You part the leaves and look inside...']));
+  Sfx.play('rustle');
+  OW.search = spot || null;
+  await wait(900);
+  OW.search = null;
   const n = (p.explored[idx] || 0) + 1;
   p.explored[idx] = n;
   const fruitK = islandFruit(idx), weps = unfoundWeapons(idx);
@@ -180,7 +184,7 @@ async function explore() {
     if (r < 0.2) {
       const key = pick(island().enemies);
       Sfx.play('hurt');
-      await talk(`Ambush! A ${ENEMIES[key].name} jumps out of the bushes!`);
+      await talk(`Ambush! A ${ENEMIES[key].name} jumps out of the ${trash ? 'trash can' : 'bush'}!`);
       startBattle({ def: ENEMIES[key], key, lvl: ENEMIES[key].lvl + randInt(0, 1) });
       return;
     }
@@ -216,7 +220,7 @@ async function explore() {
     } else {
       const left = lootCount(idx).left;
       await talk(left
-        ? `Nothing this time... but the locals swear ${left} treasure${left > 1 ? 's are' : ' is'} still hidden on this island.`
+        ? `${trash ? 'Just old fish bones' : 'Just leaves and a startled bird'}... but the locals swear ${left} treasure${left > 1 ? 's are' : ' is'} still hidden on this island.`
         : pick(['You find a nice view. This island has no more hidden treasures.', 'Just seagulls and sand. You have found every secret here.']));
     }
   }

@@ -82,6 +82,10 @@ const Sfx = (() => {
     bite:    () => notes([880, 1175], 0.06, 'square', 0.05),
     sleep:   () => notes([523, 440, 392, 330], 0.2, 'triangle', 0.045, 0.3),
     haki:    () => { tone(110, 0.6, 'sawtooth', 0.05, 55); tone(220, 0.6, 'square', 0.03, 110); },
+    bump:    () => tone(90, 0.08, 'square', 0.04, 70),
+    door:    () => { tone(330, 0.06, 'square', 0.03); tone(440, 0.1, 'square', 0.03, null, 0.06); },
+    rustle:  () => { noise(0.12, 0.06); noise(0.1, 0.05, 0.16); noise(0.12, 0.06, 0.32); },
+    alert:   () => notes([1047, 1319], 0.07, 'square', 0.05),
   };
 
   return {

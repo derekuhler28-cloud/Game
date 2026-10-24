@@ -1,6 +1,6 @@
 # Pocket Pirate
 
-A small pixel-art pirate life sim inspired by One Piece. You start as a nobody: no weapon, no powers, no crew, just the clothes on your back. Explore islands to find weapons and hidden Devil Fruits, master their moves, hire a crew at island bars, raid bosses, fix up your ship, sail over Reverse Mountain into the Grand Line and down to Fish-Man Island, awaken your Devil Fruit, and become Pirate King.
+A small pixel-art pirate life sim inspired by One Piece. You start as a nobody: no weapon, no powers, no crew, just the clothes on your back. Walk around each island and search its trash cans and shaking bushes for weapons and hidden Devil Fruits, master their moves, hire a crew at island bars, raid bosses, fix up your ship, sail over Reverse Mountain into the Grand Line and down to Fish-Man Island, awaken your Devil Fruit, and become Pirate King.
 
 No build step and no dependencies: open `index.html` in a browser (or serve the folder with any static server). Progress saves automatically in your browser.
 
@@ -19,17 +19,20 @@ Secret: tap the word "Choose" in the race picker's title. Every Devil Fruit circ
 
 ## How to play
 
-- **Explore**: search the island for hidden weapons and its Devil Fruit, plus berries, food, supplies, ambushes and mentors. The home button shows how many secrets are left.
+Every island is a little town you walk around, old-handheld style. Use the on-screen **D-pad** (or arrow keys / WASD), or just tap where you want to go. **A** (Space, Enter or Z) talks, searches, reads and goes inside; hold **B** (Shift or X) to run. Your crew follows you in a line.
+
+- **Search**: dig through **trash cans** and **shaking bushes** for hidden weapons and the island's Devil Fruit, plus berries, food, supplies, ambushes and mentors. Each trash can can be searched once a day, and a few different bushes shake every morning. The chest in the top corner shows how many secrets are left.
 - **Gear**: equip weapons and see every move you have unlocked or are working toward. Found fruits can be eaten (only one, ever), kept, or sold.
 - **Mastery**: each weapon, your fists, and your Devil Fruit have their own mastery. Using them in fights, winning with them, and practicing with Drills raises mastery and unlocks their 2nd and 3rd moves.
-- **Train**: a timing mini-game. Stop the marker in the gold zone (dead center is PERFECT) to raise ATK, DEF/HP, SPD or Haki (each stat has a limit that rises with your level), or do Drills and Fruit Power practice for mastery.
-- **Fight**: turn-based battles against the island's monsters for XP, berries and bounty. Fights at night are tougher but pay more.
-- **Raid**: big multi-phase bosses. They charge a huge attack every few turns (Guard!), enrage at half HP, and your whole crew fights alongside you. Each boss drops its signature weapon, and some have a trick: Buggy splits apart so blades barely hurt him, Kuro dodges a lot (sure-hit moves, stuns and freezes pin him down), Don Krieg's armor blunts hits until it cracks at half HP (piercing moves get through), Smoker is made of smoke and his seastone jitte drains a Devil Fruit user's SP, Wapol swallows bullets and cannonballs, and every boss from Water 7 on has a trick of its own (see the table below). The raid screen lists each boss's trick before you fight.
-- **Work**: go fishing (tap REEL when the bobber dips) or take an odd job for berries.
-- **Bar**: every island has a bar with crewmates for hire (up to 5 at once). Hand each one a weapon you found, feed them a spare Devil Fruit from your bag (it's theirs for life), or kick them out (you get the weapon back; they leave with their fruit). Crewmates jump into normal fights sometimes and fight every turn in raids. Throw a feast at the bar to lift everyone's mood.
-- **Eat / Sleep**: food, energy and mood drain as the day passes. Starving hurts; a good mood boosts training.
-- **Shop**: food, medicine, Energy Cola, Water Barrels (soak Logia bosses), and ship upgrades, paint and figureheads. Each island sells different ones.
-- **Boat**: your ship is docked behind you on every island. Tap **Boat** to go aboard, where you and your crew sit on deck around the map. Tap the map (or **Sea Chart**) to sail; an island opens once you beat the raid boss before it. **Customize** picks your hull paint and figurehead, and lists every upgrade and where it's sold. You can also sleep aboard.
+- **Train**: walk up to a training dummy (or the weights on your ship). A timing mini-game: Stop the marker in the gold zone (dead center is PERFECT) to raise ATK, DEF/HP, SPD or Haki (each stat has a limit that rises with your level), or do Drills and Fruit Power practice for mastery.
+- **Fight**: walk through the wild grass and enemies jump out. Turn-based battles for XP, berries and bounty. Fights at night are tougher but pay more.
+- **Raid**: each island's boss stands guard outside their hideout at the north end of town. Talk to them to raid. Big multi-phase bosses. They charge a huge attack every few turns (Guard!), enrage at half HP, and your whole crew fights alongside you. Each boss drops its signature weapon, and some have a trick: Buggy splits apart so blades barely hurt him, Kuro dodges a lot (sure-hit moves, stuns and freezes pin him down), Don Krieg's armor blunts hits until it cracks at half HP (piercing moves get through), Smoker is made of smoke and his seastone jitte drains a Devil Fruit user's SP, Wapol swallows bullets and cannonballs, and every boss from Water 7 on has a trick of its own (see the table below). The raid screen lists each boss's trick before you fight.
+- **Work**: grab the fishing rod at the end of the pier (tap REEL when the bobber dips), or take an odd job from the job board by the bar.
+- **Bar**: walk in the door. Every island has a bar with crewmates for hire (up to 5 at once). Hand each one a weapon you found, feed them a spare Devil Fruit from your bag (it's theirs for life), or kick them out (you get the weapon back; they leave with their fruit). Crewmates jump into normal fights sometimes and fight every turn in raids. Throw a feast at the bar to lift everyone's mood.
+- **Bag / Sleep**: food, energy and mood drain as the day passes. Eat from your Bag and Sleep from the menu bar under the controls. Starving hurts; a good mood boosts training.
+- **Shop**: the building with the SHOP sign. Food, medicine, Energy Cola, Water Barrels (soak Logia bosses), and ship upgrades, paint and figureheads. Each island sells different ones.
+- **Boat**: your ship is moored at the pier on every island. Walk up the gangplank to go aboard; your crew hangs out on deck. The **map table** (or the helm) opens the sea chart; an island opens once you beat the raid boss before it. The **paint locker** picks your hull paint and figurehead, and lists every upgrade and where it's sold. Nap in the **hammock**, cook in the galley, lift the weights. The gangplank takes you back ashore.
+- **Villagers**: talk to the locals for tips about the island, its boss and its bar.
 - **Reverse Mountain**: after you beat Smoker in Logue Town, the sea chart lets you cross the Red Line. The current carries your ship UP the mountain and drops it down the waterfall into the Grand Line.
 - **Awakening**: much later in the game, your Devil Fruit can awaken (Gear 5 for the Rubber fruit, Awakened Dough, Awakened Strings, and so on). You need 300 fruit mastery, level 55, Conqueror's Haki, and to have beaten Admiral Akainu at Marineford. Then the Gear menu offers the Awakening Trial: a solo fight against your fruit's own Will. Win it, and in battle you can **Awaken** for 3 turns: you hit 40% harder, take 25% less damage, change color, and can use two ultimate moves.
 - **Moves**: every move has its own animation and calls its name in a banner, and a weapon's plain attack shows that weapon swinging, stabbing, smashing or firing.
@@ -47,17 +50,17 @@ Secret: tap the word "Choose" in the race picker's title. Every Devil Fruit circ
 
 ## Your ship
 
-Upgrades change how the ship looks from the dock, at sea and on deck (the hull is cut away so you can see the rooms below):
+Upgrades change how the ship looks at the pier, at sea and on deck:
 
 | Upgrade | Effect |
 | --- | --- |
-| Training Weights | A gym below deck. +1 to every training session |
+| Training Weights | Weights on deck you can train with. +1 to every training session |
 | Storm Sails | Red-striped sails. Sailing takes half as long; storms can't touch you |
-| Galley Kitchen | A kitchen with a smoking chimney. Food restores 25% more |
-| Ship Cannon | Cannons on deck. Blasts raid bosses every turn |
+| Galley Kitchen | A stove on deck (opens your bag). Food restores 25% more |
+| Ship Cannon | Cannons on the rails. Blasts raid bosses every turn |
 | Crow's Nest | A lookout on the mast. Sea Kings attack half as often |
-| Crew Bunks | Hammocks below deck. +8 mood every morning |
-| Aquarium Bar | A fish tank lounge with portholes. Some mornings a free Fish |
+| Crew Bunks | Comfier hammocks. +8 mood every morning |
+| Aquarium Bar | A fish tank on deck. Some mornings a free Fish |
 | Paper Lanterns | Colored lanterns that glow at night |
 | Coup de Burst | A cola cannon in the stern. Blast away from any Sea King |
 | Bubble Coating | Lets your ship dive 10,000 m to Fish-Man Island (sold at Sabaody) |

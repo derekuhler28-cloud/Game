@@ -8,7 +8,7 @@ const ISLANDS = [
   {
     name: 'Dawn Village', scene: 'village', bar: 'Windmill Tavern', enemies: ['seaslug', 'bandit', 'boar'], boss: 'grizzle', weapons: ['cutlass', 'bostaff'],
     shop: ['meat', 'bigmeat', 'medicine', 'cola', 'lanterns', 'paint_red'],
-    intro: 'Windmills, quiet farms and a bandit problem. Explore to find a weapon, and visit the Bar to hire a crew. Locals whisper about a strange fruit hidden somewhere...',
+    intro: 'Windmills, quiet farms and a bandit problem. Search trash cans and shaking bushes for a weapon, and visit the Bar to hire a crew. Locals whisper about a strange fruit hidden somewhere...',
     job: 'You fixed the windmill sails for the village chief.',
   },
   {
