@@ -616,9 +616,9 @@ const FRUITS = {
   ope: {
     name: 'Op-Op Fruit', color: '#e04a7a', color2: '#ffb0c8', sp: 3,
     desc: 'Make a ROOM and operate on anything inside it. Focus gives you +3 SP every turn, and Shambles never misses.',
-    awaken: { name: 'Surgeon of Death', look: { h: '#2a2433', v: '#ffe14a', b: '#2a2433' }, moves: [{ name: 'Counter Shock', sp: 45, mult: 3.2, stun: 0.5, fx: 'countershock' }, { name: 'Puncture Wille', sp: 70, mult: 5.2, pierce: true, fx: 'puncturewille' }] },
+    awaken: { name: 'Surgeon of Death', look: { h: '#2a2433', v: '#ffe14a', b: '#2a2433' }, moves: [{ name: 'Counter Shock', sp: 45, mult: 3.2, stun: 0.5, fx: 'lawshock' }, { name: 'Puncture Wille', sp: 70, mult: 5.2, pierce: true, fx: 'puncturewille' }] },
     moves: [
-      { name: 'Room: Shambles', at: 0, sp: 25, mult: 1.6, sure: true, fx: 'shambles' },
+      { name: 'Room: Shambles', at: 0, sp: 25, mult: 1.6, sure: true, fx: 'roomshambles' },
       { name: 'Mes', at: 40, sp: 45, mult: 1.3, stun: 0.55, fx: 'mes' },
       { name: 'Gamma Knife', at: 120, sp: 85, mult: 3.4, pierce: true, fx: 'gammaknife' },
     ],
