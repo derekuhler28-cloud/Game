@@ -3625,7 +3625,7 @@ function onKey(e) {
   if (e.key === 'Escape' && !$('modal').hidden && !$('modalClose').hidden) { closeModal(); return; }
   if (walking() && !e.ctrlKey && !e.metaKey && !e.altKey) {
     const d = KEY_DIRS[e.key.toLowerCase()];
-    if (d) { e.preventDefault(); if (!OW.keys.includes(d)) OW.keys.push(d); return; }
+    if (d) { e.preventDefault(); if (!OW.keys.includes(d)) OW.keys.push(d); OW.pending = d; return; }
     if (e.key === 'Shift' || e.key.toLowerCase() === 'x') { OW.run = true; return; }
     // Enter on a focused menu button presses that button; otherwise Space, Enter and Z are the A button.
     const onButton = document.activeElement && document.activeElement.tagName === 'BUTTON' && !document.activeElement.closest('.pad');
@@ -3661,7 +3661,7 @@ function boot(data) {
   $('modal').addEventListener('pointerdown', e => { if (e.target === $('modal') && !$('modalClose').hidden) closeModal(); });
   document.addEventListener('keydown', onKey);
   document.addEventListener('keyup', onKeyUp);
-  window.addEventListener('blur', () => { OW.keys = []; OW.held = null; OW.run = false; });
+  window.addEventListener('blur', () => { OW.keys = []; OW.held = null; OW.pending = null; OW.run = false; });
   $('muteBtn').addEventListener('click', () => { Sfx.toggle(); updateMuteLabel(); Sfx.play('select'); });
   updateMuteLabel();
 

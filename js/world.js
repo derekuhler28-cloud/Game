@@ -777,7 +777,7 @@ function walkSprite(spec, dir, frame) {
 
 const OW = {
   key: null, map: null, x: 0, y: 0, dir: 'up', mv: null, parity: 0, trail: [], held: null, keys: [], run: false,
-  path: null, goal: null, turnT: 0, npcs: [], inside: null, respawn: false, search: null, lastTarget: null,
+  path: null, goal: null, npcs: [], inside: null, respawn: false, search: null, lastTarget: null,
 };
 
 function owLoad(kind) {
@@ -981,7 +981,7 @@ function foeThink(n, dt, t) {
 
 async function foeAmbush(n) {
   n.chase = 0;
-  OW.path = null; OW.goal = null; OW.keys = []; OW.held = null;
+  OW.path = null; OW.goal = null; OW.keys = []; OW.held = null; OW.pending = null;
   OW.dir = dirTo(OW, n);
   n.dir = dirTo(n, OW);
   lock(true);
@@ -1239,8 +1239,9 @@ function startStep(tx, ty) {
   OW.parity = 1 - OW.parity;
 }
 
+// A press counts even if it's let go before the next frame, so a quick tap still takes one step.
 function owInputDir() {
-  return OW.held || OW.keys[OW.keys.length - 1] || null;
+  return OW.held || OW.keys[OW.keys.length - 1] || OW.pending || null;
 }
 
 function owUpdate(dt) {
@@ -1253,7 +1254,6 @@ function owUpdate(dt) {
     OW.x = OW.mv.tx;
     OW.y = OW.mv.ty;
     OW.mv = null;
-    OW.stepEnd = G.t;
     if (onStep()) return;
   }
   if (!free) { OW.path = null; return; }
@@ -1261,16 +1261,13 @@ function owUpdate(dt) {
   if (dir) {
     OW.path = null;
     OW.goal = null;
-    if (OW.dir !== dir && !OW.turning && G.t - (OW.stepEnd || 0) > 0.12) { OW.dir = dir; OW.turnT = 0.08; OW.turning = true; return; }
-    if (OW.turnT > 0) { OW.turnT -= dt; return; }
-    OW.turning = false;
     OW.dir = dir;
+    OW.pending = null;
     const [dx, dy] = DIRV[dir];
     if (canWalk(OW.x + dx, OW.y + dy)) startStep(OW.x + dx, OW.y + dy);
     else if (!OW.bumpT || G.t > OW.bumpT) { OW.bumpT = G.t + 0.35; Sfx.play('bump'); }
     return;
   }
-  OW.turning = false;
   if (OW.path && OW.path.length) {
     const n = OW.path.shift();
     OW.dir = n.x > OW.x ? 'right' : n.x < OW.x ? 'left' : n.y > OW.y ? 'down' : 'up';
@@ -1292,13 +1289,13 @@ function onStep() {
   const m = OW.map, ch = m.at(OW.x, OW.y), o = m.obj[OW.y * m.w + OW.x];
   if (o && o.type === 'door') {
     OW.inside = { x: OW.x, y: OW.y };
-    OW.path = null; OW.goal = null; OW.keys = []; OW.held = null;
+    OW.path = null; OW.goal = null; OW.keys = []; OW.held = null; OW.pending = null;
     Sfx.play('door');
     if (o.of.type === 'bar') barMenu(); else shopMenu();
     return true;
   }
   if (ch === 'g') {
-    OW.path = null; OW.goal = null; OW.keys = []; OW.held = null;
+    OW.path = null; OW.goal = null; OW.keys = []; OW.held = null; OW.pending = null;
     if (OW.key === 'deck') goAshore(); else boardShip();
     return true;
   }
@@ -1617,7 +1614,7 @@ function padControls() {
     Sfx.unlock();
     if (G.busy) { onMsgTap(); return; }
     try { dpad.setPointerCapture(e.pointerId); } catch (err) { /* pointer already gone */ }
-    OW.held = dirFrom(e);
+    OW.held = OW.pending = dirFrom(e);
     show(OW.held);
   });
   dpad.addEventListener('pointermove', e => { if (dpad.hasPointerCapture(e.pointerId)) { OW.held = dirFrom(e); show(OW.held); } });
