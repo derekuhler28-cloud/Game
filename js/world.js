@@ -3,6 +3,8 @@
    Tile maps (templates + island themes), grid movement, crew followers, tap-to-walk and interactions. */
 
 const TS = 16;
+// The overworld view: 18 x 12 tiles on screen.
+const VW = 288, VH = 192;
 const DIRV = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
 const STEP_WALK = 0.19, STEP_RUN = 0.11;
 
@@ -970,7 +972,7 @@ function respawnFoes() {
   foeSlots(m).forEach((sp, i) => {
     if (OW.npcs.some(n => n.kind === 'foe' && n.slot === i) || !foeReady(m, i)) return;
     const sx = sp.x * TS - cam.x, sy = sp.y * TS - cam.y;
-    if (sx > -TS && sx < W && sy > -TS && sy < H) return;
+    if (sx > -TS && sx < VW && sy > -TS && sy < VH) return;
     if (!walkable(m, sp.x, sp.y) || occupied(sp.x, sp.y) || (sp.x === t.x && sp.y === t.y)) return;
     OW.npcs.push(makeFoe(m, i));
   });
@@ -1001,7 +1003,7 @@ function foeThink(n, dt, t) {
   n.think = 1.2 + Math.random() * 1.2;
   if (G.mode !== 'home' || OW.map.kind !== 'island' || G.t < n.calm || G.t < (OW.peaceUntil || 0)) return false;
   if (p.energy < 10 || isLate() || dist1(n, t) > 4) return false;
-  if (Math.random() > (p.tick >= 6 ? 0.4 : 0.22)) return false;
+  if (Math.random() > (p.tick >= NIGHT_TICK ? 0.4 : 0.22)) return false;
   n.chase = 9;
   n.alert = G.t;
   n.face = t.x > n.x ? 'right' : t.x < n.x ? 'left' : n.face;
@@ -1616,8 +1618,8 @@ function owPressA() {
 function owCam() {
   const m = OW.map;
   const hp = owHeroPx();
-  const cx = m.w * TS <= W ? (m.w * TS - W) / 2 : clamp(Math.round(hp.x + 8 - W / 2), 0, m.w * TS - W);
-  const cy = m.h * TS <= H ? (m.h * TS - H) / 2 : clamp(Math.round(hp.y + 8 - H / 2), 0, m.h * TS - H);
+  const cx = m.w * TS <= VW ? (m.w * TS - VW) / 2 : clamp(Math.round(hp.x + 8 - VW / 2), 0, m.w * TS - VW);
+  const cy = m.h * TS <= VH ? (m.h * TS - VH) / 2 : clamp(Math.round(hp.y + 8 - VH / 2), 0, m.h * TS - VH);
   return { x: cx, y: cy };
 }
 
@@ -1640,14 +1642,15 @@ function heroScreenPos() {
 function drawWorld() {
   const m = OW.map, cam = owCam(), t = G.t;
   const indoor = m.kind === 'bar' || m.kind === 'shop';
-  pxRect(ctx, 0, 0, W, H, indoor ? '#05081a' : m.th.water[0]);
+  pxRect(ctx, 0, 0, VW, VH, indoor ? '#05081a' : m.th.water[0]);
   if (m.kind !== 'deck') ctx.drawImage(m.layer, -cam.x, -cam.y);
-  // moving water sparkles on visible tiles
-  const x0 = Math.max(0, Math.floor(cam.x / TS)), y0 = Math.max(0, Math.floor(cam.y / TS));
-  for (let y = y0; y < Math.min(m.h, y0 + 10); y++) {
-    for (let x = x0; x < Math.min(m.w, x0 + 14); x++) {
-      if (m.ground[y * m.w + x] !== 'water') continue;
-      const ph = (x * 5 + y * 3) % 7;
+  // moving water sparkles on visible tiles (open sea around the deck too)
+  const x0 = Math.floor(cam.x / TS), y0 = Math.floor(cam.y / TS);
+  for (let y = y0; y <= y0 + VH / TS; y++) {
+    for (let x = x0; x <= x0 + VW / TS; x++) {
+      const inMap = x >= 0 && y >= 0 && x < m.w && y < m.h;
+      if (inMap ? m.ground[y * m.w + x] !== 'water' : indoor) continue;
+      const ph = ((x * 5 + y * 3) % 7 + 7) % 7;
       const k = Math.floor(t * 2 + ph) % 4;
       const sx = x * TS - cam.x, sy = y * TS - cam.y;
       pxRect(ctx, sx + 2 + ((ph * 3 + Math.floor(t * 3)) % 9), sy + 4 + k * 2, 4, 1, m.th.water[1]);
@@ -1710,11 +1713,11 @@ function drawWorld() {
   // night falls (indoors the lamps are on)
   const ti = indoor ? 0 : timeIdx(), late = !indoor && isLate();
   const th = m.th;
-  if (th.tint && !indoor) { ctx.globalAlpha = th.tint[1]; pxRect(ctx, 0, 0, W, H, th.tint[0]); ctx.globalAlpha = 1; }
-  if (ti === 2 && !late) { ctx.globalAlpha = 0.16; pxRect(ctx, 0, 0, W, H, '#ff8a3a'); ctx.globalAlpha = 1; }
+  if (th.tint && !indoor) { ctx.globalAlpha = th.tint[1]; pxRect(ctx, 0, 0, VW, VH, th.tint[0]); ctx.globalAlpha = 1; }
+  if (ti === 2 && !late) { ctx.globalAlpha = 0.16; pxRect(ctx, 0, 0, VW, VH, '#ff8a3a'); ctx.globalAlpha = 1; }
   if (ti === 3 || late) {
     ctx.globalAlpha = late ? 0.55 : 0.45;
-    pxRect(ctx, 0, 0, W, H, '#0a1030');
+    pxRect(ctx, 0, 0, VW, VH, '#0a1030');
     ctx.globalAlpha = 1;
     for (const [lx, ly, lw, lh] of m.lights) { pxRect(ctx, lx - cam.x, ly - cam.y, lw, lh, '#ffd36a'); ctx.globalAlpha = 0.25; pxRect(ctx, lx - cam.x - 2, ly - cam.y - 2, lw + 4, lh + 4, '#ffd36a'); ctx.globalAlpha = 1; }
   }
@@ -1722,7 +1725,7 @@ function drawWorld() {
   if (fs) drawFruitGlow(fs, cam);
   if (th.bubbles && !indoor) {
     for (let i = 0; i < 6; i++) {
-      const bx = (i * 47 + Math.sin(t + i) * 6) % W, by = H - ((t * 14 + i * 37) % (H + 20));
+      const bx = (i * 47 + Math.sin(t + i) * 6) % VW, by = VH - ((t * 14 + i * 37) % (VH + 20));
       ctx.globalAlpha = 0.6; pxRing(ctx, bx, by, 2 + (i % 2), '#e0f6ff'); ctx.globalAlpha = 1;
     }
   }

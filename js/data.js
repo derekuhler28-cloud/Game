@@ -2,7 +2,9 @@
 /* Game content: islands, enemies, raid bosses, crew, devil fruits, items. */
 
 const TIME_NAMES = ['Morning', 'Noon', 'Evening', 'Night'];
-const TICKS_PER_DAY = 8; // two ticks per time slot; tick 8 = late night
+const TICKS_PER_DAY = 12; // three ticks per time slot; tick 12 = late night
+const SLOT_TICKS = TICKS_PER_DAY / 4;
+const NIGHT_TICK = SLOT_TICKS * 3;
 
 const ISLANDS = [
   {

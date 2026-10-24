@@ -938,7 +938,7 @@ function drawSpriteAt(c, spr, x, y, scale, o) {
 
 function drawBubble(c, x, y, text) {
   const w = textWidth(text, 1) + 6;
-  const bx = Math.round(Math.min(W - w - 2, Math.max(2, x - w / 2)));
+  const bx = Math.round(Math.min(c.canvas.width - w - 2, Math.max(2, x - w / 2)));
   const by = Math.round(y - 11);
   pxRect(c, bx - 1, by - 1, w + 2, 11, PAL.k);
   pxRect(c, bx, by, w, 9, '#ffffff');

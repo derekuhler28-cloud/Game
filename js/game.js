@@ -40,7 +40,7 @@ function newPlayer(name, raceKey) {
     v: 5, name, race: RACES[raceKey] ? raceKey : 'human',
     lvl: 1, xp: 0, hp, maxHp: hp, atk: 10 + (st.atk || 0), def: 4, spd: 5 + (st.spd || 0), haki: 0,
     energy: 100, food: 70, mood: 60, berries: 50, bounty: 0,
-    day: 1, tick: 0, island: 0, unlocked: 1, bosses: {}, crew: [], fruit: null,
+    day: 1, tick: 0, dayLen: TICKS_PER_DAY, island: 0, unlocked: 1, bosses: {}, crew: [], fruit: null,
     bag: { meat: 1 }, owned: {}, wins: 0, trained: 0, king: false,
     weapon: null, weapons: [], mastery: {}, explored: {}, fruitMap: dealFruits({}, []), fruitsFound: [], fruitBag: [],
     ship: { paint: 'wood', head: null }, awakened: {}, clothes: [], wear: { hat: null, coat: null, charm: null },
@@ -77,8 +77,8 @@ function dealFruits(map, found) {
 }
 
 const island = () => ISLANDS[G.p.island];
-const timeIdx = () => (G.p ? Math.min(3, Math.floor(G.p.tick / 2)) : 0);
-const timeName = () => (G.p.tick >= TICKS_PER_DAY ? 'Late Night' : TIME_NAMES[Math.floor(G.p.tick / 2)]);
+const timeIdx = () => (G.p ? Math.min(3, Math.floor(G.p.tick / SLOT_TICKS)) : 0);
+const timeName = () => (G.p.tick >= TICKS_PER_DAY ? 'Late Night' : TIME_NAMES[Math.floor(G.p.tick / SLOT_TICKS)]);
 const isLate = () => G.p.tick >= TICKS_PER_DAY;
 const xpNeed = l => Math.round(12 * Math.pow(l, 1.35));
 const moodMult = () => (G.p.mood >= 75 ? 1.1 : G.p.mood <= 25 ? 0.9 : 1);
@@ -175,6 +175,9 @@ function restore(raw) {
     p.explored = remap(p.explored);
     raw = Object.assign({}, raw, { fruitMap: remap(raw.fruitMap) });
   }
+  // Days used to be 8 ticks long: keep the same time of day on older saves.
+  if (!raw.dayLen) p.tick = Math.min(TICKS_PER_DAY, Math.round((raw.tick || 0) * TICKS_PER_DAY / 8));
+  p.dayLen = TICKS_PER_DAY;
   p.ship = Object.assign({ paint: 'wood', head: null }, p.ship);
   // Older saves stored a straw hat or a pirate outfit; your pirate wears neither now.
   delete p.hat;
@@ -760,10 +763,11 @@ function spend(energy, ticks, food) {
   p.energy = clamp(p.energy - energy, 0, 100);
   p.tick = Math.min(TICKS_PER_DAY, p.tick + ticks);
   p.food = clamp(p.food - (food > 0 ? food * (p.race === 'mink' ? 1.25 : 1) * (1 - teamBonus('hunger')) : food), 0, 100);
-  p.mood = clamp(p.mood - ticks, 0, 100);
+  const dayShare = ticks * 8 / TICKS_PER_DAY;
+  p.mood = clamp(p.mood - dayShare, 0, 100);
   if (p.food <= 0 && ticks > 0) {
-    p.hp = Math.max(1, p.hp - Math.ceil(p.maxHp * 0.04 * ticks));
-    p.mood = clamp(p.mood - 4 * ticks, 0, 100);
+    p.hp = Math.max(1, p.hp - Math.ceil(p.maxHp * 0.04 * dayShare));
+    p.mood = clamp(p.mood - 4 * dayShare, 0, 100);
   }
 }
 
@@ -1832,7 +1836,7 @@ function startRaid(key, lvl) {
 function fightEnemy(key, o) {
   o = o || {};
   if (!needEnergy(10)) return false;
-  const night = G.p.tick >= 6;
+  const night = G.p.tick >= NIGHT_TICK;
   spend(10, 1, 6);
   startBattle({ def: ENEMIES[key], key, lvl: ENEMIES[key].lvl + randInt(0, 1) + (night ? 2 : 0), night, after: o.after, intro: o.intro });
   return true;
@@ -1965,7 +1969,7 @@ function hitFoe(mult, o) {
     return 0;
   }
   let atk = (o.atk || effAtk() * moodMult()) * (B.armament > 0 ? 1.35 : 1) * (!o.atk && B.awake > 0 ? 1.4 : 1);
-  if (!o.atk && p.race === 'mink' && (p.tick >= 6 || F.night)) atk *= 1.15;
+  if (!o.atk && p.race === 'mink' && (p.tick >= NIGHT_TICK || F.night)) atk *= 1.15;
   if (!o.atk && p.race === 'fishman' && (B.scene === 'desert' || B.scene === 'sky')) atk *= 0.9;
   let dmg = atk * mult * rand(0.9, 1.1) - (o.pierce ? 0 : F.defense * 0.5);
   const crit = Math.random() < clamp(0.05 + effSpd() * 0.003, 0.05, 0.3) + (o.critBonus || 0) + (o.atk ? 0 : wearBonus('crit'));
@@ -3408,10 +3412,10 @@ function drawPlaceLabel() {
   if (left) {
     const t = `${left} LEFT`, tw = textWidth(t, 1) + 16;
     ctx.globalAlpha = 0.5;
-    pxRect(ctx, W - tw - 2, 2, tw, 12, '#05081a');
+    pxRect(ctx, canvas.width - tw - 2, 2, tw, 12, '#05081a');
     ctx.globalAlpha = 1;
-    ctx.drawImage(getSprite({ kind: 'icon', icon: 'chest' }), W - tw, 3);
-    drawText(ctx, t, W - tw + 12, 5, { color: '#ffe14a', shadow: null });
+    ctx.drawImage(getSprite({ kind: 'icon', icon: 'chest' }), canvas.width - tw, 3);
+    drawText(ctx, t, canvas.width - tw + 12, 5, { color: '#ffe14a', shadow: null });
   }
 }
 
@@ -3607,11 +3611,21 @@ function drawMountainCut() {
   drawReverseMountain(ctx, G.cut ? G.cut.k : 1, G.t, sc);
 }
 
+// Walking around renders at 288x192 (finer pixels, more of the island on screen); everything else at 192x128.
+function setScreen(w, h) {
+  if (canvas.width === w) return;
+  canvas.width = w;
+  canvas.height = h;
+  ctx.imageSmoothingEnabled = false;
+}
+
 function draw() {
-  pxRect(ctx, 0, 0, W, H, '#05081a');
+  const world = (G.mode === 'home' || G.mode === 'boat') && G.p && OW.map;
+  setScreen(world ? VW : W, world ? VH : H);
+  const SW = canvas.width, SH = canvas.height;
+  pxRect(ctx, 0, 0, SW, SH, '#05081a');
   ctx.save();
   if (FX.shakeMag > 0) ctx.translate(Math.round(rand(-1, 1) * FX.shakeMag), Math.round(rand(-1, 1) * FX.shakeMag));
-  const world = (G.mode === 'home' || G.mode === 'boat') && G.p && OW.map;
   if (world) {
     drawWorld();
   } else {
@@ -3633,12 +3647,12 @@ function draw() {
   drawFx(ctx);
   ctx.restore();
   if (world) drawPlaceLabel();
-  if (FX.flashA > 0) { ctx.globalAlpha = Math.min(1, FX.flashA); pxRect(ctx, 0, 0, W, H, FX.flashColor); ctx.globalAlpha = 1; }
+  if (FX.flashA > 0) { ctx.globalAlpha = Math.min(1, FX.flashA); pxRect(ctx, 0, 0, SW, SH, FX.flashColor); ctx.globalAlpha = 1; }
   if (G.fade > 0) {
     ctx.globalAlpha = G.fade;
-    pxRect(ctx, 0, 0, W, H, '#05081a');
+    pxRect(ctx, 0, 0, SW, SH, '#05081a');
     ctx.globalAlpha = 1;
-    if (G.fade > 0.6 && G.sleeping) drawText(ctx, 'Z Z Z', W / 2, H / 2 - 5, { color: '#9aa8d8', scale: 2, align: 'center' });
+    if (G.fade > 0.6 && G.sleeping) drawText(ctx, 'Z Z Z', SW / 2, SH / 2 - 5, { color: '#9aa8d8', scale: 2, align: 'center' });
   }
 }
 
@@ -3707,8 +3721,8 @@ function frame(now) {
 function onCanvasTap(e) {
   Sfx.unlock();
   const r = canvas.getBoundingClientRect();
-  const x = (e.clientX - r.left) * W / r.width;
-  const y = (e.clientY - r.top) * H / r.height;
+  const x = (e.clientX - r.left) * canvas.width / r.width;
+  const y = (e.clientY - r.top) * canvas.height / r.height;
   if (G.mode === 'train') { trainStrike(); return; }
   if (G.mode === 'fish') { reel(); return; }
   if ((G.mode === 'home' || G.mode === 'boat') && OW.map) {
