@@ -4,6 +4,8 @@ A small pixel-art pirate life sim inspired by One Piece. You start as a nobody: 
 
 No build step and no dependencies: open `index.html` in a browser (or serve the folder with any static server). Progress saves automatically in your browser.
 
+**Save codes**: open Stats and tap **Save code** to turn your whole save into one line of text (copy it somewhere safe). Paste it into **Load code** on the title screen, in any browser or on any device, to pick up right where you left off.
+
 ## Races
 
 Pick one when you start a new game. Each changes your starting stats and has its own perks and flaws:

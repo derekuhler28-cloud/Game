@@ -386,6 +386,20 @@ body {
   border: 2px solid var(--bezel);
 }
 .nameform input:focus-visible { outline: 3px solid var(--brass); outline-offset: 1px; }
+.codebox {
+  width: 100%;
+  min-height: 96px;
+  padding: 8px;
+  font-family: ui-monospace, "Courier New", monospace;
+  font-size: 12px;
+  line-height: 1.35;
+  color: var(--ink);
+  background: var(--paper-3);
+  border: 2px solid var(--bezel);
+  resize: vertical;
+  word-break: break-all;
+}
+.codebox:focus-visible { outline: 3px solid var(--brass); outline-offset: 1px; }
 .nameform .btn { flex: 1 1 120px; }
 
 /* ---------- modal panels ---------- */

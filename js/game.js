@@ -208,6 +208,99 @@ function restore(raw) {
   return p;
 }
 
+// ---------- save codes ----------
+// Your whole save as one line of text (PP1 = compressed, PP0 = plain) plus a short check, so you can copy it
+// anywhere and load it on any browser or device.
+
+function toB64(bytes) {
+  let bin = '';
+  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+  return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+function fromB64(str) {
+  const bin = atob(str.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((str.length + 3) % 4));
+  return Uint8Array.from(bin, ch => ch.charCodeAt(0));
+}
+
+function codeCheck(str) {
+  let h = 2166136261;
+  for (let i = 0; i < str.length; i++) h = Math.imul(h ^ str.charCodeAt(i), 16777619) >>> 0;
+  return h.toString(36).slice(0, 5).toUpperCase();
+}
+
+const streamBytes = (bytes, stream) => new Response(new Blob([bytes]).stream().pipeThrough(stream)).arrayBuffer().then(b => new Uint8Array(b));
+
+async function makeSaveCode() {
+  let bytes = new TextEncoder().encode(JSON.stringify(G.p)), tag = 'PP0';
+  try { bytes = await streamBytes(bytes, new CompressionStream('deflate-raw')); tag = 'PP1'; } catch (e) { /* no compression here: plain code */ }
+  const data = toB64(bytes);
+  return `${tag}.${data}.${codeCheck(data)}`;
+}
+
+// Returns the player from a code, or throws an Error whose message says what went wrong.
+async function readSaveCode(code) {
+  const [tag, data, check] = code.replace(/\s+/g, '').split('.');
+  if (!data || !['PP0', 'PP1'].includes(tag)) throw new Error("That doesn't look like a Pocket Pirate save code.");
+  if (codeCheck(data) !== (check || '').toUpperCase()) throw new Error('That code has a typo or is cut off. Copy the whole thing and try again.');
+  let bytes = fromB64(data);
+  if (tag === 'PP1') {
+    try { bytes = await streamBytes(bytes, new DecompressionStream('deflate-raw')); } catch (e) { throw new Error("This browser can't open compressed codes. Try a newer browser."); }
+  }
+  let p = null;
+  try { p = restore(JSON.parse(new TextDecoder().decode(bytes))); } catch (e) { p = null; }
+  if (!p) throw new Error("That save code couldn't be loaded.");
+  return p;
+}
+
+async function saveCodeMenu() {
+  const body = el('div');
+  body.style.display = 'contents';
+  const box = el('textarea', { class: 'codebox', readonly: true, rows: '5', 'aria-label': 'Your save code', spellcheck: 'false' });
+  box.value = 'Making your code...';
+  const status = el('p', { class: 'note', 'aria-live': 'polite', text: 'Keep this code somewhere safe (a notes app, or text it to yourself). Load it from the title screen on any browser to pick up right here.' });
+  body.append(status, box, el('div', { class: 'btn-row' },
+    el('button', { type: 'button', class: 'mini-btn red', text: 'Copy code', onclick: () => copyCode(box, status) }),
+    el('button', { type: 'button', class: 'mini-btn', text: 'Load a different code', onclick: () => loadCodeMenu() })));
+  openModal('Save Code', body, { onClose: backToMenu });
+  save();
+  box.value = await makeSaveCode();
+  box.focus();
+  box.select();
+}
+
+async function copyCode(box, status) {
+  try { await navigator.clipboard.writeText(box.value); } catch (e) { box.select(); document.execCommand('copy'); }
+  Sfx.play('coin');
+  status.textContent = `Copied! Day ${G.p.day}, level ${G.p.lvl}. Paste it somewhere safe.`;
+}
+
+function loadCodeMenu() {
+  const body = el('div');
+  body.style.display = 'contents';
+  const box = el('textarea', { class: 'codebox', rows: '5', 'aria-label': 'Paste a save code', placeholder: 'Paste your save code here (it starts with PP1)', spellcheck: 'false', autocomplete: 'off' });
+  const status = el('p', { class: 'note', 'aria-live': 'polite', text: G.p || G.saved ? 'Loading a code replaces the save on this browser.' : 'Paste a code from another browser or device to keep playing that save.' });
+  body.append(status, box, el('div', { class: 'btn-row' },
+    el('button', { type: 'button', class: 'mini-btn red', text: 'Load', onclick: async () => {
+      try {
+        const p = await readSaveCode(box.value);
+        G.p = p;
+        G.saved = p;
+        save();
+        modalOnClose = null;
+        closeModal();
+        Sfx.play('find');
+        enterGame(true);
+      } catch (e) {
+        Sfx.play('bad');
+        status.textContent = e.message;
+      }
+    } }),
+    el('button', { type: 'button', class: 'mini-btn', text: 'Cancel', onclick: closeModal })));
+  openModal('Load Save Code', body, { onClose: G.mode === 'title' ? null : backToMenu });
+  box.focus();
+}
+
 function loadSave() {
   try {
     const s = localStorage.getItem(SAVE_KEY);
@@ -398,6 +491,7 @@ function showTitle() {
     setActions([
       { label: 'Continue', sub: `${saved.name} - Lv ${saved.lvl} - Day ${saved.day}`, cls: 'raid', onClick: () => { G.p = saved; enterGame(true); } },
       { label: 'New Game', sub: 'start over', onClick: () => newGameForm(true) },
+      { label: 'Load Code', sub: 'paste a save code', cls: 'ghost', onClick: loadCodeMenu },
     ], 'single');
     say('Welcome back, Captain. Your ship is waiting.');
   } else {
@@ -425,6 +519,7 @@ function newGameForm(overwrite) {
   });
   const kids = [form];
   if (overwrite) kids.push(el('button', { type: 'button', class: 'btn ghost', text: 'Back', onclick: () => showTitle() }));
+  else kids.push(el('button', { type: 'button', class: 'btn ghost', text: 'Load a save code', onclick: loadCodeMenu }));
   box.replaceChildren(...kids);
   if (overwrite) say('Starting over replaces your current save.');
 }
@@ -1662,6 +1757,8 @@ function wantedMenu(confirmReset) {
       el('button', { type: 'button', class: 'mini-btn', text: 'Keep playing', onclick: () => wantedMenu(false) })));
   } else {
     body.append(el('div', { class: 'btn-row' },
+      el('button', { type: 'button', class: 'mini-btn red', text: 'Save code', onclick: saveCodeMenu }),
+      el('button', { type: 'button', class: 'mini-btn', text: 'Load code', onclick: loadCodeMenu }),
       el('button', { type: 'button', class: 'mini-btn', text: 'Erase save...', onclick: () => wantedMenu(true) })));
   }
   openModal('Wanted Poster', body, { onClose: () => G.mode === 'home' && homeMenu() });
@@ -3632,7 +3729,7 @@ function onKeyUp(e) {
 }
 
 function onKey(e) {
-  if (e.target && e.target.tagName === 'INPUT') return;
+  if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
   if (e.key === 'Escape' && $('egg')) { closeEgg(); return; }
   if (e.key === 'Escape' && !$('modal').hidden && !$('modalClose').hidden) { closeModal(); return; }
   if (walking() && !e.ctrlKey && !e.metaKey && !e.altKey) {
