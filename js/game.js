@@ -39,7 +39,7 @@ function newPlayer(name, raceKey) {
   return {
     v: 5, name, race: RACES[raceKey] ? raceKey : 'human',
     lvl: 1, xp: 0, hp, maxHp: hp, atk: 10 + (st.atk || 0), def: 4, spd: 5 + (st.spd || 0), haki: 0,
-    energy: 100, food: 70, mood: 60, berries: 50, bounty: 0,
+    energy: MAX_EN, food: 70, mood: 60, berries: 50, bounty: 0,
     day: 1, tick: 0, dayLen: TICKS_PER_DAY, island: 0, unlocked: 1, bosses: {}, crew: [], fruit: null,
     bag: { meat: 1 }, owned: {}, wins: 0, trained: 0, king: false,
     weapon: null, weapons: [], mastery: {}, explored: {}, fruitMap: dealFruits({}, []), fruitsFound: [], fruitBag: [],
@@ -456,7 +456,7 @@ function updateHud() {
   const B = G.battle;
   const meters = B
     ? [['HP', p.hp, p.maxHp, '--hp', 'Health', true], ['SP', B.sp, 100, '--sp', 'Spirit', true]]
-    : [['HP', p.hp, p.maxHp, '--hp', 'Health', true], ['EN', p.energy, 100, '--en', 'Energy'], ['FOOD', p.food, 100, '--food', 'Food'], ['MOOD', p.mood, 100, '--mood', 'Mood']];
+    : [['HP', p.hp, p.maxHp, '--hp', 'Health', true], ['EN', p.energy, MAX_EN, '--en', 'Energy'], ['FOOD', p.food, 100, '--food', 'Food'], ['MOOD', p.mood, 100, '--mood', 'Mood']];
   const box = $('meters');
   const key = meters.map(m => m[0]).join();
   if (box.dataset.key !== key) {
@@ -760,7 +760,7 @@ function needEnergy(n) {
 
 function spend(energy, ticks, food) {
   const p = G.p;
-  p.energy = clamp(p.energy - energy, 0, 100);
+  p.energy = clamp(p.energy - energy, 0, MAX_EN);
   p.tick = Math.min(TICKS_PER_DAY, p.tick + ticks);
   p.food = clamp(p.food - (food > 0 ? food * (p.race === 'mink' ? 1.25 : 1) * (1 - teamBonus('hunger')) : food), 0, 100);
   const dayShare = ticks * 8 / TICKS_PER_DAY;
@@ -1033,7 +1033,7 @@ function bagMenu(note) {
     const btn = el('button', { type: 'button', class: 'mini-btn', text: it.battleOnly ? 'Battle' : 'Use', disabled: it.battleOnly || null, onclick: () => useItem(k) });
     body.append(itemRow(k, el('div', { class: 'btn-row' }, el('span', { class: 'count', text: 'x' + p.bag[k] }), btn)));
   }
-  body.append(el('p', { class: 'note', text: `Food ${Math.round(p.food)}/100 - Energy ${Math.round(p.energy)}/100 - HP ${p.hp}/${p.maxHp}${foodBoost() > 1 ? ` - food bonus +${Math.round((foodBoost() - 1) * 100)}%` : ''}` }));
+  body.append(el('p', { class: 'note', text: `Food ${Math.round(p.food)}/100 - Energy ${Math.round(p.energy)}/${MAX_EN} - HP ${p.hp}/${p.maxHp}${foodBoost() > 1 ? ` - food bonus +${Math.round((foodBoost() - 1) * 100)}%` : ''}` }));
   openModal('Bag', body, { onClose: () => G.mode === 'home' && homeMenu() });
 }
 
@@ -1044,7 +1044,7 @@ function useItem(k) {
   const boost = it.food ? foodBoost() : 1;
   const parts = [];
   if (it.food) { const v = Math.round(it.food * boost); p.food = clamp(p.food + v, 0, 100); parts.push(`+${v} food`); }
-  if (it.energy) { const v = Math.round(it.energy * boost); p.energy = clamp(p.energy + v, 0, 100); parts.push(`+${v} energy`); }
+  if (it.energy) { const v = Math.round(it.energy * boost); p.energy = clamp(p.energy + v, 0, MAX_EN); parts.push(`+${v} energy`); }
   if (it.mood) p.mood = clamp(p.mood + it.mood, 0, 100);
   if (k === 'medicine') { const v = Math.round(p.maxHp * it.heal); p.hp = Math.min(p.maxHp, p.hp + v); parts.push(`+${v} HP`); }
   else if (it.food) p.hp = Math.min(p.maxHp, p.hp + Math.round(p.maxHp * 0.1 * boost));
@@ -1493,7 +1493,7 @@ async function sailTo(idx) {
   } else if (r < 0.57) {
     if (p.owned.sails) await talk('A storm rolls in, but your Storm Sails slice right through it!');
     else if (crewWith('navigator')) await talk(`${CREW[crewWith('navigator').key].name}: "Storm ahead! Hard to port!" Your navigator steers you safely around it.`);
-    else { p.energy = clamp(p.energy - 15, 0, 100); shake(3, 600); await talk('A storm batters the ship! You bail water all night. -15 energy.'); }
+    else { p.energy = clamp(p.energy - 15, 0, MAX_EN); shake(3, 600); await talk('A storm batters the ship! You bail water all night. -15 energy.'); }
   } else if (r < 0.67 && p.fruit) {
     p.mood = clamp(p.mood - 5, 0, 100);
     const swimmer = p.crew.find(m => !m.fruit);
@@ -1699,7 +1699,7 @@ async function sleep() {
   p.day++;
   p.tick = 0;
   const fed = p.food > 0;
-  p.energy = fed ? 100 : 60;
+  p.energy = fed ? MAX_EN : Math.round(MAX_EN * 0.6);
   p.hp = p.maxHp;
   p.food = clamp(p.food - 15, 0, 100);
   p.mood = clamp(p.mood + (fed ? 6 : -10) + (p.owned.bunks ? 8 : 0), 0, 100);
@@ -1708,7 +1708,7 @@ async function sleep() {
   await wait(500);
   await tween(G, { fade: 0 }, 700, linear);
   G.sleeping = false;
-  await talk(`Day ${p.day}. ${fed ? 'You slept like a log. Fully rested!' : 'You went to bed hungry and slept badly. Only 60 energy.'}`);
+  await talk(`Day ${p.day}. ${fed ? 'You slept like a log. Fully rested!' : `You went to bed hungry and slept badly. Only ${Math.round(MAX_EN * 0.6)} energy.`}`);
   if (ev) await talk(ev);
   if (p.food < 30) { bubble('HUNGRY..'); await talk('Your stomach growls. Better eat something soon.'); }
   lock(false);
@@ -2665,7 +2665,7 @@ async function loseBattle() {
   p.day++;
   p.tick = 0;
   p.hp = Math.ceil(p.maxHp * 0.5);
-  p.energy = 60;
+  p.energy = Math.round(MAX_EN * 0.6);
   p.food = clamp(p.food - 10, 0, 100);
   p.mood = clamp(p.mood - 20, 0, 100);
   save();

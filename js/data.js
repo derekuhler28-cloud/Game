@@ -4,6 +4,8 @@
 const TIME_NAMES = ['Morning', 'Noon', 'Evening', 'Night'];
 const TICKS_PER_DAY = 12; // three ticks per time slot; tick 12 = late night
 const SLOT_TICKS = TICKS_PER_DAY / 4;
+// Max energy, sized so a full day's activities fit in one night's sleep.
+const MAX_EN = 150;
 const NIGHT_TICK = SLOT_TICKS * 3;
 
 const ISLANDS = [
