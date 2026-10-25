@@ -3360,17 +3360,14 @@ function slashAt(pos, color, angle, len) {
   });
 }
 
+// A crewmate's quick blade flurry: three fast tapered cuts across the foe.
 async function fxSlash() {
   const fc = foeC();
   for (let i = 0; i < 3; i++) {
-    Sfx.play('slash');
-    const off = (i - 1) * 7;
-    fxRun(220, (c, k) => {
-      const e = easeOut(k);
-      pxLine(c, fc.x - 16 + off, fc.y - 16, fc.x - 16 + off + 32 * e, fc.y - 16 + 32 * e, '#ffffff', 2);
-    });
+    slashAt({ x: fc.x + (i - 1) * 6, y: fc.y + (i - 1) * 3 }, i === 1 ? '#bfe6ff' : '#ffffff', i % 2 ? -0.7 : 0.75, 34);
     await wait(90);
   }
+  impact(fc, ['#ffffff', '#bfe6ff'], 8);
   await wait(200);
 }
 
