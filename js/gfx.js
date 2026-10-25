@@ -520,15 +520,23 @@ function pxRing(c, cx, cy, r, color, t) {
   }
 }
 
+// Steps along the line one pixel at a time, but draws each straight run along the main axis as
+// one rectangle (the same pixels as a square per step, in far fewer calls).
 function pxLine(c, x0, y0, x1, y1, color, t) {
   t = t || 1;
   c.fillStyle = color;
   const dx = x1 - x0, dy = y1 - y0;
   const n = Math.max(Math.abs(dx), Math.abs(dy), 1);
-  const o = Math.floor(t / 2);
+  const o = Math.floor(t / 2), xMajor = Math.abs(dx) >= Math.abs(dy);
+  let a0 = 0, a1 = 0, b = null;
   for (let i = 0; i <= n; i++) {
-    c.fillRect(Math.round(x0 + dx * i / n) - o, Math.round(y0 + dy * i / n) - o, t, t);
+    const x = Math.round(x0 + dx * i / n) - o, y = Math.round(y0 + dy * i / n) - o;
+    const a = xMajor ? x : y, m = xMajor ? y : x;
+    if (m === b) { if (a < a0) a0 = a; if (a > a1) a1 = a; continue; }
+    if (b !== null) { if (xMajor) c.fillRect(a0, b, a1 - a0 + t, t); else c.fillRect(b, a0, t, a1 - a0 + t); }
+    a0 = a1 = a; b = m;
   }
+  if (xMajor) c.fillRect(a0, b, a1 - a0 + t, t); else c.fillRect(b, a0, t, a1 - a0 + t);
 }
 
 // ---------- color helpers ----------

@@ -1074,10 +1074,13 @@ function updateFx(dt) {
     for (const p in tw.to) tw.obj[p] = tw.from[p] + (tw.to[p] - tw.from[p]) * e;
     if (k >= 1) { FX.tweens.splice(i, 1); tw.res(); }
   }
+  // A finished effect is drawn once more at its last frame and removed on the next update, so
+  // the step awaiting it has started its next effect by then and nothing blinks in between.
   for (let i = FX.list.length - 1; i >= 0; i--) {
     const f = FX.list[i];
+    if (f.done) { FX.list.splice(i, 1); continue; }
     f.t += ms;
-    if (f.t >= f.dur) { FX.list.splice(i, 1); f.res(); }
+    if (f.t >= f.dur) { f.done = true; f.res(); }
   }
   for (let i = FX.parts.length - 1; i >= 0; i--) {
     const p = FX.parts[i];

@@ -123,5 +123,6 @@ Tap or click the buttons. Tap your pirate to chat. Space bar strikes in training
 - `js/moves.js`: the animation for every move and every weapon's plain attack
 - `js/moves-islands.js`: animations for the weapons from Water 7 to Whole Cake Island
 - `js/moves-awaken.js`: the awakening transformation and every awakened move
+- `js/moves-classic.js`: the original Devil Fruits' moves (Gum-Gum, Flame, Frost, Quake, Smoke, Light, Dough, Split, String, Paw), fist attacks, the swing/shot weapon moves and Haki
 - `js/dragon.js`: the Dragon-Dragon Fruit's full dragon form (drawn so it can fly and coil), its moves, and Emperor Drakko's dragon form
 - `js/game.js`: game state, menus, the day loop, battles, raids and mini-games
