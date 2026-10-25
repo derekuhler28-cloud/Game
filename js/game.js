@@ -30,7 +30,6 @@ const shuffle = arr => arr.map(v => [Math.random(), v]).sort((a, b) => a[0] - b[
 
 // ---------- player ----------
 
-const DRAGON_FORM = { kind: 'serpent', horns: true, pal: { c: '#4a8ad9', C: '#bfe0ff', x: '#f2e6c8' } };
 
 function newPlayer(name, raceKey) {
   const R = RACES[raceKey] || RACES.human;
@@ -1846,6 +1845,7 @@ function fightEnemy(key, o) {
 // ---------- battle ----------
 
 function startBattle(o) {
+  GHOSTS.list.length = 0; GHOSTS.last = {};
   const def = o.def, lvl = o.lvl;
   const hp = Math.round((22 + lvl * 12) * (o.boss ? def.hpMult : 1));
   const F = {
@@ -1950,9 +1950,32 @@ function foeC() {
 }
 const foeTop = () => { const F = G.battle.F; return F.y - foeLift() - foeH() + 4; };
 
+// A hit spark: white core flash, a six-point star burst and a ring, then sparks.
 function impact(pos, colors, n) {
-  particles(pos.x, pos.y, n || 12, { colors: colors || ['#ffffff', '#ffe14a'], speed: 80, grav: 60, life: 0.4 });
-  fxRun(180, (c, k) => pxRing(c, pos.x, pos.y, 3 + k * 10, '#ffffff'));
+  colors = colors || ['#ffffff', '#ffe14a'];
+  particles(pos.x, pos.y, n || 12, { colors, speed: 95, grav: 60, life: 0.4 });
+  const main = colors[colors.length > 1 ? 1 : 0], rot = Math.random() * Math.PI;
+  fxRun(210, (c, k) => {
+    const e = easeOut(k), col = k < 0.45 ? '#ffffff' : main;
+    if (k < 0.35) pxCircle(c, pos.x, pos.y, 1 + Math.round(6 * (1 - k / 0.35)), '#ffffff');
+    for (let i = 0; i < 6; i++) {
+      const a = rot + i * Math.PI / 3, r0 = 2 + 7 * e, r1 = (i % 2 ? 9 : 16) * (0.5 + e);
+      if (r1 > r0) pxLine(c, pos.x + Math.cos(a) * r0, pos.y + Math.sin(a) * r0, pos.x + Math.cos(a) * r1, pos.y + Math.sin(a) * r1, col, k < 0.3 && !(i % 2) ? 2 : 1);
+    }
+    pxRing(c, pos.x, pos.y, 3 + e * 13, col, 1);
+  });
+}
+
+// Anime focus lines: streaks rushing in from the screen edges toward a point.
+function focusLines(pos, color, ms) {
+  const lines = Array.from({ length: 30 }, () => ({ a: Math.random() * Math.PI * 2, r0: rand(34, 64), w: Math.random() < 0.3 ? 2 : 1 }));
+  return fxRun(ms || 260, (c, k) => {
+    if (k > 0.6 && Math.floor(k * 20) % 2) return;
+    for (const l of lines) {
+      const r0 = l.r0 * (1 - 0.25 * k), R = 240;
+      pxLine(c, pos.x + Math.cos(l.a) * r0, pos.y + Math.sin(l.a) * r0, pos.x + Math.cos(l.a) * R, pos.y + Math.sin(l.a) * R, color || '#ffffff', l.w);
+    }
+  });
 }
 
 function hitFoe(mult, o) {
@@ -2000,6 +2023,7 @@ function hitFoe(mult, o) {
   }
   F.hp = Math.max(0, F.hp - dmg);
   F.flash = 0.12;
+  if (!phased) { F.kx = crit ? 7 : 4; hitStop(crit ? 95 : 45); }
   if (F.info.reflect && !o.atk && !phased && dmg > 1) {
     const back = Math.max(1, Math.round(dmg * F.info.reflect));
     p.hp = Math.max(1, p.hp - back);
@@ -2016,6 +2040,8 @@ function hitFoe(mult, o) {
     floatText(c.x, foeTop() - 6, dmg + '!', '#ffe14a', 2);
     Sfx.play('crit');
     shake(3, 160);
+    focusLines(c, '#ffffff', 220);
+    screenFlash('#ffffff', 0.25);
   } else {
     floatText(c.x, foeTop() - 4, dmg, '#ffffff');
     Sfx.play('hit');
@@ -2114,18 +2140,10 @@ async function playerTurn(act) {
       else { F.stun = 1; F.charging = false; await talk(`${F.name} staggers under the pressure of your will! Stunned.`); }
     } else {
       const wp = s.style === styleKey() ? weapon() : null;
-      const dragon = s.style === p.fruit && fruit().form;
-      if (dragon) {
-        G.hero.form = 'dragon';
-        Sfx.play('haki');
-        particles(heroC().x, heroC().y, 20, { colors: ['#4a8ad9', '#bfe0ff', '#ffffff'], speed: 70 });
-        await wait(300);
-      }
       let dealt = 0;
       await fxPlayer(s.fx, () => {
         dealt += hitFoe(s.mult, { sure: s.sure, critBonus: s.crit, pierce: s.pierce, logiaHit: !!(wp && wp.logiaHit), slash: isSlash(s.fx, s.style), shot: isShot(s.fx) });
       }, s.hits || 1, s.color || (wp && wp.color), { move: s });
-      if (dragon) G.hero.form = null;
       if (s.style === p.fruit) B.usedFruit = true;
       unlocked = gainMastery(s.style, 3);
       if (F.hp > 0 && s.burn) { F.burn = s.burn; F.burnDmg = Math.max(3, Math.round(effAtk() * 0.4)); await talk(`${F.name} is on fire!`); }
@@ -2477,7 +2495,7 @@ const FOE_FX = {
     await fxRun(700, (c, k) => {
       for (let i = 0; i < 12; i++) {
         const q = (k * 3 + i / 12) % 1, sx = 100 + (i * 23) % 90;
-        pxLine(c, lerp(sx, hc.x + rand(-6, 6), q), lerp(-4, hc.y, q), lerp(sx, hc.x, Math.min(1, q + 0.1)), lerp(-4, hc.y, Math.min(1, q + 0.1)), '#fff3a0', 2);
+        pxLine(c, lerp(sx, hc.x + rand(-6, 6), q), lerp(VIEW.y - 4, hc.y, q), lerp(sx, hc.x, Math.min(1, q + 0.1)), lerp(VIEW.y - 4, hc.y, Math.min(1, q + 0.1)), '#fff3a0', 2);
       }
     });
   },
@@ -2497,7 +2515,7 @@ const FOE_FX = {
     Sfx.play('fire');
     for (let i = 0; i < 4; i++) {
       const x = hc.x + (i - 1.5) * 10;
-      await fxRun(140, (c, k) => { const y = lerp(-10, hc.y, k); pxCircle(c, x, y, 6, '#5a1a1a'); pxCircle(c, x, y, 4, '#c0301a'); pxRect(c, x - 1, y - 2, 3, 2, '#ffd04a'); });
+      await fxRun(140, (c, k) => { const y = lerp(VIEW.y - 10, hc.y, k); pxCircle(c, x, y, 6, '#5a1a1a'); pxCircle(c, x, y, 4, '#c0301a'); pxRect(c, x - 1, y - 2, 3, 2, '#ffd04a'); });
       particles(x, hc.y, 8, { colors: FIRE, speed: 60, grav: 80 });
     }
   },
@@ -2555,6 +2573,7 @@ async function checkPhase() {
     F.flies = !!ph.flies;
     F.name = ph.name;
     particles(foeC().x, foeC().y, 30, { colors: ['#4a8ad9', '#bfe0ff', '#ffffff'], speed: 90 });
+    if (ph.dragon) await bossDragonRise(F);
   }
   await talk(`${F.info.enrage} (Attack up!)`);
 }
@@ -2751,11 +2770,12 @@ function raidBanner() {
     const y = 40;
     const a = k < 0.15 ? k / 0.15 : k > 0.85 ? (1 - k) / 0.15 : 1;
     c.globalAlpha = a * 0.85;
-    pxRect(c, 0, y, W, 24, '#8a1a1a');
-    for (let x = -24; x < W; x += 12) pxRect(c, x + ((k * 200) % 12), y, 6, 2, '#d8432f');
-    for (let x = -24; x < W; x += 12) pxRect(c, x - ((k * 200) % 12), y + 22, 6, 2, '#d8432f');
+    const L = VIEW.x, R = VIEW.x + VIEW.w, mid = (L + R) / 2;
+    pxRect(c, L, y, VIEW.w, 24, '#8a1a1a');
+    for (let x = L - 24; x < R; x += 12) pxRect(c, x + ((k * 200) % 12), y, 6, 2, '#d8432f');
+    for (let x = L - 24; x < R; x += 12) pxRect(c, x - ((k * 200) % 12), y + 22, 6, 2, '#d8432f');
     c.globalAlpha = a;
-    const tx = k < 0.2 ? W + 60 - (k / 0.2) * (W / 2 + 60) : k > 0.8 ? W / 2 - ((k - 0.8) / 0.2) * (W / 2 + 80) : W / 2;
+    const tx = k < 0.2 ? R + 60 - (k / 0.2) * (R - mid + 60) : k > 0.8 ? mid - ((k - 0.8) / 0.2) * (mid - L + 80) : mid;
     drawText(c, 'RAID BOSS', tx, y + 6, { color: '#ffe14a', scale: 3, align: 'center' });
     c.globalAlpha = 1;
   });
@@ -2981,32 +3001,6 @@ async function fxPlayer(kind, hit, hits, color, opts) {
       await wait(300);
       break;
     }
-    case 'breath': {
-      Sfx.play('fire');
-      const h = heroHand();
-      fxRun(650, () => {
-        for (let i = 0; i < 4; i++) FX.parts.push({ x: h.x + 6, y: h.y - 8 + rand(-4, 4), vx: 170 + rand(-20, 20), vy: rand(-20, 20), grav: 0, life: 0.5, max: 0.5, color: pick(FIRE), size: 3 });
-      });
-      await wait(400);
-      hit(0);
-      await wait(260);
-      break;
-    }
-    case 'twister': {
-      Sfx.play('boom');
-      const fc = foeC();
-      fxRun(900, c => {
-        for (let i = 0; i < 16; i++) {
-          const a = G.t * 10 + i * 0.9, up = (i / 16) * 64, r = 6 + (i / 16) * 16;
-          pxRect(c, fc.x + Math.cos(a) * r, 120 - up, 3, 2, i % 3 ? '#bfe0ff' : '#ffffff');
-        }
-      });
-      shake(6, 800);
-      await wait(250);
-      hit(0);
-      await wait(650);
-      break;
-    }
     case 'bomb': {
       Sfx.play('charge');
       const h = heroHand(), fc = foeC();
@@ -3074,7 +3068,7 @@ async function fxPlayer(kind, hit, hits, color, opts) {
         const r = 46 - Math.min(1, k * 1.3) * 30;
         for (let i = 0; i < 12; i++) {
           const x = fc.x - r + (i / 11) * r * 2;
-          pxLine(c, fc.x, -4, x, GROUND + 22, '#f2f2f2', 1);
+          pxLine(c, fc.x, VIEW.y - 4, x, GROUND + 22, '#f2f2f2', 1);
         }
       });
       Sfx.play('slash');
@@ -3313,15 +3307,24 @@ async function fxPlayer(kind, hit, hits, color, opts) {
   }
 }
 
+// A slightly bowed blade stroke, thick in the middle and sharp at both ends, with a white edge,
+// that draws in fast and then thins away from its tail.
 function slashAt(pos, color, angle, len) {
   Sfx.play('slash');
-  const dx = Math.cos(angle) * len / 2, dy = Math.sin(angle) * len / 2;
-  const x0 = pos.x - dx, y0 = pos.y - dy;
-  fxRun(260, (c, k) => {
-    if (k > 0.7 && Math.floor(k * 20) % 2) return;
-    const e = easeOut(Math.min(1, k * 1.8));
-    pxLine(c, x0, y0, x0 + dx * 2 * e, y0 + dy * 2 * e, color, 3);
-    pxLine(c, x0, y0, x0 + dx * 2 * e, y0 + dy * 2 * e, '#ffffff', 1);
+  const ux = Math.cos(angle), uy = Math.sin(angle), nx = -uy, ny = ux;
+  const steps = Math.max(8, Math.round(len));
+  fxRun(300, (c, k) => {
+    const head = easeOut(Math.min(1, k * 2.2)), tail = Math.max(0, (k - 0.35) / 0.65);
+    for (let i = 0; i <= steps; i++) {
+      const t = i / steps;
+      if (t > head || t < tail) continue;
+      const along = (t - 0.5) * len, bow = Math.sin(t * Math.PI) * len * 0.1;
+      const x = pos.x + ux * along + nx * bow, y = pos.y + uy * along + ny * bow;
+      const w = Math.max(1, Math.round(Math.sin(t * Math.PI) * 4 * (1 - tail * 0.7)));
+      pxRect(c, x - w / 2, y - w / 2, w, w, color);
+      if (w >= 2) pxRect(c, x - nx * (w / 2 - 0.5), y - ny * (w / 2 - 0.5), 1, 1, '#ffffff');
+    }
+    if (k < 0.3) pxRect(c, pos.x + ux * (head - 0.5) * len - 1, pos.y + uy * (head - 0.5) * len - 1, 3, 3, '#ffffff');
   });
 }
 
@@ -3343,7 +3346,7 @@ function fxBolt(x, y, size) {
   Sfx.play('zap');
   const pts = [];
   let px = x + rand(-10, 10);
-  for (let yy = 0; yy <= y; yy += 10) { pts.push([px, yy]); px = x + rand(-8, 8) * (1 - yy / y); }
+  for (let yy = VIEW.y; yy <= y; yy += 10) { pts.push([px, yy]); px = x + rand(-8, 8) * (1 - (yy - VIEW.y) / (y - VIEW.y)); }
   pts.push([x, y]);
   const w = Math.max(1, Math.round(2 * size));
   return fxRun(320, (c, k) => {
@@ -3374,7 +3377,6 @@ function sceneName() {
 }
 
 function heroSprite() {
-  if (G.hero.form) return getSprite(DRAGON_FORM, G.hero.flash > 0 ? 'flash' : '');
   if (G.battle && G.battle.awake > 0 && fruit() && fruit().awaken) {
     const spec = heroSpec();
     return getSprite(Object.assign({}, spec, { pal: Object.assign({}, spec.pal, fruit().awaken.look) }), G.hero.flash > 0 ? 'flash' : '');
@@ -3421,6 +3423,26 @@ function drawPlaceLabel() {
   }
 }
 
+// Afterimages: anything that moves fast in a fight leaves a few fading copies behind it.
+const GHOSTS = { list: [], last: {}, t: 0 };
+function trackGhost(id, spr, x, y, scale, o) {
+  const prev = GHOSTS.last[id];
+  if (prev && Math.hypot(x - prev.x, y - prev.y) >= 5 && (o.alpha === undefined || o.alpha > 0.3)) {
+    GHOSTS.list.push({ spr, x: prev.x, y: prev.y, scale, flip: !!o.flip, life: 0.16 });
+  }
+  GHOSTS.last[id] = { x, y };
+}
+function drawGhosts() {
+  const dt = Math.max(0, Math.min(0.1, G.t - GHOSTS.t));
+  GHOSTS.t = G.t;
+  for (let i = GHOSTS.list.length - 1; i >= 0; i--) {
+    const g = GHOSTS.list[i];
+    g.life -= dt;
+    if (g.life <= 0) { GHOSTS.list.splice(i, 1); continue; }
+    drawSpriteAt(ctx, g.spr, g.x, g.y, g.scale, { alpha: 0.4 * g.life / 0.16, shadow: false, flip: g.flip });
+  }
+}
+
 function drawBattle() {
   const B = G.battle, F = B.F, p = G.p;
   const actors = (B.solo ? [] : p.crew).map((m, i) => {
@@ -3430,7 +3452,11 @@ function drawBattle() {
   if (B.awake > 0 && fruit() && Math.random() < 0.7) {
     particles(G.hero.x + G.hero.ox + rand(-10, 10), 118, 1, { colors: [fruit().color, fruit().color2, '#ffffff'], speed: 30, grav: -70, dir: -Math.PI / 2, spread: 0.6, life: 0.7 });
   }
-  actors.push({ spr: heroSprite(), x: G.hero.x + G.hero.ox, y: 121 + G.hero.oy, scale: 2, squash: G.hero.squash + Math.sin(G.t * 5) * 0.02, alpha: G.hero.alpha, flip: !!G.hero.form });
+  const hspr = heroSprite();
+  trackGhost('hero', hspr, G.hero.x + G.hero.ox, 121 + G.hero.oy, 2, { flip: !!G.hero.form, alpha: G.hero.alpha });
+  if (!(F.info.phase2 && F.info.phase2.dragon && F.spr === F.info.phase2.spr)) trackGhost('foe', getSprite(F.spr), F.x + F.ox, F.y + F.oy - foeLift(), F.scale, { alpha: F.alpha });
+  drawGhosts();
+  actors.push({ spr: hspr, x: G.hero.x + G.hero.ox, y: 121 + G.hero.oy, scale: 2, squash: G.hero.squash + Math.sin(G.t * 5) * 0.02, alpha: G.hero.alpha, flip: !!G.hero.form });
   drawActors(actors);
   drawCrewWeapons(actors);
   if (G.hero.alpha > 0.5 && !G.hero.form && !G.hero.swing) drawHeldWeapon(ctx, G.hero.x + G.hero.ox, 121 + G.hero.oy, 2);
@@ -3440,7 +3466,7 @@ function drawBattle() {
   if (F.info.birdcage && F.alpha > 0) {
     ctx.globalAlpha = 0.35;
     const r = Math.max(20, 120 - (B.cage || 0) * 9);
-    for (let i = 0; i < 14; i++) pxLine(ctx, 100, -10, 100 + (i - 6.5) * r / 6.5, 124, '#ffffff', 1);
+    for (let i = 0; i < 14; i++) pxLine(ctx, 100, VIEW.y - 10, 100 + (i - 6.5) * r / 6.5, 124, '#ffffff', 1);
     ctx.globalAlpha = 1;
   }
   if (F.info.logia === 'smoke' && F.alpha > 0) {
@@ -3465,7 +3491,9 @@ function drawBattle() {
   else if (F.tekkai) spr = getSprite(F.spr, 'tint', '#9aa4b1');
   else if (F.phase === 2 && !F.info.phase2) spr = getSprite(F.spr, 'tint', '#ff2020');
   if (lift) { ctx.globalAlpha = 0.25; pxRect(ctx, F.x + F.ox - 10, F.y - 1, 20, 2, '#000000'); ctx.globalAlpha = 1; }
-  drawSpriteAt(ctx, spr, F.x + F.ox, F.y + F.oy - lift, F.scale, { squash: F.squash + Math.sin(G.t * 4) * 0.02, alpha: F.alpha, shadow: !lift });
+  const bossDragon = F.info.phase2 && F.info.phase2.dragon && F.spr === F.info.phase2.spr;
+  if (bossDragon) drawBossDragon(ctx, F);
+  else drawSpriteAt(ctx, spr, F.x + F.ox + Math.round(F.kx || 0), F.y + F.oy - lift, F.scale, { squash: F.squash + Math.sin(G.t * 4) * 0.02, alpha: F.alpha, shadow: !lift });
   if (F.charging && F.hp > 0) {
     if (Math.random() < 0.5) {
       const c = foeC(), a = Math.random() * Math.PI * 2;
@@ -3474,7 +3502,11 @@ function drawBattle() {
     if (Math.floor(G.t * 4) % 2) drawText(ctx, '!!', F.x + F.ox, foeTop() - 12, { color: '#ff4a3a', scale: 2, align: 'center' });
   }
 
-  // foe HUD
+}
+
+// Drawn in screen pixels on top of the stage: the foe's name, status tags and HP bar.
+function drawBattleHud() {
+  const B = G.battle, F = B.F, SW = canvas.width;
   const nameCol = F.boss ? '#ffd04a' : '#ffffff';
   drawText(ctx, `${F.name} LV${F.lvl}`, 4, 4, { color: nameCol });
   const tags = [];
@@ -3485,10 +3517,16 @@ function drawBattle() {
   if (F.stun) tags.push(['STUN', '#ffe14a']);
   if (F.phase === 2) tags.push(['RAGE', '#ff4a3a']);
   if (B.armament) tags.push(['HAKI', '#b38aff']);
-  let tx = 188;
+  let tx = SW - 4;
   for (const [t, col] of tags.reverse()) { drawText(ctx, t, tx, 4, { color: col, align: 'right' }); tx -= textWidth(t, 1) + 6; }
   const frac = F.hp / F.maxHp;
-  drawBar(ctx, 4, 12, 184, 3, frac, frac > 0.5 ? '#5ad65a' : frac > 0.2 ? '#f2c230' : '#e0483a');
+  drawBar(ctx, 4, 12, SW - 8, 3, frac, frac > 0.5 ? '#5ad65a' : frac > 0.2 ? '#f2c230' : '#e0483a');
+}
+
+function drawStageHud() {
+  if (G.mode === 'battle' && G.battle) drawBattleHud();
+  else if (G.mode === 'train' && G.train) { ctx.save(); ctx.translate(STAGE.ox, 0); drawTrainPanel(); ctx.restore(); }
+  else if (G.mode === 'fish' && G.fish) drawText(ctx, `CAST ${Math.min(G.fish.cast + 1, G.fish.casts)}/${G.fish.casts}`, 4, 4, { color: '#ffffff' });
 }
 
 function drawTrain() {
@@ -3537,8 +3575,11 @@ function drawTrain() {
   }
   drawSpriteAt(ctx, spr, x + ox + Hr.ox, y + oy, 2, { squash });
   if (T.anim === 'drill') drawHeldWeapon(ctx, x + ox + Hr.ox, y + oy, 2);
+}
 
-  // timing bar panel
+// The timing bar panel, centred at the top of the screen.
+function drawTrainPanel() {
+  const T = G.train;
   pxRect(ctx, 22, 4, 148, 34, PAL.k);
   pxRect(ctx, 23, 5, 146, 32, '#22305a');
   drawText(ctx, `${TRAININGS[T.k].name}`, 28, 9, { color: '#ffe14a', shadow: null });
@@ -3577,7 +3618,6 @@ function drawFish() {
     const ix = bx + (hx - bx) * k, iy = by - Math.sin(k * Math.PI) * 40 + (70 - by) * k;
     drawSpriteAt(ctx, getSprite(F.flying.spec), ix, iy, 2, { shadow: false });
   }
-  drawText(ctx, `CAST ${Math.min(F.cast + 1, F.casts)}/${F.casts}`, 4, 4, { color: '#ffffff' });
 }
 
 // Hero and crew peeking over the rail of the small ship.
@@ -3613,7 +3653,8 @@ function drawMountainCut() {
   drawReverseMountain(ctx, G.cut ? G.cut.k : 1, G.t, sc);
 }
 
-// Walking around renders at 288x192 (finer pixels, more of the island on screen); everything else at 192x128.
+// Walking around, fights, training and fishing render at 288x192 (finer pixels, more on screen);
+// the title, sailing and cut-scenes at 192x128.
 function setScreen(w, h) {
   if (canvas.width === w) return;
   canvas.width = w;
@@ -3621,9 +3662,13 @@ function setScreen(w, h) {
   ctx.imageSmoothingEnabled = false;
 }
 
+const onStage = () => !!G.p && ((G.mode === 'battle' && G.battle) || (G.mode === 'train' && G.train) || (G.mode === 'fish' && G.fish));
+
 function draw() {
   const world = (G.mode === 'home' || G.mode === 'boat') && G.p && OW.map;
-  setScreen(world ? VW : W, world ? VH : H);
+  const stage = !world && onStage();
+  setScreen(world || stage ? VW : W, world || stage ? VH : H);
+  setView(stage);
   const SW = canvas.width, SH = canvas.height;
   pxRect(ctx, 0, 0, SW, SH, '#05081a');
   ctx.save();
@@ -3633,7 +3678,8 @@ function draw() {
   } else {
     const ti = G.mode === 'title' ? 0 : timeIdx();
     const scene = sceneName();
-    ctx.drawImage(backdrop(scene, ti), 0, 0);
+    ctx.drawImage(backdrop(scene, ti, stage), 0, 0);
+    if (stage) ctx.translate(STAGE.ox, STAGE.oy);
     drawAnimated(ctx, scene, ti, G.t, G.mode === 'sail' ? 5 : 1);
     const docked = G.mode === 'title' ? { t: G.t } : G.p ? Object.assign(shipLook(), { t: G.t }) : null;
     if (docked && G.p && G.mode !== 'title') docked.bubble = island().scene === 'fishman';
@@ -3649,6 +3695,7 @@ function draw() {
   drawFx(ctx);
   ctx.restore();
   if (world) drawPlaceLabel();
+  if (stage) drawStageHud();
   if (FX.flashA > 0) { ctx.globalAlpha = Math.min(1, FX.flashA); pxRect(ctx, 0, 0, SW, SH, FX.flashColor); ctx.globalAlpha = 1; }
   if (G.fade > 0) {
     ctx.globalAlpha = G.fade;
@@ -3667,7 +3714,11 @@ function update(dt) {
   updateFx(dt);
   const Hr = G.hero;
   Hr.flash = Math.max(0, Hr.flash - dt);
-  if (G.battle) G.battle.F.flash = Math.max(0, G.battle.F.flash - dt);
+  if (G.battle) {
+    const F = G.battle.F;
+    F.flash = Math.max(0, F.flash - dt);
+    F.kx = Math.max(0, (F.kx || 0) - dt * 45);
+  }
 
   if ((G.mode === 'home' || G.mode === 'boat') && G.p) {
     owUpdate(dt);

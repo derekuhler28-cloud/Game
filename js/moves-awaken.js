@@ -56,9 +56,9 @@ Object.assign(MOVE_FX, {
     const band = fxRun(1900, (c, k) => {
       const al = k < 0.1 ? k / 0.1 : k > 0.85 ? (1 - k) / 0.15 : 1;
       c.globalAlpha = 0.8 * al;
-      pxRect(c, 0, 16, W, 26, '#05081a');
+      pxRect(c, VIEW.x, 16, VIEW.w, 26, '#05081a');
       c.globalAlpha = al;
-      pxRect(c, 0, 16, W, 1, c1); pxRect(c, 0, 41, W, 1, c1);
+      pxRect(c, VIEW.x, 16, VIEW.w, 1, c1); pxRect(c, VIEW.x, 41, VIEW.w, 1, c1);
       drawText(c, title, W / 2 + Math.round((1 - Math.min(1, k * 5)) * 40), 20, { color: c2, scale: 2, align: 'center' });
       drawText(c, 'AWAKENING', W / 2, 34, { color: c1, align: 'center' });
       c.globalAlpha = 1;
@@ -121,12 +121,12 @@ Object.assign(MOVE_FX, {
         });
         break;
       case 'dragon':
-        flourish = (async () => { for (let i = 0; i < 3; i++) { await fxBolt(hc.x + rand(-14, 14), hc.y - 4, 1.2); } })();
+        flourish = dragonAwaken();
         break;
       case 'split':
         Sfx.play('win');
         flourish = (async () => {
-          for (let i = 0; i < 6; i++) { particles(rand(20, 170), rand(0, 20), 10, { colors: ['#ff5a5a', '#ffd04a', '#7cd0ff', '#7cff7a', '#ff8ab0'], speed: 40, grav: 60, life: 1.2 }); await wait(200); }
+          for (let i = 0; i < 6; i++) { particles(rand(VIEW.x + 20, VIEW.x + VIEW.w - 20), rand(VIEW.y, VIEW.y + 20), 10, { colors: ['#ff5a5a', '#ffd04a', '#7cd0ff', '#7cff7a', '#ff8ab0'], speed: 40, grav: 60, life: 1.2 }); await wait(200); }
         })();
         break;
       case 'magma':
@@ -138,7 +138,7 @@ Object.assign(MOVE_FX, {
       case 'string':
         Sfx.play('slash');
         flourish = fxRun(1300, (c, k) => {
-          for (let i = 0; i < 9; i++) { const x = hc.x - 32 + i * 8, e = Math.min(1, k * 2.5 - i * 0.08); if (e > 0) pxLine(c, x, -2, x, lerp(-2, hc.y + 16, e), i % 2 ? '#ffffff' : '#ff8ab0', 1); }
+          for (let i = 0; i < 9; i++) { const x = hc.x - 32 + i * 8, e = Math.min(1, k * 2.5 - i * 0.08); if (e > 0) pxLine(c, x, VIEW.y, x, lerp(VIEW.y, hc.y + 16, e), i % 2 ? '#ffffff' : '#ff8ab0', 1); }
         });
         break;
       case 'paw':
@@ -166,7 +166,7 @@ Object.assign(MOVE_FX, {
     await tween(G.hero, { ox: -8, squash: 0.2 }, 280);
     Sfx.play('boom');
     await fxRun(420, (c, k) => {
-      const x = lerp(-70, fc.x - 26, easeIn(k));
+      const x = lerp(VIEW.x - 70, fc.x - 26, easeIn(k));
       for (let i = 0; i < 8; i++) pxRect(c, x - 70 - i * 9, fc.y - 30 + i * 8, 40, 1, '#ffffff');
       AW.fist(c, x, fc.y, 32);
     });
@@ -185,7 +185,7 @@ Object.assign(MOVE_FX, {
     const F = G.battle.F, fc = fc0();
     Sfx.play('stretch');
     const ground = fxRun(1500, (c, k) => {
-      for (let j = 0; j < 3; j++) for (let x = 0; x < W; x += 2) {
+      for (let j = 0; j < 3; j++) for (let x = VIEW.x; x < VIEW.x + VIEW.w; x += 2) {
         const y = 112 + j * 5 + Math.sin(x * 0.12 + G.t * 14 + j) * 4 * (1 - k);
         pxRect(c, x, y, 2, 1, j % 2 ? '#ffffff' : '#ffe9a8');
       }
@@ -288,11 +288,12 @@ Object.assign(MOVE_FX, {
     Sfx.play('ice');
     const ice = fxRun(1500, (c, k) => {
       const a = Math.min(1, k * 3) * (k > 0.8 ? (1 - k) / 0.2 : 1);
-      c.globalAlpha = 0.35 * a; pxRect(c, 0, 0, W, H, '#5fa8e0'); c.globalAlpha = a;
-      for (let i = 0; i < 24; i++) {
+      const L = VIEW.x, T = VIEW.y, R = VIEW.x + VIEW.w, Bo = VIEW.y + VIEW.h;
+      c.globalAlpha = 0.35 * a; pxRect(c, L, T, VIEW.w, VIEW.h, '#5fa8e0'); c.globalAlpha = a;
+      for (let i = 0; i < VIEW.w / 8; i++) {
         const len = 6 + ((i * 37) % 14) * Math.min(1, k * 2.5);
-        pxRect(c, i * 8, 0, 3, len, '#ffffff'); pxRect(c, i * 8 + 3, H - len, 3, len, '#e8fbff');
-        if (i < 16) { pxRect(c, 0, i * 8, len, 2, '#ffffff'); pxRect(c, W - len, i * 8 + 4, len, 2, '#e8fbff'); }
+        pxRect(c, L + i * 8, T, 3, len, '#ffffff'); pxRect(c, L + i * 8 + 3, Bo - len, 3, len, '#e8fbff');
+        if (i < VIEW.h / 8) { pxRect(c, L, T + i * 8, len, 2, '#ffffff'); pxRect(c, R - len, T + i * 8 + 4, len, 2, '#e8fbff'); }
       }
       c.globalAlpha = 1;
     });
@@ -319,12 +320,12 @@ Object.assign(MOVE_FX, {
     shake(14, 1400);
     const wave = fxRun(1200, (c, k) => {
       const rise = Math.sin(Math.min(1, k * 1.4) * Math.PI);
-      for (let x = 0; x < W; x += 2) {
-        const top = 70 - 46 * rise * (1 - x / W * 0.6) + Math.sin(x * 0.12 + k * 14) * 3;
+      for (let x = VIEW.x; x < VIEW.x + VIEW.w; x += 2) {
+        const top = 70 - (46 - VIEW.y) * rise * (1 - (x - VIEW.x) / VIEW.w * 0.6) + Math.sin(x * 0.12 + k * 14) * 3;
         pxRect(c, x, top, 2, 104 - top, x % 6 ? '#2f6fd0' : '#1f5aa8');
         pxRect(c, x, top, 2, 2, '#ffffff');
       }
-      for (let i = 0; i < 5; i++) zigzag(c, 70 + i * 4, 104, W, 20 + i * 18, 9, 4, '#ffffff', 1);
+      for (let i = 0; i < 5; i++) zigzag(c, 70 + i * 4, 104, VIEW.x + VIEW.w, 20 + i * 18, 9, 4, '#ffffff', 1);
     });
     await wait(650);
     m.hit(0);
@@ -470,12 +471,12 @@ Object.assign(MOVE_FX, {
     const hc = heroC(), fc = fc0();
     Sfx.play('stretch');
     await fxRun(700, (c, k) => {
-      const edge = lerp(hc.x, W, easeOut(k));
-      for (let x = 0; x < edge; x += 2) { const top = 111 + Math.sin(x * 0.2 + G.t * 8) * 2; pxRect(c, x, top, 2, H - top, '#efe2c8'); pxRect(c, x, top, 2, 1, '#fffaf0'); }
+      const edge = lerp(hc.x, VIEW.x + VIEW.w, easeOut(k));
+      for (let x = VIEW.x; x < edge; x += 2) { const top = 111 + Math.sin(x * 0.2 + G.t * 8) * 2; pxRect(c, x, top, 2, VIEW.y + VIEW.h - top, '#efe2c8'); pxRect(c, x, top, 2, 1, '#fffaf0'); }
     });
     Sfx.play('boom');
     await fxRun(700, (c, k) => {
-      for (let x = 0; x < W; x += 2) { const top = 111 + Math.sin(x * 0.2 + G.t * 8) * 2; pxRect(c, x, top, 2, H - top, '#efe2c8'); }
+      for (let x = VIEW.x; x < VIEW.x + VIEW.w; x += 2) { const top = 111 + Math.sin(x * 0.2 + G.t * 8) * 2; pxRect(c, x, top, 2, VIEW.y + VIEW.h - top, '#efe2c8'); }
       for (let i = 0; i < 3; i++) {
         const q = Math.max(0, Math.min(1, k * 1.6 - i * 0.25)), cx = lerp(fc.x - 40 + i * 10, fc.x + i * 6, q), h = Math.sin(q * Math.PI) * (40 + i * 6);
         for (let dx = -16; dx <= 16; dx += 2) { const hh = h * Math.cos(dx / 16 * Math.PI / 2); pxRect(c, cx + dx, 112 - hh, 2, hh, dx % 4 ? '#efe2c8' : '#c9a26a'); pxRect(c, cx + dx, 112 - hh, 2, 1, '#fffaf0'); }
@@ -510,56 +511,6 @@ Object.assign(MOVE_FX, {
     floatText(fc.x, top - 10, 'MOCHI!', '#efe2c8');
   },
 
-  // --- Dragon: Hybrid Dragon ---
-  thunderbagua: async m => {
-    const fc = fc0();
-    const club = getSprite({ kind: 'weapon', shape: 'kanabo', pal: { g: '#3a3440', w: '#c9ccd6' } });
-    hold(true);
-    Sfx.play('charge');
-    await tween(G.hero, { ox: 36, oy: -44 }, 320);
-    const crackle = fxRun(500, (c, k) => {
-      const x = G.hero.x + G.hero.ox + 12, y = 76 + G.hero.oy;
-      drawRot(c, club, x, y - 12, -0.4, 3);
-      for (let i = 0; i < 3; i++) zigzag(c, x - 10 + i * 8, y - 30, x - 6 + i * 8, y + 4, 4, 3, i % 2 ? '#ffffff' : '#7cd0ff', 1);
-    });
-    await crackle;
-    Sfx.play('zap');
-    screenFlash('#fff6a0', 0.9);
-    const bolt = fxBolt(fc.x, fc.y, 2.2);
-    await fxRun(160, (c, k) => drawRot(c, club, lerp(G.hero.x + G.hero.ox + 12, fc.x - 8, k), lerp(64 + G.hero.oy, fc.y - 6, k), lerp(-0.4, 1.4, k), 3));
-    m.hit(0);
-    Sfx.play('boom');
-    for (let i = 0; i < 3; i++) ringOut({ x: fc.x, y: 120 }, i % 2 ? '#7cd0ff' : '#ffe14a', 4, 40 + i * 14, 500, 2);
-    groundCrack(fc.x - 40, fc.x + 40, '#1b1424', 300);
-    particles(fc.x, fc.y, 36, { colors: ['#ffe14a', '#7cd0ff', '#ffffff'], speed: 130 });
-    shake(10, 600);
-    await bolt;
-    hold(false);
-    await tween(G.hero, { ox: 0, oy: 0 }, 260);
-  },
-  bolobreath: async m => {
-    const hc = heroC(), mx = hc.x + 12, my = hc.y - 14, fc = fc0();
-    Sfx.play('charge');
-    await fxRun(500, (c, k) => {
-      for (let i = 0; i < 10; i++) { const a = i * 0.63, r = 30 * (1 - k) + 4; pxRect(c, mx + Math.cos(a) * r, my + Math.sin(a) * r, 2, 2, i % 2 ? '#ffd04a' : '#ffffff'); }
-      pxCircle(c, mx, my, 2 + k * 5, '#ffd04a');
-    });
-    Sfx.play('fire');
-    screenFlash('#ff9a3a', 0.7);
-    let hit = false;
-    await fxRun(800, (c, k) => {
-      const w = Math.round(Math.sin(Math.min(1, k * 1.2) * Math.PI) * 18), reach = lerp(mx, W + 10, Math.min(1, k * 3));
-      for (let x = mx; x < reach; x += 3) {
-        const wob = Math.sin(x * 0.3 + G.t * 30) * 2;
-        pxRect(c, x, my - w - 3 + wob, 3, (w + 3) * 2, '#ff5a2a');
-        pxRect(c, x, my - w + wob, 3, w * 2, '#ffd04a');
-        pxRect(c, x, my - w / 2 + wob, 3, w, '#ffffff');
-      }
-      if (!hit && k > 0.3) { hit = true; m.hit(0); particles(fc.x, fc.y, 40, { colors: FIRE, speed: 140, grav: -40, size: 3 }); shake(10, 600); }
-    });
-    if (!hit) m.hit(0);
-  },
-
   // --- Split: Flashy Festival ---
   grandparade: async m => {
     const fc = fc0(), n = Math.max(1, m.hits), parts = ['fist', 'foot', 'head', 'fist', 'foot', 'fist'];
@@ -583,7 +534,7 @@ Object.assign(MOVE_FX, {
     const fc = fc0();
     Sfx.play('charge');
     await fxRun(900, (c, k) => {
-      const x = lerp(20, fc.x, k), y = lerp(-30, fc.y - 8, easeIn(k)) - Math.sin(k * Math.PI) * 20, r = 22, rot = k * 8;
+      const x = lerp(20, fc.x, k), y = lerp(VIEW.y - 30, fc.y - 8, easeIn(k)) - Math.sin(k * Math.PI) * 20, r = 22, rot = k * 8;
       pxCircle(c, x, y, r + 2, PAL.k); pxCircle(c, x, y, r, '#d63c2f');
       for (let i = -2; i <= 2; i++) { const yy = y + i * 8 + Math.round(Math.sin(rot) * 3); const half = Math.sqrt(Math.max(0, r * r - (yy - y) * (yy - y))); pxRect(c, x - half, yy - 1, half * 2, 3, '#ffffff'); }
       drawText(c, 'B', x - 3, y - 7, { color: '#ffe14a', scale: 3, shadow: null });
@@ -672,7 +623,7 @@ Object.assign(MOVE_FX, {
     let hit = false;
     await fxRun(1100, (c, k) => {
       const cx = lerp(hc.x, fc.x + 16, Math.min(1, k * 1.2));
-      for (let x = 0; x < W; x += 3) {
+      for (let x = VIEW.x; x < VIEW.x + VIEW.w; x += 3) {
         const d = (x - cx) / 20, h = Math.max(2, 52 * Math.exp(-d * d) * Math.min(1, k * 3));
         pxLine(c, x, 121, x + Math.sin(G.t * 10 + x) * 2, 121 - h, x % 6 ? '#ffffff' : '#ff8ab0', 1);
       }

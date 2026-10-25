@@ -352,7 +352,7 @@ const BOSSES = {
   drakko: {
     name: 'Emperor Drakko', drop: 'kanabo', lvl: 70, hpMult: 9.6, bounty: 4611100000, berries: 30000, scale: 3,
     spr: { kind: 'brute', head: 'drakko', weapon: 'kanabo', pal: { x: '#f2e6c8', h: '#1b1424', c: '#5a3a7a', C: '#e6b422', p: '#2a2433' } },
-    phase2: { spr: { kind: 'serpent', horns: true, pal: { c: '#4a8ad9', C: '#bfe0ff', x: '#f2e6c8' } }, scale: 4, name: 'Dragon Drakko', basic: 'Dragon Claw', flies: true },
+    phase2: { spr: { kind: 'serpent', horns: true, pal: { c: '#4a8ad9', C: '#bfe0ff', x: '#f2e6c8' } }, scale: 4, name: 'Dragon Drakko', basic: 'Dragon Claw', flies: true, dragon: true },
     intro: '"Entertain me, rookie. Then die."',
     basic: 'Kanabo Smash', charge: 'breathes in. The air gets hot...', big: 'Dragon Flame', fx: 'fire',
     enrage: 'Drakko transforms into a giant azure dragon!',
@@ -563,8 +563,8 @@ const FRUITS = {
     awaken: { name: 'Azure Emperor', look: { h: '#4a8ad9', v: '#bfe0ff', b: '#2a4a8a' }, moves: [{ name: 'Thunder Bagua', sp: 45, mult: 3.4, stun: 0.3, fx: 'thunderbagua' }, { name: 'Bolo Breath', sp: 70, mult: 5.2, fx: 'bolobreath' }] },
     moves: [
       { name: 'Dragon Claw', at: 0, sp: 25, mult: 1.8, fx: 'dragonclaw', color: '#bfe0ff' },
-      { name: 'Blaze Breath', at: 40, sp: 50, mult: 1.5, burn: 3, fx: 'breath' },
-      { name: 'Dragon Twister', at: 120, sp: 90, mult: 3.5, fx: 'twister' },
+      { name: 'Blaze Breath', at: 40, sp: 50, mult: 1.5, burn: 3, fx: 'dragonbreath' },
+      { name: 'Dragon Twister', at: 120, sp: 90, mult: 3.5, fx: 'dragontwister' },
     ],
   },
   split: {

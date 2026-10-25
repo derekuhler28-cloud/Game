@@ -900,7 +900,7 @@
       const sky = fxRun(1250, (c, k) => {
         const a = Math.min(1, k * 3) * (k > 0.8 ? (1 - k) / 0.2 : 1);
         c.globalAlpha = 0.3 * a;
-        pxRect(c, 0, 0, W, H, '#0a1430');
+        pxRect(c, VIEW.x, VIEW.y, VIEW.w, VIEW.h, '#0a1430');
         c.globalAlpha = a;
         cloud(c, x, 8, 10 + 14 * Math.min(1, k * 3));
         c.globalAlpha = 1;
@@ -940,7 +940,7 @@
       Sfx.play('charge');
       const dim = fxRun(1400, (c, k) => {
         c.globalAlpha = 0.35 * Math.min(1, k * 3) * (k > 0.8 ? (1 - k) / 0.2 : 1);
-        pxRect(c, 0, 0, W, H, '#0a0a1e');
+        pxRect(c, VIEW.x, VIEW.y, VIEW.w, VIEW.h, '#0a0a1e');
         c.globalAlpha = 1;
       });
       const inner = flicker(() => [0, 1].map(() => { const a = rand(0, 6.28), b = a + rand(1.5, 3); return [Math.cos(a), Math.sin(a), Math.cos(b), Math.sin(b)]; }));
@@ -964,7 +964,7 @@
     },
     thunderdragon: async m => {
       const fc = fc0(), hc = heroC();
-      const path = t => ({ x: lerp(-24, fc.x, t) + Math.sin(t * Math.PI) * 30, y: lerp(30, fc.y, easeIn(t)) + Math.sin(t * Math.PI * 4) * 14 * (1 - t) });
+      const path = t => ({ x: lerp(VIEW.x - 24, fc.x, t) + Math.sin(t * Math.PI) * 30, y: lerp(30, fc.y, easeIn(t)) + Math.sin(t * Math.PI * 4) * 14 * (1 - t) });
       Sfx.play('charge');
       tween(G.hero, { squash: -0.1 }, 200);
       particles(hc.x, hc.y - 10, 12, { colors: VOLT, speed: 60, grav: 0, life: 0.4 });
@@ -1306,7 +1306,7 @@
       const pose = fxRun(1450, (c, k) => crossArms(c, k > 0.85 ? (1 - k) / 0.15 : 1));
       const show = fxRun(1450, c => {
         c.globalAlpha = 0.35 * S.fade;
-        pxRect(c, 0, 0, W, H, '#1a0a2a');
+        pxRect(c, VIEW.x, VIEW.y, VIEW.w, VIEW.h, '#1a0a2a');
         c.globalAlpha = S.fade;
         demon(c, cx, 121, S.rise, S.wing);
         c.globalAlpha = 1;
@@ -1343,7 +1343,7 @@
       Sfx.play('stretch');
       hold(true);
       shake(3, 1400);
-      for (let x = 4; x < W; x += 12) petals(x, 120, 3, 50);
+      for (let x = VIEW.x + 4; x < VIEW.x + VIEW.w; x += 12) petals(x, 120, 3, 50);
       const pose = fxRun(1400, (c, k) => crossArms(c, k > 0.85 ? (1 - k) / 0.15 : 1));
       const forest = fxRun(1400, c => {
         c.globalAlpha = S.a;
@@ -1370,7 +1370,7 @@
       shake(13, 800);
       await wait(300);
       await tween(S, { a: 0 }, 240);
-      for (let x = 4; x < W; x += 16) petals(x, 80, 4, 70);
+      for (let x = VIEW.x + 4; x < VIEW.x + VIEW.w; x += 16) petals(x, 80, 4, 70);
       hold(false);
       await Promise.all([forest, pose]);
     },

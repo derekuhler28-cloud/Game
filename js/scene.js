@@ -1,7 +1,20 @@
 'use strict';
 /* Scene rendering: island backdrops, sky and sea by time of day, the ship, and the effects engine. */
 
-const W = 192, H = 128, HORIZON = 70, GROUND = 102;
+let W = 192;
+const H = 128, HORIZON = 70, GROUND = 102;
+
+// Fights, training and fishing render on a bigger 288x192 stage (finer pixels, more scenery).
+// The scene is still laid out in the classic 192x128 frame, placed at (STAGE.ox, STAGE.oy).
+// VIEW is the whole visible screen in that frame's coordinates, for effects that fill the screen.
+const STAGE = { w: 288, h: 192, ox: 48, oy: 40 };
+const VIEW = { x: 0, y: 0, w: 192, h: 128 };
+function setView(stage) {
+  VIEW.x = stage ? -STAGE.ox : 0;
+  VIEW.y = stage ? -STAGE.oy : 0;
+  VIEW.w = stage ? STAGE.w : 192;
+  VIEW.h = stage ? STAGE.h : H;
+}
 
 const SKIES = [
   { top: '#6ab8ee', mid: '#a9d8f5', bot: '#ffe0b0', sea: '#2f8fd0', sea2: '#8fd0f2', shade: 0 },
@@ -39,15 +52,17 @@ const UNDERSEA = { fishman: { sea: '#0a3a5a', sea2: '#2a7a9a' } };
 const NO_SKY = { impel: true, fishman: true };
 
 const BG_CACHE = new Map();
-function backdrop(scene, ti) {
-  const key = scene + '|' + ti;
+function backdrop(scene, ti, big) {
+  const key = scene + '|' + ti + (big ? '|big' : '');
   if (BG_CACHE.has(key)) return BG_CACHE.get(key);
-  const cv = makeCanvas(W, H);
+  const ox = big ? STAGE.ox : 0, oy = big ? STAGE.oy : 0;
+  const BW = big ? STAGE.w : W, BH = big ? STAGE.h : H, hz = HORIZON + oy, gr = GROUND + oy;
+  const cv = makeCanvas(BW, BH);
   const c = cv.getContext('2d');
   const S = SKIES[ti];
 
   // sky bands
-  const bands = 14, bandH = Math.ceil(HORIZON / bands);
+  const bands = big ? 20 : 14, bandH = Math.ceil(hz / bands);
   let prev = null;
   for (let i = 0; i < bands; i++) {
     const t = i / (bands - 1);
@@ -57,59 +72,91 @@ function backdrop(scene, ti) {
     if (scene === 'drum') col = mixColor(col, '#dfe8f5', ti === 3 ? 0.12 : 0.35);
     if (scene === 'logue') col = mixColor(col, '#6a7088', 0.25);
     if (SKY_TINT[scene]) col = mixColor(col, SKY_TINT[scene][0], SKY_TINT[scene][1]);
-    pxRect(c, 0, i * bandH, W, bandH, col);
+    pxRect(c, 0, i * bandH, BW, bandH, col);
     // checkerboard dither where two bands meet, for a smoother pixel gradient
-    if (prev) for (let x = 0; x < W; x += 2) { pxRect(c, x, i * bandH, 1, 1, prev); pxRect(c, x + 1, i * bandH - 1, 1, 1, col); }
+    if (prev) for (let x = 0; x < BW; x += 2) { pxRect(c, x, i * bandH, 1, 1, prev); pxRect(c, x + 1, i * bandH - 1, 1, 1, col); }
     prev = col;
   }
   // stars
   if (ti === 3 && !NO_SKY[scene]) {
     const r = seeded(7);
-    for (let i = 0; i < 40; i++) pxRect(c, r() * W, r() * (HORIZON - 8), 1, 1, r() > 0.7 ? '#fff6c8' : '#9aa8d8');
+    for (let i = 0; i < (big ? 90 : 40); i++) pxRect(c, r() * BW, r() * (hz - 8), 1, 1, r() > 0.7 ? '#fff6c8' : '#9aa8d8');
   }
   // sun / moon
   const lit = NO_SKY[scene] ? -1 : ti;
-  if (lit === 0) pxCircle(c, 158, 44, 8, '#fff1b0');
-  if (lit === 1) { pxCircle(c, 34, 16, 8, '#fff8d8'); pxCircle(c, 34, 16, 6, '#ffffff'); }
-  if (lit === 2) pxCircle(c, 96, 64, 11, '#ffb060');
-  if (lit === 3) { pxCircle(c, 150, 18, 6, '#f0f0d8'); pxCircle(c, 148, 17, 1, '#c8c8b0'); pxCircle(c, 152, 20, 1, '#c8c8b0'); }
+  if (lit === 0) pxCircle(c, ox + 158, oy + 44, 8, '#fff1b0');
+  if (lit === 1) { pxCircle(c, ox + 34, oy + 16, 8, '#fff8d8'); pxCircle(c, ox + 34, oy + 16, 6, '#ffffff'); }
+  if (lit === 2) pxCircle(c, ox + 96, oy + 64, 11, '#ffb060');
+  if (lit === 3) { pxCircle(c, ox + 150, oy + 18, 6, '#f0f0d8'); pxCircle(c, ox + 148, oy + 17, 1, '#c8c8b0'); pxCircle(c, ox + 152, oy + 20, 1, '#c8c8b0'); }
 
   // distant islands on the horizon
   if (scene !== 'sky' && !NO_SKY[scene]) {
     const far = mixColor(S.mid, '#2a3a5a', 0.45);
-    pxCircle(c, 116, HORIZON + 2, 7, far);
-    pxCircle(c, 126, HORIZON + 3, 5, far);
+    pxCircle(c, ox + 116, hz + 2, 7, far);
+    pxCircle(c, ox + 126, hz + 3, 5, far);
+    if (big) { pxCircle(c, 20, hz + 2, 4, far); pxCircle(c, 27, hz + 3, 3, far); pxCircle(c, 262, hz + 2, 5, far); }
   }
 
   // sea
   const sc = seaColors(scene, ti);
-  const seaBottom = scene === 'sea' || scene === 'deck' ? H : GROUND;
-  pxRect(c, 0, HORIZON, W, seaBottom - HORIZON, sc.sea);
-  pxRect(c, 0, HORIZON, W, 1, sc.sea2);
+  const seaBottom = scene === 'sea' || scene === 'deck' ? BH : gr;
+  pxRect(c, 0, hz, BW, seaBottom - hz, sc.sea);
+  pxRect(c, 0, hz, BW, 1, sc.sea2);
   // sun glitter column
   if (ti !== 1 && scene !== 'sky' && !NO_SKY[scene]) {
-    const gx = ti === 0 ? 158 : ti === 2 ? 96 : 150;
-    for (let y = HORIZON + 3; y < seaBottom; y += 4) pxRect(c, gx - 4 + ((y * 7) % 5), y, 6, 1, ti === 3 ? '#8a9ac8' : '#ffe0a0');
+    const gx = ox + (ti === 0 ? 158 : ti === 2 ? 96 : 150);
+    for (let y = hz + 3; y < seaBottom; y += 4) pxRect(c, gx - 4 + ((y * 7) % 5), y, 6, 1, ti === 3 ? '#8a9ac8' : '#ffe0a0');
   }
 
   // land props on their own layer so dusk/night shading darkens them but not the sky
   const draw = PROPS[scene];
   if (draw) {
-    const layer = makeCanvas(W, H);
+    const layer = makeCanvas(BW, BH);
     const lc = layer.getContext('2d');
-    draw(lc, ti);
+    // On the big stage, props are drawn in the classic frame; full-width ground and walls
+    // run on to the right edge (W covers it) and the other edges are mirrored out.
+    const framed = fn => { lc.save(); lc.translate(ox, oy); W = 192 + ox; try { fn(); } finally { W = 192; lc.restore(); } };
+    framed(() => draw(lc, ti));
+    if (big) extendEdges(lc, BW, BH, ox, oy);
     if (S.shade) {
       lc.globalCompositeOperation = 'source-atop';
       lc.globalAlpha = S.shade;
-      pxRect(lc, 0, 0, W, H, '#0a1030');
+      pxRect(lc, 0, 0, BW, BH, '#0a1030');
       lc.globalAlpha = 1;
       lc.globalCompositeOperation = 'source-over';
-      if (LIGHTS[scene]) LIGHTS[scene](lc);
+      if (LIGHTS[scene]) framed(() => LIGHTS[scene](lc));
     }
     c.drawImage(layer, 0, 0);
   }
   BG_CACHE.set(key, cv);
   return cv;
+}
+
+// Carries props that touch the classic frame's edges out into the stage margins, so ground,
+// walls and cliffs run on past the frame instead of stopping dead: the ground is mirrored down
+// and sideways (darkening a little as it nears the bottom), and anything touching the top
+// (walls, trunks, towers) is stretched upward into shadow.
+function extendEdges(lc, BW, BH, ox, oy) {
+  const img = lc.getImageData(0, 0, BW, BH), d = img.data;
+  const a = (x, y) => d[(y * BW + x) * 4 + 3];
+  const copy = (tx, ty, sx, sy, dim) => {
+    const t = (ty * BW + tx) * 4, s = (sy * BW + sx) * 4;
+    if (d[t + 3]) return;
+    const m = 1 - (dim || 0);
+    d[t] = d[s] * m; d[t + 1] = d[s + 1] * m; d[t + 2] = d[s + 2] * m; d[t + 3] = d[s + 3];
+  };
+  const right = ox + 192, bottom = oy + H;
+  for (let x = ox; x < right; x++) {
+    if (a(x, bottom - 1)) for (let k = 0; k < BH - bottom; k++) copy(x, bottom + k, x, bottom - 1 - k, 0.3 * (k + 1) / (BH - bottom));
+  }
+  for (let y = oy; y < BH; y++) {
+    if (a(ox, y)) for (let k = 0; k < ox; k++) copy(ox - 1 - k, y, ox + k, y);
+    if (right < BW && a(right - 1, y) && !a(right, y)) for (let k = 0; k < BW - right; k++) copy(right + k, y, right - 1 - k, y);
+  }
+  for (let x = 0; x < BW; x++) {
+    if (a(x, oy)) for (let k = 0; k < oy; k++) copy(x, oy - 1 - k, x, oy, 0.45 * (k + 1) / oy);
+  }
+  lc.putImageData(img, 0, 0);
 }
 
 function groundBase(c, top, body, line) {
@@ -581,25 +628,27 @@ function drawCloud(c, x, y, s, col) {
 function drawAnimated(c, scene, ti, t, seaSpeed) {
   const open = !NO_SKY[scene];
   const cloudCol = ti === 3 ? '#2a3466' : ti === 2 ? '#ffd0b0' : '#ffffff';
-  const clouds = [[10, 14, 1], [90, 26, 1], [150, 8, 1]];
+  // Everything that drifts across the screen wraps over VIEW, so it fills the big stage too.
+  const vx = VIEW.x, vy = VIEW.y, vw = VIEW.w, vh = VIEW.h, wide = vw / 192;
+  const clouds = [[10, 14, 1], [90, 26, 1], [150, 8, 1]].concat(vy < 0 ? [[60, -30, 1], [200, -14, 1], [130, -36, 1], [250, -24, 1]] : []);
   if (open) for (const [x0, y, s] of clouds) {
-    const x = ((x0 + t * 3) % (W + 40)) - 20;
+    const x = vx + ((x0 + t * 3) % (vw + 40)) - 20;
     drawCloud(c, Math.round(x), y, s, cloudCol);
   }
   if (ti === 3 && open) {
-    for (let i = 0; i < 6; i++) {
-      if (Math.sin(t * 2 + i * 1.7) > 0.6) pxRect(c, (i * 37 + 11) % W, (i * 13 + 5) % 50, 1, 1, '#ffffff');
+    for (let i = 0; i < 6 * wide; i++) {
+      if (Math.sin(t * 2 + i * 1.7) > 0.6) pxRect(c, vx + (i * 37 + 11) % vw, vy + (i * 13 + 5) % (50 - vy), 1, 1, '#ffffff');
     }
   }
   const sc = seaColors(scene, ti);
   const seaBottom = scene === 'sea' ? H : scene === 'deck' ? GROUND - 5 : GROUND;
   const rows = Math.max(1, Math.floor((seaBottom - HORIZON - 6) / 5));
   const spd = seaSpeed || 1;
-  for (let i = 0; i < (scene === 'impel' ? 0 : rows * 3); i++) {
+  for (let i = 0; i < (scene === 'impel' ? 0 : Math.round(rows * 3 * wide)); i++) {
     const y = HORIZON + 4 + (i % rows) * 5 + (i % 3);
     if (y >= seaBottom - 1) continue;
     const len = 4 + (i % 4) * 2;
-    const x = ((i * 41 + t * (6 + (i % 3) * 3) * spd) % (W + 24)) - 12;
+    const x = vx + ((i * 41 + t * (6 + (i % 3) * 3) * spd) % (vw + 24)) - 12;
     pxRect(c, Math.round(x), y, len, 1, sc.sea2);
   }
   if (scene === 'village') {
@@ -619,9 +668,9 @@ function drawAnimated(c, scene, ti, t, seaSpeed) {
     }
   }
   if (scene === 'drum') {
-    for (let i = 0; i < 34; i++) {
-      const x = ((i * 53 + t * (6 + (i % 4) * 2) + Math.sin(t + i) * 4) % (W + 8)) - 4;
-      const y = (i * 29 + t * (10 + (i % 3) * 5)) % H;
+    for (let i = 0; i < 34 * wide * wide; i++) {
+      const x = vx + ((i * 53 + t * (6 + (i % 4) * 2) + Math.sin(t + i) * 4) % (vw + 8)) - 4;
+      const y = vy + (i * 29 + t * (10 + (i % 3) * 5)) % vh;
       pxRect(c, Math.round(x), Math.round(y), i % 5 ? 1 : 2, i % 5 ? 1 : 2, '#ffffff');
     }
   }
@@ -635,23 +684,23 @@ function drawAnimated(c, scene, ti, t, seaSpeed) {
       const k = (t * 0.6 + i / 10) % 1, dir = i % 2 ? 1 : -1;
       pxRect(c, 141 + dir * k * 26, GROUND - 66 + k * k * 30 - Math.sin(k * Math.PI) * 8, 2, 2, '#8fd0f2');
     }
-    for (let i = 0; i < 6; i++) pxRect(c, ((i * 37 + t * 10) % (W + 10)) - 5, GROUND + 7 + (i % 2) * 2, 5, 1, '#bfe6ff');
+    for (let i = 0; i < 6 * wide; i++) pxRect(c, vx + ((i * 37 + t * 10) % (vw + 10)) - 5, GROUND + 7 + (i % 2) * 2, 5, 1, '#bfe6ff');
   }
   if (scene === 'thriller') {
     for (let i = 0; i < 4; i++) {
       c.globalAlpha = 0.25;
-      pxRect(c, ((i * 70 + t * (4 + i)) % (W + 80)) - 80, GROUND - 14 + i * 6, 80, 5, '#c9ccd6');
+      pxRect(c, vx + ((i * 70 + t * (4 + i)) % (vw + 80)) - 80, GROUND - 14 + i * 6, 80, 5, '#c9ccd6');
       c.globalAlpha = 1;
     }
     for (let i = 0; i < 3; i++) {
-      const bx = ((i * 64 + t * 20) % (W + 20)) - 10, by = 20 + i * 9 + Math.sin(t * 4 + i) * 3, f = Math.floor(t * 8 + i) % 2;
+      const bx = vx + ((i * 64 + t * 20) % (vw + 20)) - 10, by = 20 + i * 9 + Math.sin(t * 4 + i) * 3, f = Math.floor(t * 8 + i) % 2;
       pxRect(c, bx, by, 2, 2, '#1b1424'); pxRect(c, bx - 3, by - f, 3, 1, '#1b1424'); pxRect(c, bx + 2, by - f, 3, 1, '#1b1424');
     }
   }
   if (scene === 'sabaody') {
     for (let i = 0; i < 9; i++) {
       const k = (t * 0.12 + i / 9) % 1;
-      const x = (i * 23 + 8) % W + Math.sin(k * 6 + i) * 4, y = GROUND - k * 100;
+      const x = vx + (i * 23 + 8) % vw + Math.sin(k * 6 + i) * 4, y = GROUND - k * (100 - vy);
       pxRing(c, x, y, 2 + (i % 3), '#e8f6ff'); pxRect(c, x - 1, y - 1, 1, 1, '#ffffff');
     }
   }
@@ -668,25 +717,25 @@ function drawAnimated(c, scene, ti, t, seaSpeed) {
   if (scene === 'fishman') {
     for (let i = 0; i < 4; i++) {
       c.globalAlpha = 0.12 + 0.06 * Math.sin(t + i);
-      for (let y = 0; y < GROUND; y += 2) pxRect(c, 20 + i * 44 + y * 0.35, y, 6, 2, '#bfe6ff');
+      for (let y = vy; y < GROUND; y += 2) pxRect(c, 20 + i * 44 + y * 0.35, y, 6, 2, '#bfe6ff');
       c.globalAlpha = 1;
     }
     for (let i = 0; i < 5; i++) {
-      const dir = i % 2 ? 1 : -1, x = dir > 0 ? ((t * (10 + i * 3) + i * 50) % (W + 20)) - 10 : W + 10 - ((t * (10 + i * 3) + i * 50) % (W + 20)), y = 30 + i * 11;
+      const dir = i % 2 ? 1 : -1, x = vx + (dir > 0 ? ((t * (10 + i * 3) + i * 50) % (vw + 20)) - 10 : vw + 10 - ((t * (10 + i * 3) + i * 50) % (vw + 20))), y = 30 + i * 11;
       const col = ['#ffd04a', '#ff8a5a', '#7cd0ff', '#f2f2f2', '#ff7a9a'][i];
       pxRect(c, x, y, 4, 2, col); pxRect(c, x - dir * 2, y, 1, 2, col);
     }
-    for (let i = 0; i < 6; i++) { const k = (t * 0.25 + i / 6) % 1; pxRect(c, (i * 33 + 12) % W, GROUND - k * 90, 1, 1, '#d8f4ff'); }
+    for (let i = 0; i < 6 * wide; i++) { const k = (t * 0.25 + i / 6) % 1; pxRect(c, vx + (i * 33 + 12) % vw, GROUND - k * (90 - vy), 1, 1, '#d8f4ff'); }
   }
   if (scene === 'punkhazard') {
     for (let i = 0; i < 6; i++) pxRect(c, 8 + i * 14, GROUND - 2 - Math.abs(Math.sin(t * 7 + i)) * 4, 3, 3, i % 2 ? '#ff9a3a' : '#ffd04a');
-    for (let i = 0; i < 14; i++) pxRect(c, 96 + ((i * 41 + t * 6) % 96), (i * 23 + t * 14) % H, 1, 1, '#ffffff');
+    for (let i = 0; i < 14 * wide; i++) pxRect(c, 96 + ((i * 41 + t * 6) % (vx + vw - 96)), vy + (i * 23 + t * 14) % vh, 1, 1, '#ffffff');
   }
   if (scene === 'dressrosa') {
-    for (let i = 0; i < 8; i++) pxRect(c, ((i * 47 + t * 12) % (W + 10)) - 5, (i * 19 + t * 9) % 90, 2, 1, i % 2 ? '#ff8ab0' : '#ffd04a');
+    for (let i = 0; i < 8 * wide; i++) pxRect(c, vx + ((i * 47 + t * 12) % (vw + 10)) - 5, vy + (i * 19 + t * 9) % (90 - vy), 2, 1, i % 2 ? '#ff8ab0' : '#ffd04a');
   }
   if (scene === 'wholecake') {
-    for (let i = 0; i < 12; i++) pxRect(c, ((i * 41 + t * 5) % W), (i * 27 + t * 16) % (GROUND + 10), 1, 2, ['#ff5a8a', '#5ab8e8', '#ffd04a', '#7cff7a'][i % 4]);
+    for (let i = 0; i < 12 * wide; i++) pxRect(c, vx + ((i * 41 + t * 5) % vw), vy + (i * 27 + t * 16) % (GROUND + 10 - vy), 1, 2, ['#ff5a8a', '#5ab8e8', '#ffd04a', '#7cff7a'][i % 4]);
   }
   if (scene === 'reef') {
     for (let i = 0; i < 6; i++) {
@@ -958,7 +1007,7 @@ function drawBar(c, x, y, w, h, frac, col, back) {
 
 // ---------- effects engine ----------
 
-const FX = { list: [], parts: [], floats: [], tweens: [], shakeMag: 0, shakeT: 0, flashColor: '#ffffff', flashA: 0 };
+const FX = { list: [], parts: [], floats: [], tweens: [], shakeMag: 0, shakeT: 0, flashColor: '#ffffff', flashA: 0, stopT: 0 };
 
 const easeOut = k => 1 - (1 - k) * (1 - k);
 const easeIn = k => k * k;
@@ -1000,12 +1049,22 @@ function shake(mag, ms) {
   FX.shakeT = Math.max(FX.shakeT, ms);
 }
 
+// Hit-stop: freezes every animation for a moment so a hit lands with weight.
+function hitStop(ms) {
+  FX.stopT = Math.max(FX.stopT, ms);
+}
+
 function screenFlash(color, a) {
   FX.flashColor = color;
   FX.flashA = a === undefined ? 0.8 : a;
 }
 
 function updateFx(dt) {
+  if (FX.stopT > 0) {
+    FX.stopT -= dt * 1000;
+    if (FX.shakeT > 0) FX.shakeT -= dt * 1000;
+    return;
+  }
   const ms = dt * 1000;
   for (let i = FX.tweens.length - 1; i >= 0; i--) {
     const tw = FX.tweens[i];
@@ -1039,8 +1098,14 @@ function updateFx(dt) {
 function drawFx(c) {
   for (const f of FX.list) f.draw(c, Math.min(1, f.t / f.dur));
   for (const p of FX.parts) {
-    if (p.life < p.max * 0.25 && Math.random() < 0.4) continue;
-    pxRect(c, p.x, p.y, p.size, p.size, p.color);
+    const f = p.life / p.max;
+    if (f < 0.25 && Math.random() < 0.4) continue;
+    // fast sparks leave a short streak; particles shrink as they fade; big ones get a bright core
+    const sp = Math.abs(p.vx) + Math.abs(p.vy);
+    if (sp > 70 && f > 0.3) pxLine(c, p.x, p.y, p.x - p.vx * 0.03, p.y - p.vy * 0.03, p.color, 1);
+    const s = f < 0.45 && p.size > 1 ? Math.max(1, Math.round(p.size * f / 0.45)) : p.size;
+    pxRect(c, p.x, p.y, s, s, p.color);
+    if (s >= 3 && f > 0.4) pxRect(c, p.x + 1, p.y + 1, s - 2, s - 2, mixColor(p.color, '#ffffff', 0.55));
   }
   for (const f of FX.floats) {
     const k = f.t / f.dur;
@@ -1052,5 +1117,5 @@ function clearFx() {
   for (const f of FX.list) f.res();
   for (const tw of FX.tweens) tw.res();
   FX.list.length = 0; FX.tweens.length = 0; FX.parts.length = 0; FX.floats.length = 0;
-  FX.shakeMag = 0; FX.shakeT = 0; FX.flashA = 0;
+  FX.shakeMag = 0; FX.shakeT = 0; FX.flashA = 0; FX.stopT = 0;
 }

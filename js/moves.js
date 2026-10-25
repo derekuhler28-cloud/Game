@@ -90,7 +90,7 @@ function ghosts(ms, color, n, dx) {
 }
 
 function dropOn(pos, ms, drawFn) {
-  return fxRun(ms, (c, k) => drawFn(c, pos.x, lerp(-24, pos.y, easeIn(k)), k));
+  return fxRun(ms, (c, k) => drawFn(c, pos.x, lerp(VIEW.y - 24, pos.y, easeIn(k)), k));
 }
 
 function groundCrack(x0, x1, color, ms) {
@@ -469,7 +469,7 @@ const MOVE_FX = {
     await tween(G.hero, { squash: 0.15 }, 150);
     Sfx.play('slash');
     const fc = fc0();
-    const dim = fxRun(500, (c, k) => { c.globalAlpha = 0.3 * Math.sin(k * Math.PI); pxRect(c, 0, 0, W, H, '#0a0014'); c.globalAlpha = 1; });
+    const dim = fxRun(500, (c, k) => { c.globalAlpha = 0.3 * Math.sin(k * Math.PI); pxRect(c, VIEW.x, VIEW.y, VIEW.w, VIEW.h, '#0a0014'); c.globalAlpha = 1; });
     await projectile(heroHand(), fc, 300, (c, x, y) => {
       for (let a = -1.3; a <= 1.3; a += 0.07) { pxRect(c, x + Math.cos(a) * 10 - 6, y + Math.sin(a) * 13, 3, 2, '#3a3048'); pxRect(c, x + Math.cos(a) * 8 - 6, y + Math.sin(a) * 11, 1, 1, '#9a6ae0'); }
     });
@@ -483,7 +483,7 @@ const MOVE_FX = {
     const fc = fc0();
     for (let i = 0; i < m.hits && G.battle.F.hp > 0; i++) {
       const x = fc.x + rand(-14, 14);
-      await fxRun(110, (c, k) => { pxLine(c, x - 6, lerp(-10, fc.y - 10, k), x + 2, lerp(4, fc.y + 6, k), '#9a6ae0', 2); pxLine(c, x - 6, lerp(-10, fc.y - 10, k), x + 2, lerp(4, fc.y + 6, k), '#1b1424', 1); });
+      await fxRun(110, (c, k) => { pxLine(c, x - 6, lerp(VIEW.y - 10, fc.y - 10, k), x + 2, lerp(VIEW.y + 4, fc.y + 6, k), '#9a6ae0', 2); pxLine(c, x - 6, lerp(VIEW.y - 10, fc.y - 10, k), x + 2, lerp(VIEW.y + 4, fc.y + 6, k), '#1b1424', 1); });
       m.hit(i);
       particles(x, fc.y, 5, { colors: ['#9a6ae0', '#3a3048'], speed: 40 });
     }
@@ -493,13 +493,14 @@ const MOVE_FX = {
     hold(true);
     Sfx.play('boom');
     const fc = fc0();
-    await fxRun(260, (c, k) => { c.globalAlpha = 0.6 * k; pxRect(c, 0, 0, W, H, '#0a0014'); c.globalAlpha = 1; });
+    await fxRun(260, (c, k) => { c.globalAlpha = 0.6 * k; pxRect(c, VIEW.x, VIEW.y, VIEW.w, VIEW.h, '#0a0014'); c.globalAlpha = 1; });
     screenFlash('#9a6ae0', 0.8);
     fxRun(900, (c, k) => {
       const e = easeOut(Math.min(1, k * 2.5));
-      pxLine(c, 0, 128, W * e, 128 - 128 * e, '#1b1424', 5);
-      pxLine(c, 0, 128, W * e, 128 - 128 * e, '#9a6ae0', 3);
-      pxLine(c, 0, 128, W * e, 128 - 128 * e, '#ffffff', 1);
+      const x0 = VIEW.x, y0 = VIEW.y + VIEW.h, x1 = x0 + VIEW.w * e, y1 = y0 - VIEW.h * e;
+      pxLine(c, x0, y0, x1, y1, '#1b1424', 5);
+      pxLine(c, x0, y0, x1, y1, '#9a6ae0', 3);
+      pxLine(c, x0, y0, x1, y1, '#ffffff', 1);
     });
     shake(9, 900);
     await wait(300); m.hit(0);
@@ -556,7 +557,7 @@ const MOVE_FX = {
     hold(true);
     const fc = fc0(), img = getSprite(weaponSpec('ironaxe'));
     await tween(G.hero, { squash: 0.2 }, 200);
-    await fxRun(360, (c, k) => drawRot(c, img, fc.x - 10, lerp(-30, fc.y - 6, easeIn(k)), lerp(-0.4, 0.5, k), 5));
+    await fxRun(360, (c, k) => drawRot(c, img, fc.x - 10, lerp(VIEW.y - 30, fc.y - 6, easeIn(k)), lerp(-0.4, 0.5, k), 5));
     Sfx.play('boom'); m.hit(0);
     groundCrack(fc.x - 20, fc.x + 24, '#3a3440', 260);
     shake(6, 400); hold(false); await back();
@@ -699,8 +700,8 @@ const MOVE_FX = {
   emperorwrath: async m => {
     Sfx.play('haki');
     const fc = fc0(), img = getSprite(weaponSpec('kanabo'));
-    await fxRun(400, (c, k) => { c.globalAlpha = 0.5 * k; pxRect(c, 0, 0, W, H, '#1b0010'); c.globalAlpha = 1; for (let i = 0; i < 6; i++) zigzag(c, rand(0, W), 0, rand(0, W), H * k, 5, 4, '#9a6ae0', 1); });
-    await fxRun(320, (c, k) => drawRot(c, img, fc.x, lerp(-40, fc.y - 8, easeIn(k)), 0.3, 6));
+    await fxRun(400, (c, k) => { c.globalAlpha = 0.5 * k; pxRect(c, VIEW.x, VIEW.y, VIEW.w, VIEW.h, '#1b0010'); c.globalAlpha = 1; for (let i = 0; i < 6; i++) zigzag(c, rand(VIEW.x, VIEW.x + VIEW.w), VIEW.y, rand(VIEW.x, VIEW.x + VIEW.w), VIEW.y + VIEW.h * k, 5, 4, '#9a6ae0', 1); });
+    await fxRun(320, (c, k) => drawRot(c, img, fc.x, lerp(VIEW.y - 40, fc.y - 8, easeIn(k)), 0.3, 6));
     Sfx.play('boom'); screenFlash('#ffffff', 0.9);
     m.hit(0);
     for (let i = 0; i < 3; i++) ringOut(fc, i % 2 ? '#9a6ae0' : '#ffffff', 2, 30 + i * 20, 600, 2);
@@ -778,7 +779,7 @@ const MOVE_FX = {
       }
     });
     m.hit(0);
-    fxRun(400, (c, k) => { c.globalAlpha = 0.8 * (1 - k); pxRect(c, 0, 0, W, H, '#ffffff'); c.globalAlpha = 1; });
+    fxRun(400, (c, k) => { c.globalAlpha = 0.8 * (1 - k); pxRect(c, VIEW.x, VIEW.y, VIEW.w, VIEW.h, '#ffffff'); c.globalAlpha = 1; });
     shake(4, 300);
   },
 
@@ -884,7 +885,7 @@ const MOVE_FX = {
         const x = fc.x - 30 + i * 5, y = lerp(-10 - (i % 4) * 12, fc.y, Math.min(1, k * 1.4));
         pxLine(c, x, y - 6, x, y, '#e8e8f0', 1); pxRect(c, x, y - 8, 1, 2, '#d63c2f');
       }
-      for (let i = 0; i < 6; i++) pxRect(c, (i * 31 + k * 60) % W, (i * 17 + k * 90) % 60, 2, 2, ['#ff5a5a', '#ffd04a', '#7cd0ff'][i % 3]);
+      for (let i = 0; i < 6; i++) pxRect(c, VIEW.x + (i * 31 + k * 60) % VIEW.w, VIEW.y + (i * 17 + k * 90) % (60 - VIEW.y), 2, 2, ['#ff5a5a', '#ffd04a', '#7cd0ff'][i % 3]);
     });
     m.hit(0);
     particles(fc.x, fc.y, 30, { colors: ['#ff5a5a', '#ffd04a', '#7cd0ff', '#7cff7a'], speed: 100, grav: 80 });
@@ -947,7 +948,7 @@ const MOVE_FX = {
   grandcleave: async m => {
     const fc = fc0(), img = getSprite(weaponSpec('cleaver'));
     await tween(G.hero, { squash: 0.15 }, 160);
-    await fxRun(360, (c, k) => drawRot(c, img, fc.x, lerp(-30, fc.y - 6, easeIn(k)), 0, 6));
+    await fxRun(360, (c, k) => drawRot(c, img, fc.x, lerp(VIEW.y - 30, fc.y - 6, easeIn(k)), 0, 6));
     Sfx.play('boom'); m.hit(0);
     slashAt(fc, '#ffffff', Math.PI / 2, 60);
     shake(6, 400); await back();
@@ -1069,17 +1070,6 @@ const MOVE_FX = {
     m.hit(0); Sfx.play('boom'); shake(5, 400);
     particles(fc.x, fc.y, 20, { colors: ['#efe2c8', '#c9a26a'], speed: 70, grav: 120, size: 3 });
   },
-  dragonclaw: async m => {
-    G.hero.form = 'dragon';
-    await tween(G.hero, { ox: 44 }, 140, easeIn);
-    const fc = fc0();
-    m.hit(0);
-    slashMarks(fc, 3, '#4a8ad9', 40, 1.0, 7);
-    slashMarks(fc, 3, '#bfe0ff', 34, 1.0, 7);
-    particles(fc.x, fc.y, 16, { colors: ['#4a8ad9', '#bfe0ff', '#ffffff'], speed: 80 });
-    shake(3, 220);
-    await back();
-  },
   festival: async m => {
     const fc = fc0();
     Sfx.play('stretch');
@@ -1123,9 +1113,9 @@ const MOVE_FX = {
   puppet: async m => {
     const fc = fc0(), F = G.battle.F;
     Sfx.play('stretch');
-    await fxRun(320, (c, k) => { for (let i = 0; i < 5; i++) pxLine(c, fc.x - 12 + i * 6, -2, fc.x - 12 + i * 6, lerp(-2, fc.y - 10 + (i % 2) * 6, k), '#f2f2f2', 1); });
+    await fxRun(320, (c, k) => { for (let i = 0; i < 5; i++) pxLine(c, fc.x - 12 + i * 6, VIEW.y, fc.x - 12 + i * 6, lerp(VIEW.y, fc.y - 10 + (i % 2) * 6, k), '#f2f2f2', 1); });
     m.hit(0);
-    const strings = fxRun(700, c => { for (let i = 0; i < 5; i++) pxLine(c, fc.x - 12 + i * 6, -2, fc.x - 12 + i * 6 + F.ox, fc.y - 10 + (i % 2) * 6, '#f2f2f2', 1); });
+    const strings = fxRun(700, c => { for (let i = 0; i < 5; i++) pxLine(c, fc.x - 12 + i * 6, VIEW.y, fc.x - 12 + i * 6 + F.ox, fc.y - 10 + (i % 2) * 6, '#f2f2f2', 1); });
     for (let i = 0; i < 4; i++) { await tween(F, { ox: i % 2 ? 6 : -6, oy: -4 }, 80); }
     await tween(F, { ox: 0, oy: 0 }, 120);
     await strings;

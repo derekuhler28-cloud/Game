@@ -527,7 +527,7 @@
       rays(fc, '#c9ccd6', 8, 22, 260);
     },
     lockdown: async m => {
-      const fc = fc0(), from = [[0, 20], [W, 20], [fc.x - 40, H], [fc.x + 40, H]];
+      const fc = fc0(), from = [[VIEW.x, 20], [VIEW.x + VIEW.w, 20], [fc.x - 40, VIEW.y + VIEW.h], [fc.x + 40, VIEW.y + VIEW.h]];
       const end = i => [fc.x + (i % 2 ? 6 : -6), fc.y + (i < 2 ? -6 : 6)];
       Sfx.play('stretch');
       await fxRun(380, (c, k) => from.forEach(([x, y], i) => { const [ex, ey] = end(i); chainLinks(c, x, y, lerp(x, ex, easeOut(k)), lerp(y, ey, easeOut(k)), 3, k * 10); }));
@@ -620,7 +620,7 @@
       const fc = fc0();
       Sfx.play('slash');
       arcSweep(G.hero.x + 50, 60, 60, 2.5, 0.6, '#e8e8f0', 320, 4);
-      fxRun(500, (c, k) => { for (let i = 0; i < 7; i++) pxRect(c, lerp(40, W, (k + i * 0.13) % 1), 98 + (i * 5) % 22, 12, 1, '#c9d4e4'); });
+      fxRun(500, (c, k) => { for (let i = 0; i < 7; i++) pxRect(c, lerp(40, VIEW.x + VIEW.w, (k + i * 0.13) % 1), 98 + (i * 5) % 22, 12, 1, '#c9d4e4'); });
       await wait(200);
       m.hit(0);
       dust(fc.x, 14);
@@ -727,7 +727,7 @@
       for (let i = 0; i < m.hits && foeHp(); i++) {
         const tx = fc.x + rand(-14, 14), ty = fc.y + rand(-8, 8);
         await fxRun(150, (c, k) => {
-          const x = lerp(tx - 30, tx, k), y = lerp(-12, ty, easeIn(k));
+          const x = lerp(tx - 30, tx, k), y = lerp(VIEW.y - 12, ty, easeIn(k));
           fist(c, x, y);
           particles(x, y - 8, 1, { colors: FIRE, speed: 10, grav: -30, life: 0.3 });
         });
@@ -910,8 +910,8 @@
       Sfx.play('slash');
       const trail = fxRun(700, (c, k) => {
         c.globalAlpha = 1 - k;
-        pxRect(c, x0, fc.y - 1, W - x0, 3, '#7cd0ff');
-        pxRect(c, x0, fc.y, W - x0, 1, '#ffffff');
+        pxRect(c, x0, fc.y - 1, VIEW.x + VIEW.w - x0, 3, '#7cd0ff');
+        pxRect(c, x0, fc.y, VIEW.x + VIEW.w - x0, 1, '#ffffff');
         c.globalAlpha = 1;
       });
       await tween(hero, { ox: 150, oy: fc.y - 104, squash: 0 }, 140, easeIn);
@@ -971,7 +971,7 @@
         pxRect(c, x - 6, 121 - r * 0.5, 12, 2, '#3a1a5a');
       };
       Sfx.play('charge');
-      await fxRun(700, (c, k) => blob(c, lerp(-40, fc.x, easeOut(k)), 30 + Math.sin(k * 20) * 2));
+      await fxRun(700, (c, k) => blob(c, lerp(VIEW.x - 40, fc.x, easeOut(k)), 30 + Math.sin(k * 20) * 2));
       m.hit(0);
       Sfx.play('boom');
       shake(6, 400);
@@ -1077,8 +1077,8 @@
     parasite: async m => {
       const F = G.battle.F, fc = fc0(), xs = [-10, -4, 4, 10];
       Sfx.play('stretch');
-      await fxRun(260, (c, k) => xs.forEach(dx => pxLine(c, F.x + dx * 3, -2, F.x + dx, lerp(-2, fc.y - 8, easeOut(k)), '#f2f2f2')));
-      const str = fxRun(900, c => xs.forEach(dx => pxLine(c, F.x + dx * 3, -2, F.x + F.ox + dx, fc.y - 8 + F.oy, '#f2f2f2')));
+      await fxRun(260, (c, k) => xs.forEach(dx => pxLine(c, F.x + dx * 3, VIEW.y, F.x + dx, lerp(VIEW.y, fc.y - 8, easeOut(k)), '#f2f2f2')));
+      const str = fxRun(900, c => xs.forEach(dx => pxLine(c, F.x + dx * 3, VIEW.y, F.x + F.ox + dx, fc.y - 8 + F.oy, '#f2f2f2')));
       await tween(F, { oy: -34 }, 260, easeOut);
       await tween(F, { oy: 0, squash: 0.25 }, 140, easeIn);
       m.hit(0);
