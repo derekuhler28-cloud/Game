@@ -386,7 +386,10 @@
   }
 
   // A cone of fire from `from` that reaches `to`; returns when the flames die down.
-  function flames(from, to, ms, width, onHit) {
+  // `pal` swaps the five layers (edge to core) for sand, gas or anything else that billows.
+  const FLAME_PAL = ['#a8200f', '#ff5a2a', '#ff9a3a', '#ffd04a', '#fff6c8'];
+  function flames(from, to, ms, width, onHit, pal) {
+    pal = pal || FLAME_PAL;
     let hit = false;
     Sfx.play('fire');
     return fxRun(ms, (c, k) => {
@@ -400,15 +403,15 @@
         const w = (2 + t * width) * fade * (1 + fl * 0.22), wob = Math.sin(s * 0.3 - G.t * 36) * (1 + t * 3);
         P.push({ x: from.x + ux * s + nx * wob, y: from.y + uy * s + ny * wob, w });
       }
-      for (const [col, f] of [['#a8200f', 1.18], ['#ff5a2a', 1], ['#ff9a3a', 0.72], ['#ffd04a', 0.45], ['#fff6c8', 0.2]]) {
-        for (const q of P) if (q.w * f >= 1) pxCircle(c, q.x, q.y, q.w * f, col);
-      }
+      [1.18, 1, 0.72, 0.45, 0.2].forEach((f, li) => {
+        for (const q of P) if (q.w * f >= 1) pxCircle(c, q.x, q.y, q.w * f, pal[li]);
+      });
       if (Math.random() < 0.9) {
         const q = P[Math.floor(Math.random() * P.length)];
-        if (q) FX.parts.push({ x: q.x + nx * q.w, y: q.y + ny * q.w, vx: ux * 60 + nx * rand(-30, 30), vy: uy * 60 - 40, grav: -30, life: 0.4, max: 0.4, color: pick(FIRE), size: 2 });
+        if (q) FX.parts.push({ x: q.x + nx * q.w, y: q.y + ny * q.w, vx: ux * 60 + nx * rand(-30, 30), vy: uy * 60 - 40, grav: -30, life: 0.4, max: 0.4, color: pick(pal.slice(1)), size: 2 });
       }
       if (reach >= 1) {
-        for (let i = 0; i < 3; i++) FX.parts.push({ x: to.x + rand(-6, 6), y: to.y + rand(-8, 8), vx: rand(-40, 60), vy: rand(-70, -10), grav: -20, life: 0.5, max: 0.5, color: pick(FIRE), size: 3 });
+        for (let i = 0; i < 3; i++) FX.parts.push({ x: to.x + rand(-6, 6), y: to.y + rand(-8, 8), vx: rand(-40, 60) * Math.sign(ux || 1), vy: rand(-70, -10), grav: -20, life: 0.5, max: 0.5, color: pick(pal.slice(1)), size: 3 });
         if (!hit) { hit = true; onHit && onHit(); }
       }
     });
@@ -646,5 +649,10 @@
     fxRun(500, (c, k) => { for (let i = 0; i < 3; i++) pxRing(c, D.hx, D.hy, 14 + ((k * 3 + i / 3) % 1) * 56, i % 2 ? '#ffffff' : C.bl, 1); });
     await wait(500);
   };
+  // Shared with the bosses' attacks in game.js.
+  window.flameJet = flames;
+  window.skyBolt = bolt;
+  window.dragonClaws = claws;
+  window.dragonMouthOf = F => (F.dragon && F.spr === F.info.phase2.spr ? mouth(F.dragon) : null);
   window.DRAGON_COLORS = C;
 }

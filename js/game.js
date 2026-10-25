@@ -710,7 +710,7 @@ async function enterGame(cont, secret) {
 }
 
 function resetHero() {
-  Object.assign(G.hero, { ox: 0, oy: 0, squash: 0, flash: 0, alpha: 1, form: null, swing: false });
+  Object.assign(G.hero, { ox: 0, oy: 0, squash: 0, flash: 0, alpha: 1, form: null, swing: false, kx: 0 });
   if (G.hero.x < 80 || G.hero.x > 140) G.hero.x = G.hero.tx = 110;
 }
 
@@ -1881,7 +1881,7 @@ function startBattle(o) {
 }
 
 function resetHeroPose() {
-  Object.assign(G.hero, { ox: 0, oy: 0, squash: 0, flash: 0, alpha: 1, form: null, swing: false });
+  Object.assign(G.hero, { ox: 0, oy: 0, squash: 0, flash: 0, alpha: 1, form: null, swing: false, kx: 0 });
 }
 
 function battleMenu() {
@@ -2080,6 +2080,8 @@ function hitPlayer(mult, o) {
   dmg = Math.max(1, Math.round(dmg));
   p.hp = Math.max(0, p.hp - dmg);
   G.hero.flash = 0.15;
+  G.hero.kx = o.big ? -8 : -4;
+  hitStop(o.big ? 90 : 40);
   Sfx.play('hurt');
   shake(o.big ? 6 : 2, o.big ? 420 : 150);
   floatText(hc.x, 74, '-' + dmg, '#ff6a5a', o.big ? 2 : 1);
@@ -2354,7 +2356,7 @@ async function foeTurn() {
   }
   const move = F.boss ? (F.phase === 2 && info.phase2 ? info.phase2.basic : info.basic) : pick(info.moves);
   say(`${F.name} uses ${move}!`);
-  await fxFoeLunge(() => hitPlayer(1));
+  await fxFoeLunge(() => hitPlayer(1), move);
   await wait(250);
 }
 
@@ -2363,32 +2365,49 @@ async function foeBig() {
   say(`${F.name}: "${info.big}!!"`);
   const hc = heroC();
   if (info.fx === 'bolt') {
+    // the sky darkens, warning strikes walk in, then one huge bolt lands on you
+    Sfx.play('charge');
+    const dark = fxRun(1300, (c, k) => { c.globalAlpha = 0.45 * Math.sin(k * Math.PI); pxRect(c, VIEW.x, VIEW.y, VIEW.w, VIEW.h, '#0a0a24'); c.globalAlpha = 1; });
+    for (let i = 0; i < 3; i++) { skyBolt(hc.x + 60 - i * 26 + rand(-6, 6), 120); await wait(170); }
     Sfx.play('zap');
-    screenFlash('#fff6a0', 0.8);
-    await fxBolt(hc.x, hc.y, 1.4);
+    screenFlash('#fff6a0', 0.9);
+    skyBolt(hc.x, hc.y);
+    await fxBolt(hc.x, hc.y, 2.2);
+    focusLines(hc, '#fff6a0', 300);
+    for (let i = 0; i < 2; i++) ringOut({ x: hc.x, y: 120 }, i ? '#7cd0ff' : '#ffe14a', 4, 30 + i * 14, 400, 2);
+    particles(hc.x, hc.y, 30, { colors: ['#fff6a0', '#ffe14a', '#7cd0ff', '#ffffff'], speed: 130 });
     hitPlayer(2.2, { big: true });
+    await dark;
   } else if (info.fx === 'fire' || info.fx === 'sand') {
-    Sfx.play('fire');
-    const cols = info.fx === 'fire' ? FIRE : SAND;
-    const start = foeC();
-    await fxRun(700, () => {
-      for (let i = 0; i < 4; i++) {
-        FX.parts.push({ x: start.x - 10, y: start.y - 4 + rand(-4, 4), vx: -170 + rand(-20, 20), vy: rand(-20, 20), grav: 0, life: 0.55, max: 0.55, color: pick(cols), size: 3 });
-      }
-    });
-    hitPlayer(2.2, { big: true });
+    // a roaring jet of fire (or a scouring blast of sand); a dragon breathes it from its jaws
+    const fire = info.fx === 'fire';
+    const from = dragonMouthOf(F) || { x: F.x + F.ox - getSprite(F.spr).width * F.scale * 0.35, y: foeC().y - 4 };
+    if (F.dragon) tween(F.dragon, { open: 1 }, 160);
+    await tween(F, { squash: 0.15 }, 200);
+    screenFlash(fire ? '#ff9a3a' : '#e8c27b', 0.4);
+    shake(6, 700);
+    await flameJet(from, { x: hc.x, y: hc.y + 2 }, 820, 14, () => hitPlayer(2.2, { big: true }),
+      fire ? null : ['#8a6a2a', '#c9963b', '#e8c27b', '#f5d79a', '#fff2d0']);
+    tween(F, { squash: 0 }, 200);
   } else if (info.fx === 'bomb') {
     Sfx.play('charge');
     const start = foeC();
     await fxRun(650, (c, k) => {
       const x = start.x + (hc.x - start.x) * k, y = start.y + (hc.y - start.y) * k - Math.sin(k * Math.PI) * 40;
+      if (Math.random() < 0.7) particles(x + 4, y - 4, 1, { colors: SMOKE, speed: 10, grav: -20, life: 0.5, size: 3 });
       pxCircle(c, x, y, 7, PAL.k); pxCircle(c, x, y, 6, '#3a3440'); pxRect(c, x - 3, y - 3, 2, 2, '#9aa4b1');
       pxRect(c, x, y - 9, 1, 3, '#c9b88a'); pxRect(c, x - 1, y - 11, 3, 2, pick(FIRE));
     });
     Sfx.play('boom');
-    screenFlash('#ffd04a', 0.6);
-    fxRun(500, (c, k) => { pxRing(c, hc.x, hc.y, 4 + k * 30, '#ffe14a', 2); pxRing(c, hc.x, hc.y, 2 + k * 20, '#ff5a2a', 2); });
-    particles(hc.x, hc.y, 36, { colors: FIRE.concat(['#3a3440']), speed: 120 });
+    screenFlash('#ffd04a', 0.7);
+    focusLines(hc, '#ffd04a', 260);
+    fxRun(560, (c, k) => {
+      const e = easeOut(k);
+      if (k < 0.5) { pxCircle(c, hc.x, hc.y, 4 + e * 22, '#ff5a2a'); pxCircle(c, hc.x, hc.y, 2 + e * 15, '#ffd04a'); pxCircle(c, hc.x, hc.y, e * 7, '#fff6c8'); }
+      pxRing(c, hc.x, hc.y, 4 + e * 36, '#ffe14a', 2); pxRing(c, hc.x, hc.y, 2 + e * 26, '#ff5a2a', 2);
+    });
+    particles(hc.x, hc.y, 36, { colors: FIRE.concat(['#3a3440']), speed: 130 });
+    particles(hc.x, hc.y - 4, 12, { colors: SMOKE, speed: 40, grav: -30, life: 0.9, size: 4 });
     hitPlayer(2.2, { big: true });
   } else if (info.fx === 'flurry') {
     Sfx.play('slash');
@@ -2401,15 +2420,12 @@ async function foeBig() {
       await wait(150);
     }
   } else if (info.fx === 'gas') {
+    // a slow, billowing cloud of poison gas that swallows you
     Sfx.play('fire');
     const start = foeC();
-    const GAS = ['#8a4ac0', '#b98ae0', '#6a8a3a', '#c9e08a'];
-    await fxRun(900, () => {
-      for (let i = 0; i < 3; i++) {
-        FX.parts.push({ x: start.x - 8, y: start.y + rand(-10, 10), vx: -120 + rand(-20, 20), vy: rand(-15, 15), grav: -10, life: 0.9, max: 0.9, color: pick(GAS), size: 4 });
-      }
-    });
-    hitPlayer(2.2, { big: true });
+    await flameJet({ x: start.x - 10, y: start.y }, { x: hc.x, y: hc.y }, 1000, 20, () => hitPlayer(2.2, { big: true }),
+      ['#3a2a4a', '#6a3a8a', '#8a5ac0', '#9ab05a', '#d0e89a']);
+    particles(hc.x, hc.y, 24, { colors: ['#8a4ac0', '#b98ae0', '#6a8a3a', '#c9e08a'], speed: 40, grav: -15, life: 1, size: 4 });
   } else if (info.fx === 'smoke') {
     Sfx.play('fire');
     const start = foeC();
@@ -2442,15 +2458,30 @@ async function foeBig() {
     await FOE_FX[info.fx](hc, F);
     hitPlayer(2.2, { big: true });
   } else if (info.fx === 'water') {
+    // a torpedo charge wrapped in a spiralling wake of seawater
     Sfx.play('splash');
-    await tween(F, { ox: -96, squash: -0.15 }, 260, easeIn);
-    particles(hc.x, hc.y, 22, { colors: ['#4fa3e0', '#bfe6ff', '#ffffff'], speed: 90, grav: 120 });
+    await tween(F, { ox: 10, squash: 0.2 }, 220);
+    const wake = fxRun(520, () => {
+      const x = F.x + F.ox + 8, y = foeC().y;
+      for (let i = 0; i < 3; i++) particles(x + rand(0, 10), y + Math.sin(G.t * 30 + i * 2) * 8, 1, { colors: ['#4fa3e0', '#bfe6ff', '#ffffff'], speed: 30, grav: 60, life: 0.4 });
+    });
+    await tween(F, { ox: -96, squash: -0.18 }, 260, easeIn);
+    Sfx.play('splash');
+    for (let i = 0; i < 2; i++) ringOut(hc, i ? '#bfe6ff' : '#4fa3e0', 3, 26 + i * 12, 360, 2);
+    particles(hc.x, hc.y, 30, { colors: ['#4fa3e0', '#bfe6ff', '#ffffff'], speed: 110, grav: 140, size: 3 });
     hitPlayer(2.2, { big: true });
     await tween(F, { ox: 0, squash: 0 }, 300);
+    await wake;
   } else {
-    await tween(F, { ox: 10, squash: 0.2 }, 250);
+    // a full-power charge: the boss rears back, then crashes through you with a shockwave
+    Sfx.play('charge');
+    await tween(F, { ox: 14, squash: 0.25 }, 280);
     Sfx.play('boom');
     await tween(F, { ox: -72, squash: -0.15 }, 150, easeIn);
+    focusLines(hc, '#ffffff', 240);
+    for (let i = 0; i < 2; i++) ringOut({ x: hc.x + 4, y: 120 }, i ? '#ffffff' : '#e8d9b0', 3, 34 + i * 14, 380, 2);
+    groundCrack(hc.x - 26, hc.x + 26, '#3a2a1a', 240);
+    dust(hc.x + 6, 18);
     hitPlayer(2.2, { big: true });
     await tween(F, { ox: 0, squash: 0 }, 300);
   }
@@ -2475,8 +2506,9 @@ const FOE_FX = {
     Sfx.play('boom');
     screenFlash('#ffffff', 0.5);
     for (let i = 0; i < 3; i++) ringOut(hc, i % 2 ? '#c9ccd6' : '#ffffff', 2, 18 + i * 10, 420, 2);
+    focusLines(hc, '#ffffff', 220);
     await wait(200);
-    tween(F, { ox: 0 }, 300);
+    await tween(F, { ox: 0 }, 300);
   },
   shadows: async hc => {
     Sfx.play('charge');
@@ -3358,12 +3390,81 @@ function fxBolt(x, y, size) {
   });
 }
 
-async function fxFoeLunge(hit) {
-  const F = G.battle.F;
+// Every enemy's basic attack, shaped by the move's name: guns and thrown things fly across,
+// jaws bite, blades and claws slash, heavy hitters leap in and smash, and anything else is a
+// rushing blow. Elemental moves burst in their element's colours.
+const FOE_KINDS = [
+  ['shot', /shot|shoot|pistol|rifle|musket|volley|gun|cannon|blast|laser|spit|spray|toss|throw|arrow|bottle|chakram|net\b|hollow|rap\b|tear gas/i],
+  ['bite', /bite|chomp|munch|maul|fang|pinch|sting|peck/i],
+  ['slash', /slash|swing|saber|strike|chop|axe|scythe|claw|scratch|edge|cut|bayonet|spear|thrust|lance|whip|saw|shigan|strings|juggling/i],
+  ['smash', /stomp|smash|club|hammer|pound|slam|charge|rush|bash|roll|avalanche|ball|butt|tusk|horn|pounce|leap|dive|wall|shield|squish|box|plank|pan\b|tail/i],
+];
+const FOE_ELEMENTS = [
+  [/fire|flame|magma|heat|hot|soup/i, FIRE],
+  [/thunder|lightning|static|volt|dial/i, ['#fff6a0', '#ffe14a', '#7cd0ff', '#ffffff']],
+  [/ice|snow|blizzard|frost|avalanche/i, ['#ffffff', '#bfe6ff', '#7fe8ff']],
+  [/venom|poison|gas/i, ['#8a4ac0', '#b98ae0', '#c9e08a']],
+  [/water|soap|bubble|splash|shark/i, ['#4fa3e0', '#bfe6ff', '#ffffff']],
+  [/sand/i, SAND],
+  [/ghost|hollow|negative/i, ['#f6e6ff', '#ffffff', '#c9a6e0']],
+  [/smoke|white blow/i, SMOKE],
+  [/light kick/i, ['#fff6a0', '#ffffff', '#ffe14a']],
+];
+
+async function fxFoeLunge(hit, move) {
+  const F = G.battle.F, name = move || '', hc = heroC();
+  const kind = (FOE_KINDS.find(([, re]) => re.test(name)) || ['hit'])[0];
+  const pal = (FOE_ELEMENTS.find(([re]) => re.test(name)) || [])[1];
+  const col = pal ? pal[0] : '#ffffff';
   const dist = F.boss ? -52 : -60;
-  await tween(F, { ox: dist }, 160, easeIn);
+  await tween(F, { ox: 8, squash: 0.18 }, 150);
+  if (kind === 'shot') {
+    const from = { x: F.x + F.ox - getSprite(F.spr).width * F.scale * 0.35, y: foeC().y };
+    tween(F, { ox: 16, squash: -0.06 }, 90);
+    Sfx.play('shot');
+    fxRun(140, (c, k) => { pxCircle(c, from.x, from.y, 6 * (1 - k) + 1, pal ? pal[0] : '#fff6a0'); pxCircle(c, from.x, from.y, 3 * (1 - k), '#ffffff'); });
+    await projectile(from, hc, 210, (c, x, y) => {
+      pxLine(c, x, y, x + 14, y, pal ? pal[1] || pal[0] : '#ffe14a', 1);
+      pxCircle(c, x, y, pal ? 4 : 2, PAL.k);
+      pxCircle(c, x, y, pal ? 3 : 1, pal ? pal[0] : '#ffffff');
+      if (pal && Math.random() < 0.5) particles(x, y, 1, { colors: pal, speed: 15, grav: 0, life: 0.25 });
+    });
+    hit();
+    impact(hc, pal || ['#ffffff', '#ffe14a'], 10);
+    await tween(F, { ox: 0, squash: 0 }, 220);
+    return;
+  }
+  if (kind === 'smash') {
+    // a hop in and a heavy landing that shakes the ground
+    await Promise.all([tween(F, { ox: dist + 6, squash: -0.1 }, 260, easeOut), fxRun(260, (c, k) => { F.oy = -Math.sin(k * Math.PI) * 26; })]);
+    F.oy = 0;
+    hit();
+    Sfx.play('boom');
+    shake(4, 240);
+    ringOut({ x: hc.x + 6, y: 120 }, pal ? pal[0] : '#e8d9b0', 3, 32, 320, 2);
+    dust(hc.x + 8, 14);
+    if (pal) particles(hc.x, hc.y, 14, { colors: pal, speed: 80, grav: 40 });
+    F.squash = 0.28;
+    await tween(F, { ox: 0, squash: 0 }, 280);
+    return;
+  }
+  await tween(F, { ox: dist, squash: -0.12 }, 150, easeIn);
+  if (kind === 'slash') {
+    if (F.dragon && F.spr === F.info.phase2.spr) dragonClaws(hc, 280);
+    else { slashAt({ x: hc.x, y: hc.y - 2 }, col, -0.9, 34); setTimeout(() => slashAt({ x: hc.x + 2, y: hc.y + 1 }, col, 0.85, 28), 70); }
+  } else if (kind === 'bite') {
+    Sfx.play('bite');
+    await fxRun(200, (c, k) => {
+      const open = 10 * (1 - easeIn(k));
+      for (const d of [-1, 1]) {
+        const y = hc.y + d * (open + 1);
+        for (let i = 0; i < 5; i++) { const x = hc.x - 9 + i * 4; pxRect(c, x, d < 0 ? y - 4 : y, 3, 4, PAL.k); pxRect(c, x + 1, d < 0 ? y - 3 : y, 1, 3, '#ffffff'); }
+      }
+    });
+  }
   hit();
-  await tween(F, { ox: 0 }, 220);
+  if (pal) { particles(hc.x, hc.y, 16, { colors: pal, speed: 85, grav: 40 }); ringOut(hc, pal[0], 3, 24, 280, 1); }
+  await tween(F, { ox: 0, squash: 0 }, 240);
 }
 
 // ---------- rendering ----------
@@ -3456,10 +3557,11 @@ function drawBattle() {
   trackGhost('hero', hspr, G.hero.x + G.hero.ox, 121 + G.hero.oy, 2, { flip: !!G.hero.form, alpha: G.hero.alpha });
   if (!(F.info.phase2 && F.info.phase2.dragon && F.spr === F.info.phase2.spr)) trackGhost('foe', getSprite(F.spr), F.x + F.ox, F.y + F.oy - foeLift(), F.scale, { alpha: F.alpha });
   drawGhosts();
-  actors.push({ spr: hspr, x: G.hero.x + G.hero.ox, y: 121 + G.hero.oy, scale: 2, squash: G.hero.squash + Math.sin(G.t * 5) * 0.02, alpha: G.hero.alpha, flip: !!G.hero.form });
+  const hkx = Math.round(G.hero.kx || 0);
+  actors.push({ spr: hspr, x: G.hero.x + G.hero.ox + hkx, y: 121 + G.hero.oy, scale: 2, squash: G.hero.squash + Math.sin(G.t * 5) * 0.02, alpha: G.hero.alpha, flip: !!G.hero.form });
   drawActors(actors);
   drawCrewWeapons(actors);
-  if (G.hero.alpha > 0.5 && !G.hero.form && !G.hero.swing) drawHeldWeapon(ctx, G.hero.x + G.hero.ox, 121 + G.hero.oy, 2);
+  if (G.hero.alpha > 0.5 && !G.hero.form && !G.hero.swing) drawHeldWeapon(ctx, G.hero.x + G.hero.ox + hkx, 121 + G.hero.oy, 2);
 
   // foe
   const lift = foeLift();
@@ -3718,6 +3820,7 @@ function update(dt) {
     const F = G.battle.F;
     F.flash = Math.max(0, F.flash - dt);
     F.kx = Math.max(0, (F.kx || 0) - dt * 45);
+    Hr.kx = Math.min(0, (Hr.kx || 0) + dt * 45);
   }
 
   if ((G.mode === 'home' || G.mode === 'boat') && G.p) {
