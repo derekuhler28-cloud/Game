@@ -608,8 +608,8 @@ const FRUITS = {
     ],
   },
   phoenix: {
-    name: 'Bird-Bird Fruit: Phoenix', color: '#3a9ae8', color2: '#ffd04a', regen: 0.05,
-    desc: 'A mythical Zoan. Blue flames of rebirth heal 5% of your HP every turn, and Flames of Rebirth heals you as it burns the foe.',
+    name: 'Bird-Bird Fruit: Phoenix', color: '#3a9ae8', color2: '#ffd04a', regen: 0.1,
+    desc: 'A mythical Zoan. Blue flames of rebirth heal 10% of your HP every turn, and Flames of Rebirth heals you as it burns the foe.',
     awaken: { name: 'Immortal Phoenix', look: { h: '#ffd04a', v: '#3a9ae8', b: '#2a6ab8' }, moves: [{ name: 'Blue Flame Wings', sp: 45, mult: 3.0, heal: 0.2, fx: 'bluewings' }, { name: 'Phoenix Rebirth Dive', sp: 70, mult: 5.0, fx: 'phoenixdive' }] },
     moves: [
       { name: 'Phoenix Brand', at: 0, sp: 25, mult: 1.8, fx: 'phoenixbrand' },
